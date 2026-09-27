@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - Leaflet版</title>
-    <!-- 軽量で確実な地図エンジン (Leaflet) を読み込み -->
+    <title>純正風カーナビ - リアルGPS版</title>
+    <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; }
         .container { display: flex; flex-direction: column; height: 100vh; }
         
-        /* マップ表示エリア */
         .map-screen { flex: 1; position: relative; border-bottom: 4px solid #111; }
+        /* マップの重なり順（z-index）を一番下に設定 */
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
         
-        /* マップの色を反転させてダークテーマ風にする裏技 */
+        /* ダークテーマ風裏技 */
         .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
         
-        .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 10; display: flex; flex-direction: column; gap: 5px; }
+        /* ★修正：ボタン類が確実に一番上にくるように z-index を 9999 に設定 */
+        .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 5px; }
         .map-btn { background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: white; padding: 10px 15px; font-size: 1rem; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; }
         .map-btn:active { background: rgba(0, 0, 0, 0.9); }
         
-        /* 下部ボタンパネル */
-        .hardware-panel { height: 90px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #0a0a0a 100%); border-top: 2px solid #444; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 20; }
+        .hardware-panel { height: 90px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #0a0a0a 100%); border-top: 2px solid #444; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 9999; position: relative; }
         .hw-btn { background: linear-gradient(to bottom, #111 0%, #222 100%); border: 1px solid #000; border-top: 1px solid #444; color: #ccc; height: 55px; min-width: 65px; margin: 0 4px; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 5px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.2); cursor: pointer; position: relative; }
         .hw-btn:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.9); color: #fff; }
         .hw-btn-text { font-size: 0.9rem; padding: 0 15px; }
@@ -31,7 +31,7 @@
         .hw-btn::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 30px; height: 2px; background-color: #ff3333; box-shadow: 0 0 3px #ff0000; opacity: 0.7; }
         .neon-blue::after { background-color: #008cff; box-shadow: 0 0 3px #008cff; }
         
-        #toast { visibility: hidden; min-width: 250px; background-color: rgba(0, 0, 0, 0.8); color: #fff; text-align: center; border-radius: 30px; padding: 15px; position: fixed; z-index: 100; left: 50%; bottom: 120px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #444; box-shadow: 0 5px 15px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
+        #toast { visibility: hidden; min-width: 250px; background-color: rgba(0, 0, 0, 0.8); color: #fff; text-align: center; border-radius: 30px; padding: 15px; position: fixed; z-index: 10000; left: 50%; bottom: 120px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #444; box-shadow: 0 5px 15px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
         #toast.show { visibility: visible; opacity: 1; bottom: 140px; }
     </style>
 </head>
@@ -40,8 +40,9 @@
         <div class="map-screen">
             <div id="map"></div>
             <div class="map-overlay-left">
-                <div class="map-btn" onclick="map.zoomIn()">広域表示(＋)</div>
-                <div class="map-btn" onclick="map.zoomOut()">詳細表示(－)</div>
+                <!-- 広域はズームアウト、詳細はズームイン -->
+                <div class="map-btn" onclick="zoomOutMap()">広域表示</div>
+                <div class="map-btn" onclick="zoomInMap()">詳細表示</div>
                 <div class="map-btn" style="margin-top: 15px;" onclick="resetCamera()">ON 》</div>
             </div>
         </div>
@@ -61,30 +62,63 @@
     <div id="toast">通知メッセージ</div>
 
     <script>
-        // 千葉市周辺の座標
-        const currentLat = 35.6074;
-        const currentLng = 140.1065;
+        // --- 1. 地図の初期化 ---
+        var map = L.map('map', { zoomControl: false }).setView([35.6074, 140.1065], 14);
 
-        // 地図の初期化
-        const map = L.map('map', {
-            zoomControl: false // デフォルトのズームボタンを非表示
-        }).setView([currentLat, currentLng], 14);
-
-        // トークン不要のオープンストリートマップを使用
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // 現在地マーカーを追加
-        const marker = L.marker([currentLat, currentLng]).addTo(map);
-        marker.bindPopup("<b>現在地周辺</b>").openPopup();
+        // --- 2. GPS用変数の準備 ---
+        var userMarker = L.marker([35.6074, 140.1065]).addTo(map); // 現在地ピン
+        userMarker.bindPopup("<b>あなたの現在地</b>");
+        
+        var userLat = 35.6074;
+        var userLng = 140.1065;
+        var isTracking = true; // 画面がGPSに追従するかどうか
 
-        // カメラリセット機能
-        function resetCamera() {
-            map.setView([currentLat, currentLng], 14);
-            showToast('📍 現在地周辺にフォーカスしました');
+        // --- 3. リアルタイムGPS取得（本物のカーナビ機能） ---
+        if (navigator.geolocation) {
+            // watchPositionで移動に合わせて常に位置を更新
+            navigator.geolocation.watchPosition(function(position) {
+                userLat = position.coords.latitude;
+                userLng = position.coords.longitude;
+                
+                // ピンの位置を実際のGPS座標に移動
+                userMarker.setLatLng([userLat, userLng]);
+                
+                // 追従モードがONなら、地図の中心も移動させる
+                if(isTracking) {
+                    map.setView([userLat, userLng]);
+                }
+            }, function(error) {
+                showToast('⚠️ GPSの取得に失敗しました。設定を確認してください。');
+            }, {
+                enableHighAccuracy: true, // カーナビ用に高精度GPSを要求
+                maximumAge: 0,
+                timeout: 5000
+            });
+        } else {
+            showToast('お使いの端末はGPSに対応していません');
         }
+
+        // --- 4. ナビ特有の操作感 ---
+        // ユーザーが指で地図を動かしたら、自動追従をストップする（迷子防止）
+        map.on('dragstart', function() {
+            isTracking = false; 
+        });
+
+        // 「現在地」ボタンを押したら、再びGPS追従を開始して現在地に戻る
+        function resetCamera() {
+            isTracking = true;
+            map.setView([userLat, userLng], 15);
+            showToast('📍 現在地にフォーカスしました');
+        }
+
+        // ズームボタン機能
+        function zoomInMap() { map.zoomIn(); showToast('詳細表示にします'); }
+        function zoomOutMap() { map.zoomOut(); showToast('広域表示にします'); }
 
         // トースト通知機能
         let toastTimeout;
