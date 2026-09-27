@@ -3,31 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Hybrid - Googleマップ完全連動版</title>
+    <title>Neon HUD - Googleマップ × ネオンオーバーレイ</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
-        .container { display: flex; flex-direction: column; height: 100vh; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #000; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
+        .container { display: flex; flex-direction: column; height: 100vh; position: relative; }
         
-        /* メインのマップ表示エリア（Googleマップへのポータル） */
-        .map-screen { flex: 1; position: relative; border-bottom: 4px solid #111; background: #111; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
-        .map-placeholder-icon { font-size: 4rem; margin-bottom: 15px; text-shadow: 0 0 20px #00d4ff; }
-        .map-placeholder-text { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #fff; }
-        .map-placeholder-sub { font-size: 1rem; color: #888; margin-bottom: 25px; line-height: 1.5; }
-        .gmap-launch-btn { background: linear-gradient(to bottom, #00d4ff, #008cff); color: #000; font-weight: bold; font-size: 1.3rem; padding: 18px 35px; border-radius: 8px; border: none; box-shadow: 0 0 20px rgba(0,212,255,0.6); cursor: pointer; }
-        .gmap-launch-btn:active { transform: scale(0.98); background: #00a0cc; }
+        /* 背景のGoogleマップ（iframeで全画面表示し、自由にタッチ操作可能に） */
+        .map-screen { flex: 1; position: relative; width: 100%; height: 100%; z-index: 1; }
+        #googleMapFrame { width: 100%; height: 100%; border: none; }
 
-        /* 左上の簡易コントロールボタン */
-        .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9900; display: flex; flex-direction: column; gap: 5px; }
-        .map-btn { background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: white; padding: 10px 15px; font-size: 1rem; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; }
-        .map-btn:active { background: rgba(0, 0, 0, 0.9); }
+        /* 画面上に浮かぶネオン操作パネル（HUDスタイル） */
+        .hud-overlay-top { position: absolute; top: 15px; left: 15px; right: 15px; z-index: 9900; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+        .hud-brand { background: rgba(0, 0, 0, 0.75); border: 1px solid #00d4ff; color: #00d4ff; padding: 8px 15px; font-size: 0.9rem; font-weight: bold; border-radius: 4px; box-shadow: 0 0 10px rgba(0,212,255,0.4); text-shadow: 0 0 5px #00d4ff; pointer-events: auto; }
         
-        /* 下部ハードウェアパネル */
+        .hud-search-quick { display: flex; gap: 5px; pointer-events: auto; background: rgba(0,0,0,0.8); padding: 5px; border-radius: 6px; border: 1px solid #444; }
+        .hud-input { padding: 8px 12px; border-radius: 4px; border: 1px solid #555; background: #111; color: #fff; font-size: 1rem; width: 220px; }
+        .hud-input::placeholder { color: #888; }
+        .hud-search-btn { background: #00d4ff; color: #000; padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; }
+        .hud-search-btn:active { background: #00a0cc; }
+
+        /* 下部ハードウェアパネル（ネオンUI） */
         .hardware-panel { height: 90px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #0a0a0a 100%); border-top: 2px solid #444; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 9999; position: relative; }
         .hw-btn { background: linear-gradient(to bottom, #111 0%, #222 100%); border: 1px solid #000; border-top: 1px solid #444; color: #ccc; height: 55px; min-width: 65px; margin: 0 4px; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 5px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.2); cursor: pointer; position: relative; }
         .hw-btn:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.9); color: #fff; }
         .hw-btn-text { font-size: 0.9rem; padding: 0 15px; }
         .neon-blue { color: #e0f7ff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff, 0 0 20px #0044ff, 0 0 30px #0022cc; }
 
+        /* 下部のネオンアニメーションライン */
         @keyframes colorShift {
             0% { background-color: #ff3333; box-shadow: 0 0 4px #ff0000; }
             33% { background-color: #00d4ff; box-shadow: 0 0 4px #00d4ff; }
@@ -49,40 +51,34 @@
         .modal-icon { margin-right: 20px; font-size: 1.8rem; }
         .modal-close { background: linear-gradient(to bottom, #800, #500); padding: 18px; border-radius: 5px; text-align: center; font-size: 1.3rem; margin-top: auto; cursor: pointer; border: 1px solid #f55; color: #fff; font-weight: bold; }
         .modal-close:active { background: #f00; transform: scale(0.98); }
-
-        .search-container { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-input { flex: 1; padding: 15px; border-radius: 5px; border: 1px solid #555; background: #222; color: #fff; font-size: 1.2rem; }
-        .search-input::placeholder { color: #888; }
-        .search-btn { background: #00d4ff; color: #000; padding: 15px 25px; border-radius: 5px; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
-        .search-btn:active { background: #00a0cc; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- メイン画面：GPS連動のGoogleマップポータル -->
-        <div id="mapScreen" class="map-screen">
-            <div class="map-placeholder-icon">🗺️</div>
-            <div class="map-placeholder-text">Neon カーナビシステム (Googleマップ連携)</div>
-            <div class="map-placeholder-sub" id="gpsStatus">GPS現在地を取得中...<br>下の ▲ボタン からいつでも検索・案内をスタートできます</div>
-            <button class="gmap-launch-btn sound-btn" onclick="openGoogleMapWithCurrentGPS()">📍 Googleマップで現在地を開く</button>
+        <!-- 画面上部のネオンHUD（クイック検索バーなど） -->
+        <div class="hud-overlay-top">
+            <div class="hud-brand">NEON HUD SYSTEM</div>
+            <div class="hud-search-quick">
+                <input type="text" id="hudInput" class="hud-input" placeholder="Googleで検索・番地入力...">
+                <button class="hud-search-btn sound-btn" onclick="hudSearch()">🔍 検索</button>
+            </div>
         </div>
 
-        <!-- ナビゲーションメニュー -->
-        <div id="navModal" class="system-modal">
-            <div class="modal-header">🧭 目的地検索（Googleマップ連携）</div>
-            
-            <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="名称 または 住所・番地 (例: 浦安市北栄4-9-1)...">
-                <button class="search-btn sound-btn" onclick="searchOnGoogleMaps()">🔍 案内開始</button>
-            </div>
+        <!-- 裏側のGoogleマップ表示エリア -->
+        <div class="map-screen">
+            <iframe id="googleMapFrame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.8280336041697!2d140.1043!3d35.6074!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sMzXCsDM2JzI2LjYiTiAxNDDCsDA2JzE1LjUiRQ!5e0!3m2!1sja!2sjp!4v1650000000000!5m2!1sja!2sjp" allowfullscreen="" loading="lazy"></iframe>
+        </div>
 
-            <div class="modal-btn sound-btn" onclick="openGoogleMapDirect('コンビニ')"><span class="modal-icon">🏪</span>周辺のコンビニを検索</div>
-            <div class="modal-btn sound-btn" onclick="openGoogleMapDirect('ガソリンスタンド')"><span class="modal-icon">⛽</span>周辺のGSを検索</div>
-            <div class="modal-btn sound-btn" onclick="openGoogleMapDirect('千葉県千葉市花見川区宮野木町')"><span class="modal-icon">🏠</span>自宅へ帰る（宮野木町）</div>
+        <!-- ナビゲーションメニューモーダル -->
+        <div id="navModal" class="system-modal">
+            <div class="modal-header">🧭 メニュー（Googleマップ連動）</div>
+            <div class="modal-btn sound-btn" onclick="mapDirectAction('コンビニ')"><span class="modal-icon">🏪</span>周辺のコンビニを検索</div>
+            <div class="modal-btn sound-btn" onclick="mapDirectAction('ガソリンスタンド')"><span class="modal-icon">⛽</span>周辺のGSを検索</div>
+            <div class="modal-btn sound-btn" onclick="mapDirectAction('千葉県千葉市花見川区宮野木町')"><span class="modal-icon">🏠</span>自宅へ帰る（宮野木町）</div>
             <div class="modal-close sound-btn" onclick="closeModal('navModal')">閉じる</div>
         </div>
 
-        <!-- システム設定メニュー -->
+        <!-- システム設定モーダル -->
         <div id="settingsModal" class="system-modal">
             <div class="modal-header settings-header">⚙ システム設定</div>
             <div class="modal-btn sound-btn settings-btn" id="voiceBtn" onclick="toggleVoice()"><span class="modal-icon">🗣️</span>音声案内：ON</div>
@@ -91,7 +87,7 @@
             <div class="modal-close sound-btn" onclick="closeModal('settingsModal')">閉じる</div>
         </div>
 
-        <!-- 下部ハードウェアパネル -->
+        <!-- 下部ハードウェアパネル（ネオンUI） -->
         <div class="hardware-panel">
             <div class="hw-btn sound-btn" onclick="showToast('◀◀')">⏮</div>
             <div class="hw-btn sound-btn" onclick="showToast('▶▶')">⏭</div>
@@ -101,12 +97,13 @@
             <!-- ♪マーク：YouTube Music起動 -->
             <div class="hw-btn sound-btn neon-blue" style="font-size: 1.5rem;" onclick="openYouTubeMusic()">♪</div>
             
-            <!-- 〇マーク：検索メニュー -->
+            <!-- 〇マーク：メニューを開く -->
             <div class="hw-btn sound-btn neon-blue" style="font-size: 1.3rem;" onclick="openModal('navModal')">▲<br><span style="font-size:0.5rem; position:absolute; top:8px;">◯</span></div>
             
-            <div class="hw-btn sound-btn hw-btn-text" onclick="openGoogleMapWithCurrentGPS()">現在地</div>
+            <div class="hw-btn sound-btn hw-btn-text" onclick="resetMapToCurrent()">現在地</div>
             <div class="hw-btn sound-btn" style="font-size: 1.5rem;" onclick="openModal('settingsModal')">⚙</div>
             
+            <!-- 音量ボタン -->
             <div class="hw-btn sound-btn" onclick="changeVolume(-1)">－</div>
             <div class="hw-btn sound-btn" onclick="changeVolume(1)">＋</div>
         </div>
@@ -123,20 +120,7 @@
         });
         requestWakeLock();
 
-        // リアルタイムGPS保持用
-        let currentLat = 35.6074;
-        let currentLng = 140.1065;
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(function(position) {
-                currentLat = position.coords.latitude;
-                currentLng = position.coords.longitude;
-                document.getElementById('gpsStatus').innerHTML = `GPS現在地取得完了 (緯度:${currentLat.toFixed(4)}, 経度:${currentLng.toFixed(4)})<br>下の ▲ボタン からいつでも検索・案内をスタートできます`;
-            }, function(error) {
-                document.getElementById('gpsStatus').innerHTML = `※GPS信号を待っています（デフォルト地を使用中）`;
-            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
-        }
-
-        // 操作音
+        // 操作音システム
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx = new AudioContext();
         function unlockAudio() { if(audioCtx.state === 'suspended') audioCtx.resume(); }
@@ -210,34 +194,24 @@
         function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
-        // 実際のGPS座標を使ってGoogleマップを開く
-        function openGoogleMapWithCurrentGPS() {
-            showToast('📍 Googleマップで現在地を開きます');
-            speak('現在地を開きます');
-            setTimeout(() => {
-                window.open(`https://www.google.com/maps/@${currentLat},${currentLng},16z`, '_blank');
-            }, 400);
-        }
-
-        function searchOnGoogleMaps() {
-            var keyword = document.getElementById('searchInput').value.trim();
+        // 上部HUDからの検索
+        function hudSearch() {
+            var keyword = document.getElementById('hudInput').value.trim();
             if(!keyword) return;
-            closeModal('navModal');
-            showToast('Googleマップでルートを検索中...');
-            speak(keyword + 'へのルートを検索します');
-            setTimeout(() => {
-                // 現在地（saddr）から目的地（daddr）へのルート案内としてGoogleマップを直接起動
-                window.open(`https://www.google.com/maps/dir/?api=1&origin=${currentLat},${currentLng}&destination=${encodeURIComponent(keyword)}&travelmode=driving`, '_blank');
-            }, 400);
+            showToast('Googleマップで検索中...');
+            speak(keyword + 'を検索します');
+            document.getElementById('googleMapFrame').src = `https://www.google.com/maps?q=${encodeURIComponent(keyword)}&output=embed`;
         }
 
-        function openGoogleMapDirect(query) {
+        function mapDirectAction(query) {
             closeModal('navModal');
             showToast(query + 'を検索中...');
-            speak(query + 'を検索します');
-            setTimeout(() => {
-                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
-            }, 400);
+            document.getElementById('googleMapFrame').src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+        }
+
+        function resetMapToCurrent() {
+            showToast('📍 現在地周辺を表示します');
+            document.getElementById('googleMapFrame').src = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.8280336041697!2d140.1043!3d35.6074!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sMzXCsDM2JzI2LjYiTiAxNDDCsDA2JzE1LjUiRQ!5e0!3m2!1sja!2sjp!4v1650000000000!5m2!1sja!2sjp`;
         }
 
         let toastTimeout;
