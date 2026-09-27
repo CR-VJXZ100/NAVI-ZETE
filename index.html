@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - 検索安定化完全版</title>
+    <title>純正風カーナビ - 住所自動リカバリー検索版</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -105,7 +105,7 @@
             <div class="modal-header">🧭 ナビゲーションメニュー</div>
             
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="名称 または 住所 (例: 宮野木町、一蘭)...">
+                <input type="text" id="searchInput" class="search-input" placeholder="名称 または 住所 (例: 浦安市北栄、一蘭)...">
                 <button class="search-btn sound-btn" onclick="searchLocation()">🔍 検索</button>
             </div>
 
@@ -294,13 +294,12 @@
             return R * c;
         }
 
-        // ★ 検索キーワードに自動で「千葉県」を補正してエラーを防ぐ超安定検索エンジン
+        // ★ 住所詳細でヒットしなかった場合に、自動で町名レベルに落として再検索する「自動リカバリー機能」
         function searchLocation() {
-            var rawKeyword = document.getElementById('searchInput').value;
+            var rawKeyword = document.getElementById('searchInput').value.trim();
             if(!rawKeyword) return;
             showToast('検索中...');
             
-            // すでに都道府県名が入っていなければ「千葉県」を補足してヒット率を最大化
             let query = rawKeyword;
             if (!query.includes('千葉') && !query.includes('東京') && !query.includes('県') && !query.includes('都') && !query.includes('府') && !query.includes('道')) {
                 query = '千葉県 ' + query;
@@ -312,40 +311,58 @@
             .then(res => res.json())
             .then(data => {
                 if(data.length > 0) {
-                    data.forEach(item => {
-                        item.dist = calculateDistance(userLat, userLng, parseFloat(item.lat), parseFloat(item.lon));
-                    });
-                    
-                    data.sort((a, b) => a.dist - b.dist);
-
-                    let listHtml = '';
-                    data.forEach((item) => {
-                        let shortName = item.display_name.split(',')[0];
-                        let fullName = item.display_name;
-                        listHtml += `
-                            <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${shortName.replace(/'/g, "")}')">
-                                <div class="result-name">📍 ${shortName}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
-                                <div class="result-dist">約 ${item.dist.toFixed(1)} km</div>
-                            </div>
-                        `;
-                    });
-
-                    closeModal('navModal');
-                    document.getElementById('resultsListContainer').innerHTML = listHtml;
-                    openModal('resultsModal');
-
-                    showToast(data.length + '件見つかりました（近い順）');
-                    speak('候補が見つかりました。リストから選択してください。');
-
+                    processSearchResults(data);
                 } else {
-                    showToast('見つかりませんでした。別の言葉で試してください。');
-                    speak('目的地が見つかりませんでした。');
+                    // 【自動リカバリー】もし詳細な番地でヒットしなかった場合、数字やハイフン（番地情報）を削って「町名」だけで再検索！
+                    let simplifiedQuery = query.replace(/[0-9０-９\-\－\d+]/g, '').trim();
+                    if (simplifiedQuery !== query && simplifiedQuery.length > 2) {
+                        showToast('詳細住所が見つからないため、周辺エリアを検索中...');
+                        let retryUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(simplifiedQuery)}&countrycodes=jp&limit=25`;
+                        return fetch(retryUrl).then(res => res.json());
+                    } else {
+                        throw new Error('NotFound');
+                    }
+                }
+            })
+            .then(retryData => {
+                if (retryData) {
+                    if (retryData.length > 0) {
+                        processSearchResults(retryData);
+                    } else {
+                        throw new Error('NotFound');
+                    }
                 }
             })
             .catch(err => { 
-                showToast('検索エラーが発生しました'); 
-                speak('検索に失敗しました');
+                showToast('目的地が見つかりませんでした。別の住所や名称で試してください。'); 
+                speak('目的地が見つかりませんでした。');
             });
+        }
+
+        function processSearchResults(data) {
+            data.forEach(item => {
+                item.dist = calculateDistance(userLat, userLng, parseFloat(item.lat), parseFloat(item.lon));
+            });
+            data.sort((a, b) => a.dist - b.dist);
+
+            let listHtml = '';
+            data.forEach((item) => {
+                let shortName = item.display_name.split(',')[0];
+                let fullName = item.display_name;
+                listHtml += `
+                    <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${shortName.replace(/'/g, "")}')">
+                        <div class="result-name">📍 ${shortName}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
+                        <div class="result-dist">約 ${item.dist.toFixed(1)} km</div>
+                    </div>
+                `;
+            });
+
+            closeModal('navModal');
+            document.getElementById('resultsListContainer').innerHTML = listHtml;
+            openModal('resultsModal');
+
+            showToast(data.length + '件見つかりました（近い順）');
+            speak('候補が見つかりました。リストから選択してください。');
         }
 
         function selectSearchResult(lat, lon, name) {
