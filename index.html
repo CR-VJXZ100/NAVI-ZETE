@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - アルティメット完全版</title>
+    <title>純正風カーナビ - ロケーション最適化版</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -42,7 +42,6 @@
         .navi-marker-icon { display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; }
         .navi-arrow { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #00d4ff; filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.8)); transform-origin: center 70%; transition: transform 0.2s ease-out; }
 
-        /* モーダルメニュー（大画面化） */
         .system-modal { position: fixed; top: 5%; left: 8%; right: 8%; bottom: 110px; background: linear-gradient(135deg, #1f1f1f 0%, #0d0d0d 100%); border: 2px solid #444; box-shadow: 0 15px 40px rgba(0,0,0,0.9); border-radius: 8px; z-index: 100000; display: none; flex-direction: column; padding: 25px; overflow-y: auto; }
         .modal-header { font-size: 1.6rem; border-bottom: 2px solid #00d4ff; padding-bottom: 15px; margin-bottom: 20px; color: #fff; text-shadow: 0 0 10px #00d4ff; font-weight: bold; }
         .modal-header.settings-header { border-bottom: 2px solid #aaa; text-shadow: none; color: #eee; }
@@ -59,14 +58,12 @@
         .search-btn { background: #00d4ff; color: #000; padding: 15px 25px; border-radius: 5px; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
         .search-btn:active { background: #00a0cc; }
 
-        /* ★ 検索結果専用のフルサイズリスト画面 */
         .results-list-container { display: flex; flex-direction: column; gap: 12px; max-height: 55vh; overflow-y: auto; margin-bottom: 20px; padding-right: 5px; }
         .result-item { background: #222; border: 1px solid #555; padding: 18px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .result-item:active { background: #00d4ff; color: #000; }
         .result-name { font-size: 1.25rem; font-weight: bold; }
         .result-dist { font-size: 1.1rem; color: #00d4ff; background: rgba(0,212,255,0.1); padding: 6px 12px; border-radius: 20px; border: 1px solid #00d4ff; white-space: nowrap; margin-left: 15px; }
 
-        /* ルート確認パネル */
         .route-preview { position: fixed; bottom: -350px; left: 0; right: 0; background: linear-gradient(to bottom, #1a1a1a, #050505); border-top: 3px solid #00d4ff; z-index: 9950; padding: 20px; display: flex; flex-direction: column; gap: 15px; transition: bottom 0.3s ease-in-out; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         .route-preview.show { bottom: 90px; } 
         .preview-header { font-size: 1.4rem; font-weight: bold; color: #fff; text-align: center; }
@@ -104,12 +101,11 @@
             </div>
         </div>
 
-        <!-- ナビゲーションメニュー（通常時） -->
         <div id="navModal" class="system-modal">
             <div class="modal-header">🧭 ナビゲーションメニュー</div>
             
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="名称 または 住所を入力 (例: 一蘭、セブン)...">
+                <input type="text" id="searchInput" class="search-input" placeholder="名称 または エリア名 (例: 山岡家 花見川)...">
                 <button class="search-btn sound-btn" onclick="searchLocation()">🔍 検索</button>
             </div>
 
@@ -119,14 +115,12 @@
             <div class="modal-close sound-btn" onclick="closeModal('navModal')">閉じる</div>
         </div>
 
-        <!-- ★ 検索結果リスト専用メニュー（メニューに代わって画面いっぱいに表示） -->
         <div id="resultsModal" class="system-modal">
             <div class="modal-header">📍 検索結果（現在地から近い順）</div>
             <div id="resultsListContainer" class="results-list-container"></div>
             <div class="modal-close sound-btn" onclick="backToNavMenu()">🔙 メニューに戻る</div>
         </div>
 
-        <!-- システム設定メニュー -->
         <div id="settingsModal" class="system-modal">
             <div class="modal-header settings-header">⚙ システム設定</div>
             <div class="modal-btn sound-btn settings-btn" onclick="toggleMapMode()"><span class="modal-icon">🌙</span>地図 昼/夜 切替</div>
@@ -155,7 +149,6 @@
     <div id="toast">通知メッセージ</div>
 
     <script>
-        // スリープ防止
         let wakeLock = null;
         async function requestWakeLock() {
             try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
@@ -165,7 +158,6 @@
         });
         requestWakeLock();
 
-        // 操作音
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx = new AudioContext();
         function unlockAudio() { if(audioCtx.state === 'suspended') audioCtx.resume(); }
@@ -302,24 +294,30 @@
             return R * c;
         }
 
-        // ★ 厳密な距離順ソート付き検索
+        // ★ 近い順＆エリア指定（花見川など）に対応した賢い検索エンジン
         function searchLocation() {
             var keyword = document.getElementById('searchInput').value;
             if(!keyword) return;
             showToast('検索中...');
             
-            // 日本国内に絞って多く検索を取得
-            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(keyword)}&countrycodes=jp&limit=20`;
+            // 現在地周辺（千葉県周辺）の座標範囲を限定して検索（viewbox指定）
+            // 緯度・経度の幅を設定して、遠くの東京や浅草が勝手に入り込まないようにする
+            let minLon = userLng - 0.8;
+            let maxLon = userLng + 0.8;
+            let minLat = userLat - 0.8;
+            let maxLat = userLat + 0.8;
+
+            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(keyword)}&countrycodes=jp&viewbox=${minLon},${minLat},${maxLon},${maxLat}&bounded=1&limit=15`;
             
             fetch(searchUrl)
             .then(res => res.json())
             .then(data => {
                 if(data.length > 0) {
-                    // 現在地からの距離を確実に計算
+                    // 距離を正確に計算
                     data.forEach(item => {
                         item.dist = calculateDistance(userLat, userLng, parseFloat(item.lat), parseFloat(item.lon));
                     });
-                    // 近い順にソート（昇順）
+                    // 近い順に強制ソート
                     data.sort((a, b) => a.dist - b.dist);
 
                     let listHtml = '';
@@ -334,7 +332,6 @@
                         `;
                     });
 
-                    // ナビメニューを閉じ、フルサイズの検索結果モーダルを開く
                     closeModal('navModal');
                     document.getElementById('resultsListContainer').innerHTML = listHtml;
                     openModal('resultsModal');
