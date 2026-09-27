@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - 安定・高速検索版</title>
+    <title>純正風カーナビ - 名称・住所検索対応版</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -105,7 +105,8 @@
             <div class="modal-header">🧭 ナビゲーションメニュー</div>
             
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="名称 または エリア名 (例: 山岡家 花見川)...">
+                <!-- プレースホルダーを「名称または住所」に明記 -->
+                <input type="text" id="searchInput" class="search-input" placeholder="名称 または 住所 (例: 宮野木町、一蘭)...">
                 <button class="search-btn sound-btn" onclick="searchLocation()">🔍 検索</button>
             </div>
 
@@ -199,7 +200,7 @@
         function changeVolume(direction) {
             if (direction > 0) {
                 if (appVolume === 0) appVolume = 0.5; else appVolume = 1.0;
-                showToast('🔊 音量: 大 (MAX)'); speak('音量を大きくしました');
+                showToast('🔊 音量: 대 (MAX)'); speak('音量を大きくしました');
             } else {
                 if (appVolume === 1.0) appVolume = 0.5; else appVolume = 0;
                 if (appVolume === 0) { showToast('🔇 音声案内: ミュート'); } 
@@ -294,19 +295,14 @@
             return R * c;
         }
 
-        // ★ 安定かつ高速なNominatim検索 ＋ 稲毛区周辺（近距離）優先ソート
+        // ★ 名称・住所どちらでも検索でき、現在地からの距離順に並ぶ検索エンジン
         function searchLocation() {
             var keyword = document.getElementById('searchInput').value;
             if(!keyword) return;
             showToast('検索中...');
             
-            // 現在地（userLat, userLng）を中心に、千葉周辺（±0.4度＝約40km圏内）を視野ボックスとして指定
-            let minLon = userLng - 0.4;
-            let maxLon = userLng + 0.4;
-            let minLat = userLat - 0.4;
-            let maxLat = userLat + 0.4;
-
-            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(keyword)}&countrycodes=jp&viewbox=${minLon},${minLat},${maxLon},${maxLat}&bounded=0&limit=20`;
+            // 住所検索をスムーズにするため、キーワードに「日本」や現在地付近のヒントを補う、またはNominatimの拡張検索を利用
+            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(keyword)}&countrycodes=jp&addressdetails=1&limit=25`;
             
             fetch(searchUrl)
             .then(res => res.json())
@@ -317,7 +313,7 @@
                         item.dist = calculateDistance(userLat, userLng, parseFloat(item.lat), parseFloat(item.lon));
                     });
                     
-                    // 「一番近い店舗」が絶対に一番上にくるように徹底的にソート
+                    // 近い順（昇順）に強制ソート
                     data.sort((a, b) => a.dist - b.dist);
 
                     let listHtml = '';
@@ -340,7 +336,7 @@
                     speak('候補が見つかりました。リストから選択してください。');
 
                 } else {
-                    showToast('見つかりませんでした。別の言葉で試してください。');
+                    showToast('見つかりませんでした。別の言葉や住所で試してください。');
                     speak('目的地が見つかりませんでした。');
                 }
             })
