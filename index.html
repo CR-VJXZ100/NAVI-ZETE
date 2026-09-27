@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - メニュー実装版</title>
+    <title>純正風カーナビ - 完全実用版（ルート検索・周辺検索搭載）</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -14,8 +14,8 @@
         .map-screen { flex: 1; position: relative; border-bottom: 4px solid #111; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
         
-        /* ダークテーマ風裏技 */
-        .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+        /* 昼/夜モード */
+        .dark-mode .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
         
         .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9990; display: flex; flex-direction: column; gap: 5px; }
         .map-btn { background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: white; padding: 10px 15px; font-size: 1rem; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; }
@@ -35,48 +35,35 @@
         .navi-marker-icon { display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; }
         .navi-arrow { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #00d4ff; filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.8)); transform-origin: center 70%; transition: transform 0.2s ease-out; }
 
-        /* =========================================
-           ★ ここから：本格的なメニュー画面のデザイン 
-           ========================================= */
+        /* メニュー画面のデザイン */
         .system-modal {
             position: fixed; top: 5%; left: 8%; right: 8%; bottom: 110px;
             background: linear-gradient(135deg, #1f1f1f 0%, #0d0d0d 100%);
             border: 2px solid #444; box-shadow: 0 15px 40px rgba(0,0,0,0.9);
-            border-radius: 8px; z-index: 100000; display: none; /* 初期状態は非表示 */
-            flex-direction: column; padding: 25px;
+            border-radius: 8px; z-index: 100000; display: none; 
+            flex-direction: column; padding: 25px; overflow-y: auto;
         }
-        /* メニューのタイトル部分 */
-        .modal-header { 
-            font-size: 1.6rem; border-bottom: 2px solid #00d4ff; 
-            padding-bottom: 15px; margin-bottom: 20px; color: #fff; 
-            text-shadow: 0 0 10px #00d4ff; font-weight: bold; 
-        }
+        .modal-header { font-size: 1.6rem; border-bottom: 2px solid #00d4ff; padding-bottom: 15px; margin-bottom: 20px; color: #fff; text-shadow: 0 0 10px #00d4ff; font-weight: bold; }
         .modal-header.settings-header { border-bottom: 2px solid #aaa; text-shadow: none; color: #eee; }
-        
-        /* メニューの各ボタン */
-        .modal-btn { 
-            background: linear-gradient(to bottom, #333, #222); 
-            padding: 20px 25px; margin-bottom: 15px; border-radius: 5px; 
-            font-size: 1.3rem; border: 1px solid #555; cursor: pointer; 
-            display: flex; align-items: center; color: #ddd; transition: 0.1s;
-        }
+        .modal-btn { background: linear-gradient(to bottom, #333, #222); padding: 20px 25px; margin-bottom: 15px; border-radius: 5px; font-size: 1.3rem; border: 1px solid #555; cursor: pointer; display: flex; align-items: center; color: #ddd; transition: 0.1s;}
         .modal-btn:active { background: #00d4ff; color: #000; border-color: #00d4ff; }
         .modal-btn.settings-btn:active { background: #888; color: #fff; }
         .modal-icon { margin-right: 20px; font-size: 1.8rem; }
-        
-        /* 閉じるボタン */
-        .modal-close { 
-            background: linear-gradient(to bottom, #800, #500); 
-            padding: 18px; border-radius: 5px; text-align: center; 
-            font-size: 1.3rem; margin-top: auto; cursor: pointer; 
-            border: 1px solid #f55; color: #fff; font-weight: bold; 
-        }
+        .modal-close { background: linear-gradient(to bottom, #800, #500); padding: 18px; border-radius: 5px; text-align: center; font-size: 1.3rem; margin-top: auto; cursor: pointer; border: 1px solid #f55; color: #fff; font-weight: bold; }
         .modal-close:active { background: #f00; transform: scale(0.98); }
+
+        /* ★ 追加：検索バーのデザイン */
+        .search-container { display: flex; gap: 10px; margin-bottom: 25px; }
+        .search-input { flex: 1; padding: 15px; border-radius: 5px; border: 1px solid #555; background: #222; color: #fff; font-size: 1.2rem; }
+        .search-input::placeholder { color: #888; }
+        .search-btn { background: #00d4ff; color: #000; padding: 15px 25px; border-radius: 5px; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+        .search-btn:active { background: #00a0cc; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="map-screen">
+        <!-- 初期状態は夜間モード(dark-mode) -->
+        <div id="mapScreen" class="map-screen dark-mode">
             <div id="map"></div>
             <div class="map-overlay-left">
                 <div class="map-btn" onclick="zoomInMap()">広域表示(＋)</div>
@@ -85,53 +72,52 @@
             </div>
         </div>
 
-        <!-- =========================================
-             ★ ここから：各メニューのHTML構造
-             ========================================= -->
-        <!-- ① ナビゲーションメニュー画面 (▲ボタンで起動) -->
+        <!-- ナビゲーションメニュー -->
         <div id="navModal" class="system-modal">
             <div class="modal-header">🧭 ナビゲーションメニュー</div>
-            <div class="modal-btn" onclick="showToast('現在地の周辺施設を検索します')"><span class="modal-icon">🏪</span>周辺施設を探す</div>
-            <div class="modal-btn" onclick="showToast('自宅へのルート探索を開始します')"><span class="modal-icon">🏠</span>自宅へ帰る</div>
-            <div class="modal-btn" onclick="showToast('過去の履歴から目的地を選びます')"><span class="modal-icon">🕒</span>目的地履歴</div>
-            <div class="modal-btn" onclick="showToast('ルート案内を中止しました')"><span class="modal-icon">🛑</span>案内ストップ</div>
+            
+            <!-- ★追加：名称・住所検索システム -->
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="名称 または 住所を入力...">
+                <button class="search-btn" onclick="searchLocation()">🔍 検索</button>
+            </div>
+            
+            <div class="modal-btn" onclick="findPOIs()"><span class="modal-icon">🏪</span>現在地周辺の コンビニ・GS</div>
+            <div class="modal-btn" onclick="goHome()"><span class="modal-icon">🏠</span>自宅へ帰る（宮野木町）</div>
+            <div class="modal-btn" onclick="stopGuidance()"><span class="modal-icon">🛑</span>ルート案内 ストップ</div>
             <div class="modal-close" onclick="closeModal('navModal')">閉じる</div>
         </div>
 
-        <!-- ② システム設定画面 (⚙ボタンで起動) -->
+        <!-- システム設定メニュー -->
         <div id="settingsModal" class="system-modal">
             <div class="modal-header settings-header">⚙ システム設定</div>
-            <div class="modal-btn settings-btn" onclick="showToast('昼/夜の地図表示を切り替えます')"><span class="modal-icon">🌙</span>地図カラー設定</div>
-            <div class="modal-btn settings-btn" onclick="showToast('音声案内の音量設定を開きます')"><span class="modal-icon">🔊</span>音声案内 音量</div>
-            <div class="modal-btn settings-btn" onclick="showToast('Bluetooth接続機器を探しています...')"><span class="modal-icon">📱</span>Bluetooth 機器登録</div>
-            <div class="modal-btn settings-btn" onclick="showToast('MITSUBISHI DELICA NAVI Ver.1.0')"><span class="modal-icon">ℹ️</span>バージョン情報</div>
+            <div class="modal-btn settings-btn" onclick="toggleMapMode()"><span class="modal-icon">🌙</span>地図 昼/夜 切替</div>
+            <div class="modal-btn settings-btn" onclick="showToast('音量はiPad本体のボタンで調整してください')"><span class="modal-icon">🔊</span>音声案内 音量</div>
+            <div class="modal-btn settings-btn" onclick="showToast('Bluetooth機器を検索中...')"><span class="modal-icon">📱</span>Bluetooth 機器登録</div>
+            <div class="modal-btn settings-btn" onclick="alert('MITSUBISHI DELICA NAVI\nVersion 3.0 (PRO Build)\n- Real Routing Engine搭載')"><span class="modal-icon">ℹ️</span>バージョン情報</div>
             <div class="modal-close" onclick="closeModal('settingsModal')">閉じる</div>
         </div>
-        <!-- ========================================= -->
 
         <div class="hardware-panel">
             <div class="hw-btn" onclick="showToast('◀◀')">⏮</div>
             <div class="hw-btn" onclick="showToast('▶▶')">⏭</div>
             <div class="hw-btn" onclick="showToast('地点登録完了')">★</div>
             <div class="hw-btn hw-btn-text" onclick="showToast('ソース切替 (ダミー)')">AV</div>
-            <div class="hw-btn neon-blue" style="font-size: 1.5rem;" onclick="window.location.href='music://'">♪</div>
             
-            <!-- ★ 変更：▲ボタンでナビメニューを開く -->
+            <!-- YouTube Music起動 -->
+            <div class="hw-btn neon-blue" style="font-size: 1.5rem;" onclick="window.location.href='youtubemusic://'">♪</div>
+            
             <div class="hw-btn neon-blue" style="font-size: 1.3rem;" onclick="openModal('navModal')">▲<br><span style="font-size:0.5rem; position:absolute; top:8px;">◯</span></div>
-            
             <div class="hw-btn hw-btn-text" onclick="resetCamera()">現在地</div>
-            
-            <!-- ★ 変更：⚙ボタンで設定メニューを開く -->
             <div class="hw-btn" style="font-size: 1.5rem;" onclick="openModal('settingsModal')">⚙</div>
-            
-            <div class="hw-btn" onclick="showToast('※本体のボタンで調整してください')">－</div>
-            <div class="hw-btn" onclick="showToast('※本体のボタンで調整してください')">＋</div>
+            <div class="hw-btn" onclick="showToast('音量は本体のボタンで調整してください')">－</div>
+            <div class="hw-btn" onclick="showToast('音量は本体のボタンで調整してください')">＋</div>
         </div>
     </div>
     <div id="toast">通知メッセージ</div>
 
     <script>
-        // 地図とGPSの基本設定
+        // --- 1. 地図とGPSの基本設定 ---
         var map = L.map('map', { zoomControl: false }).setView([35.6074, 140.1065], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
 
@@ -143,7 +129,7 @@
             navigator.geolocation.watchPosition(function(position) {
                 userLat = position.coords.latitude; userLng = position.coords.longitude;
                 userMarker.setLatLng([userLat, userLng]);
-                if(isTracking) map.setView([userLat, userLng]);
+                if(isTracking && !isRouting) map.setView([userLat, userLng]);
                 if (position.coords.heading !== null && !isCompassActive) updateArrowRotation(position.coords.heading);
             }, function(error) {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
         }
@@ -158,32 +144,142 @@
                 window.addEventListener('deviceorientation', handleOrientation, false); isCompassActive = true; event.target.style.display = 'none';
             }
         }
-
         function handleOrientation(event) {
             var heading = event.webkitCompassHeading ? event.webkitCompassHeading : (event.alpha ? 360 - event.alpha : 0);
             updateArrowRotation(heading);
         }
-
         function updateArrowRotation(degree) {
             var arrowElement = document.getElementById('navi-arrow');
             if (arrowElement) arrowElement.style.transform = 'rotate(' + degree + 'deg)';
         }
 
         map.on('dragstart', function() { isTracking = false; });
-        function resetCamera() { isTracking = true; map.setView([userLat, userLng], 15); showToast('📍 現在地にフォーカスしました'); }
+        function resetCamera() { isTracking = true; isRouting = false; map.setView([userLat, userLng], 15); showToast('📍 現在地にフォーカスしました'); }
         function zoomInMap() { map.zoomIn(); }
         function zoomOutMap() { map.zoomOut(); }
+        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
-        // =========================================
-        // ★ メニュー画面を開く・閉じる機能
-        // =========================================
-        function openModal(modalId) {
-            // 指定されたIDの画面を表示（flex）にする
-            document.getElementById(modalId).style.display = 'flex';
+        // --- 2. 各種機能の実装 ---
+        
+        var isDarkMode = true;
+        function toggleMapMode() {
+            closeModal('settingsModal');
+            var mapScreen = document.getElementById('mapScreen');
+            if (isDarkMode) { mapScreen.classList.remove('dark-mode'); showToast('🌞 昼間モード'); }
+            else { mapScreen.classList.add('dark-mode'); showToast('🌙 夜間モード'); }
+            isDarkMode = !isDarkMode;
         }
-        function closeModal(modalId) {
-            // 指定されたIDの画面を非表示（none）にする
-            document.getElementById(modalId).style.display = 'none';
+
+        // ルートとピンの管理用変数
+        var routeLayer = null;
+        var destinationMarker = null;
+        var poiMarkers = [];
+        var isRouting = false;
+
+        // ★ APIを利用した【実際の道路に沿った】ルート探索
+        function startRoute(destLat, destLng, destName) {
+            stopGuidance(true); // 古いものを消去
+            destinationMarker = L.marker([destLat, destLng]).addTo(map).bindPopup('🏁 ' + destName).openPopup();
+            showToast('ルート探索中...');
+            
+            // OSRM (Open Source Routing Machine) APIによる本格ルート検索
+            var osrmUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
+            
+            fetch(osrmUrl)
+            .then(res => res.json())
+            .then(data => {
+                if(data.routes && data.routes.length > 0) {
+                    var routeGeoJSON = data.routes[0].geometry;
+                    routeLayer = L.geoJSON(routeGeoJSON, {
+                        style: {color: '#00d4ff', weight: 8, opacity: 0.8}
+                    }).addTo(map);
+                    
+                    // ルート全体が画面に収まるようにズーム調整
+                    map.fitBounds(routeLayer.getBounds(), {padding: [50, 50]});
+                    isRouting = true;
+                    isTracking = false;
+                    showToast('案内を開始します');
+                } else {
+                    showToast('ルートが見つかりませんでした');
+                }
+            })
+            .catch(err => { showToast('ルート検索エラーが発生しました'); });
+        }
+
+        // ★ 名前・住所からの目的地検索機能
+        function searchLocation() {
+            var keyword = document.getElementById('searchInput').value;
+            if(!keyword) return;
+            showToast('検索中...');
+            
+            // OSM Nominatim API
+            fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(keyword))
+            .then(res => res.json())
+            .then(data => {
+                if(data.length > 0) {
+                    var lat = parseFloat(data[0].lat);
+                    var lon = parseFloat(data[0].lon);
+                    var name = data[0].display_name.split(',')[0]; // 長いので最初の名前だけ取得
+                    
+                    closeModal('navModal');
+                    startRoute(lat, lon, name); // 見つかったらルート探索へ
+                } else {
+                    showToast('見つかりませんでした。別の言葉で試してください。');
+                }
+            })
+            .catch(err => { showToast('検索エラーが発生しました'); });
+        }
+
+        // ★ 自宅へ帰る機能（千葉市稲毛区宮野木町1664-242 付近の座標）
+        function goHome() {
+            closeModal('navModal');
+            var homeLat = 35.6560; // 稲毛区宮野木町の緯度
+            var homeLng = 140.1030; // 稲毛区宮野木町の経度
+            startRoute(homeLat, homeLng, '自宅');
+        }
+
+        // ★ 本物の周辺施設検索（現在地の半径3kmのコンビニ・ガソリンスタンドを取得）
+        function findPOIs() {
+            closeModal('navModal');
+            stopGuidance(true);
+            showToast('現在地周辺の施設を検索中...');
+            
+            // Overpass API
+            var query = `[out:json];(node["amenity"="convenience"](around:3000,${userLat},${userLng});node["amenity"="fuel"](around:3000,${userLat},${userLng}););out;`;
+            var url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+            
+            fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if(data.elements && data.elements.length > 0) {
+                    data.elements.forEach(e => {
+                        var name = e.tags.name || '施設';
+                        var icon = e.tags.amenity === 'fuel' ? '⛽ ' : '🏪 ';
+                        var poi = L.marker([e.lat, e.lon]).addTo(map).bindPopup(icon + name);
+                        poiMarkers.push(poi);
+                    });
+                    map.setView([userLat, userLng], 13);
+                    showToast(data.elements.length + '件の施設が見つかりました');
+                } else {
+                    showToast('近くに施設が見つかりませんでした');
+                }
+            })
+            .catch(err => { showToast('施設検索エラーが発生しました'); });
+        }
+
+        // 案内ストップ（画面クリア）
+        function stopGuidance(silent = false) {
+            if(!silent) closeModal('navModal');
+            if(routeLayer) map.removeLayer(routeLayer);
+            if(destinationMarker) map.removeLayer(destinationMarker);
+            poiMarkers.forEach(function(poi) { map.removeLayer(poi); });
+            poiMarkers = [];
+            isRouting = false;
+            if(!silent) {
+                showToast('🛑 案内を終了しました');
+                resetCamera();
+            }
         }
 
         let toastTimeout;
