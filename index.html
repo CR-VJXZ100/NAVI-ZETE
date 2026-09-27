@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - リアルGPS版</title>
+    <title>純正風カーナビ - リアルGPS＆コンパス版</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12,13 +12,11 @@
         .container { display: flex; flex-direction: column; height: 100vh; }
         
         .map-screen { flex: 1; position: relative; border-bottom: 4px solid #111; }
-        /* マップの重なり順（z-index）を一番下に設定 */
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
         
         /* ダークテーマ風裏技 */
         .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
         
-        /* ★修正：ボタン類が確実に一番上にくるように z-index を 9999 に設定 */
         .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 5px; }
         .map-btn { background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: white; padding: 10px 15px; font-size: 1rem; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; }
         .map-btn:active { background: rgba(0, 0, 0, 0.9); }
@@ -33,6 +31,27 @@
         
         #toast { visibility: hidden; min-width: 250px; background-color: rgba(0, 0, 0, 0.8); color: #fff; text-align: center; border-radius: 30px; padding: 15px; position: fixed; z-index: 10000; left: 50%; bottom: 120px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #444; box-shadow: 0 5px 15px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
         #toast.show { visibility: visible; opacity: 1; bottom: 140px; }
+
+        /* ★ 追加：自車位置マーカー（▲）のスタイル */
+        .navi-marker-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+        }
+        .navi-arrow {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 30px solid #00d4ff; /* 青色 */
+            /* 影をつけて少し立体的に */
+            filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.8));
+            /* アイコンの中心が実際の座標になるように調整 */
+            transform-origin: center 70%;
+            transition: transform 0.2s ease-out; /* 回転を滑らかにする */
+        }
     </style>
 </head>
 <body>
@@ -40,9 +59,9 @@
         <div class="map-screen">
             <div id="map"></div>
             <div class="map-overlay-left">
-                <!-- 広域はズームアウト、詳細はズームイン -->
-                <div class="map-btn" onclick="zoomOutMap()">広域表示</div>
-                <div class="map-btn" onclick="zoomInMap()">詳細表示</div>
+                <div class="map-btn" onclick="zoomInMap()">広域表示(＋)</div>
+                <div class="map-btn" onclick="zoomOutMap()">詳細表示(－)</div>
+                <div class="map-btn" style="margin-top: 15px;" onclick="requestDeviceOrientation()">コンパス許可</div>
                 <div class="map-btn" style="margin-top: 15px;" onclick="resetCamera()">ON 》</div>
             </div>
         </div>
@@ -71,56 +90,113 @@
         }).addTo(map);
 
         // --- 2. GPS用変数の準備 ---
-        var userMarker = L.marker([35.6074, 140.1065]).addTo(map); // 現在地ピン
-        userMarker.bindPopup("<b>あなたの現在地</b>");
-        
         var userLat = 35.6074;
         var userLng = 140.1065;
-        var isTracking = true; // 画面がGPSに追従するかどうか
+        var isTracking = true;
 
-        // --- 3. リアルタイムGPS取得（本物のカーナビ機能） ---
+        // ★ 変更：自車位置マーカーをカスタマイズしたHTML（▲）にする
+        var naviIcon = L.divIcon({
+            className: 'navi-marker-icon',
+            html: '<div id="navi-arrow" class="navi-arrow"></div>',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20] // アイコンの中心
+        });
+
+        var userMarker = L.marker([userLat, userLng], {icon: naviIcon}).addTo(map);
+
+        // --- 3. リアルタイムGPS取得 ---
         if (navigator.geolocation) {
-            // watchPositionで移動に合わせて常に位置を更新
             navigator.geolocation.watchPosition(function(position) {
                 userLat = position.coords.latitude;
                 userLng = position.coords.longitude;
                 
-                // ピンの位置を実際のGPS座標に移動
+                // ピンの位置を移動
                 userMarker.setLatLng([userLat, userLng]);
                 
-                // 追従モードがONなら、地図の中心も移動させる
+                // 追従モードなら中心を移動
                 if(isTracking) {
                     map.setView([userLat, userLng]);
                 }
+                
+                // ※移動速度がある程度（時速数km）出ている場合は、GPSの進行方向(heading)が取得できる
+                if (position.coords.heading !== null && !isCompassActive) {
+                     updateArrowRotation(position.coords.heading);
+                }
+                
             }, function(error) {
-                showToast('⚠️ GPSの取得に失敗しました。設定を確認してください。');
+                console.log('GPS取得エラー');
             }, {
-                enableHighAccuracy: true, // カーナビ用に高精度GPSを要求
+                enableHighAccuracy: true,
                 maximumAge: 0,
                 timeout: 5000
             });
-        } else {
-            showToast('お使いの端末はGPSに対応していません');
         }
 
-        // --- 4. ナビ特有の操作感 ---
-        // ユーザーが指で地図を動かしたら、自動追従をストップする（迷子防止）
+        // --- 4. コンパス（ジャイロセンサー）の取得とアイコンの回転 ---
+        var isCompassActive = false;
+
+        // iOS(iPadOS)向けに、センサー使用の許可を求める関数
+        function requestDeviceOrientation() {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation, false);
+                            isCompassActive = true;
+                            showToast('コンパスをオンにしました');
+                            // ボタンを隠す（または色を変える）
+                            event.target.style.display = 'none';
+                        } else {
+                            showToast('コンパスの許可が拒否されました');
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // iOS13未満やAndroidの場合、許可不要でそのままリスナー追加
+                window.addEventListener('deviceorientation', handleOrientation, false);
+                isCompassActive = true;
+                showToast('コンパスをオンにしました');
+                event.target.style.display = 'none';
+            }
+        }
+
+        function handleOrientation(event) {
+            var heading = 0;
+            
+            // iOS向けのwebkitCompassHeading（北が0度）を優先
+            if (event.webkitCompassHeading) {
+                heading = event.webkitCompassHeading;
+            } else if (event.alpha) {
+                // Androidなどの場合 (簡易的な計算)
+                heading = 360 - event.alpha;
+            }
+            updateArrowRotation(heading);
+        }
+
+        // アイコンを回転させる関数
+        function updateArrowRotation(degree) {
+            var arrowElement = document.getElementById('navi-arrow');
+            if (arrowElement) {
+                // CSSのtransformで回転させる
+                arrowElement.style.transform = 'rotate(' + degree + 'deg)';
+            }
+        }
+
+
+        // --- 5. ナビ特有の操作感 ---
         map.on('dragstart', function() {
             isTracking = false; 
         });
 
-        // 「現在地」ボタンを押したら、再びGPS追従を開始して現在地に戻る
         function resetCamera() {
             isTracking = true;
             map.setView([userLat, userLng], 15);
             showToast('📍 現在地にフォーカスしました');
         }
 
-        // ズームボタン機能
         function zoomInMap() { map.zoomIn(); showToast('詳細表示にします'); }
         function zoomOutMap() { map.zoomOut(); showToast('広域表示にします'); }
 
-        // トースト通知機能
         let toastTimeout;
         function showToast(message) {
             const toast = document.getElementById("toast");
