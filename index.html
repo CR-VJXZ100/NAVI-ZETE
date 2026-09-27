@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER クロコダイルレザー版</title>
+    <title>純正風カーナビ - TOYOTA CHASER プレミアムレスポンス版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -57,44 +57,8 @@
         .left-group { left: 10px; justify-content: flex-start; }
         .right-group { right: 10px; justify-content: flex-end; }
 
-        /* ★ 黒のワニ柄（クロコダイルレザー）エンブレム */
-        .luxury-badge { 
-            background-color: #050505;
-            background-image: 
-                radial-gradient(ellipse 12px 8px at 50% 50%, #222 30%, #000 80%),
-                radial-gradient(ellipse 12px 8px at 50% 50%, #222 30%, #000 80%);
-            background-position: 0 0, 12px 8px;
-            background-size: 24px 16px;
-            padding: 0 15px; 
-            border-radius: 6px; 
-            border: 2px solid #111; 
-            outline: 1px solid #333;
-            outline-offset: -2px;
-            color: #e0e0e0; 
-            font-family: 'Times New Roman', serif; 
-            font-size: clamp(0.7rem, 1.2vw, 0.9rem); 
-            letter-spacing: 2px; 
-            text-shadow: -1px -1px 1px #000, 1px 1px 2px #888; 
-            box-shadow: 0 5px 10px rgba(0,0,0,0.9), inset 0 2px 5px rgba(255,255,255,0.1); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 40px; 
-            white-space: nowrap; 
-            flex-shrink: 0; 
-            font-weight: bold; 
-            position: relative;
-            overflow: hidden;
-        }
-        /* ワニ柄レザーの光沢（グロス）表現 */
-        .luxury-badge::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(0,0,0,0.5) 100%);
-            pointer-events: none;
-            border-radius: 4px;
-        }
+        /* ★ メタルエンブレム（上品なガンメタ調に戻しました！） */
+        .luxury-badge { background: linear-gradient(135deg, #444, #111); padding: 0 12px; border-radius: 4px; border: 1px solid #666; border-bottom: 2px solid #000; color: #d4d4d4; font-family: 'Times New Roman', serif; font-size: clamp(0.7rem, 1.2vw, 0.85rem); letter-spacing: 2px; text-shadow: -1px -1px 1px #000, 1px 1px 1px #666; box-shadow: 0 4px 8px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; height: 40px; white-space: nowrap; flex-shrink: 1; font-weight: bold; overflow: hidden; }
 
         /* ボタン */
         .hw-btn { flex: 1; min-width: 45px; max-width: 80px; background: linear-gradient(to bottom, #444 0%, #222 50%, #111 100%); border: 1px solid #000; border-top: 1px solid #666; border-bottom: 2px solid #000; color: #eee; height: 55px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: clamp(1rem, 2.5vw, 1.4rem); font-weight: 900; box-shadow: 0 8px 15px rgba(0,0,0,0.8), inset 0 3px 4px rgba(255,255,255,0.2), inset 0 -3px 4px rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.1s; white-space: nowrap; }
@@ -106,16 +70,8 @@
         .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: colorShift 5s infinite ease-in-out; opacity: 1; }
         .neon-blue::after { animation: colorShift 3.5s infinite ease-in-out; }
 
-        /* ★ 中央の超絶ギラギラ時計（iPadのはみ出しバグを完全防止するマスク処理を追加） */
-        .analog-clock { 
-            flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; 
-            border-radius: 50%; border: 3px solid #e0e0e0; position: relative; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,212,255,1), 0 0 30px rgba(0,212,255,0.8); 
-            z-index: 10000; overflow: hidden; background: #000; 
-            /* iPad特有のはみ出しバグ防止コード */
-            transform: translateZ(0); 
-            -webkit-mask-image: -webkit-radial-gradient(white, black);
-        }
+        /* 中央の超絶ギラギラ時計 */
+        .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #e0e0e0; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,212,255,1), 0 0 30px rgba(0,212,255,0.8); z-index: 10000; overflow: hidden; background: #000; transform: translateZ(0); -webkit-mask-image: -webkit-radial-gradient(white, black); }
         
         .analog-clock::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, #0a1128, #2a5298, #8ec5fc, #00f2fe, #2a5298, #0a1128, #8ec5fc, #00f2fe, #2a5298, #0a1128); animation: radarShine 6s linear infinite; z-index: 1; }
         @keyframes radarShine { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -137,7 +93,6 @@
         .sub-label { position: absolute; bottom: 1px; width: 100%; text-align: center; font-size: 5px; color: #fff; line-height: 1; font-weight: bold; text-shadow: 0 0 4px #00d4ff; }
         .sub-hand { width: 2px; height: 9px; background: #fff; position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.5s; box-shadow: 0 0 3px #000; }
         
-        /* 高級時計のような細くて立体的な剣型の針 */
         .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.8)); }
         .hour-hand { width: 4px; height: 20px; clip-path: polygon(50% 0%, 100% 20%, 50% 100%, 0% 20%); z-index: 10; background: linear-gradient(to right, #ccc 50%, #fff 50%); }
         .minute-hand { width: 3px; height: 28px; clip-path: polygon(50% 0%, 100% 15%, 50% 100%, 0% 15%); z-index: 11; background: linear-gradient(to right, #ccc 50%, #fff 50%); }
@@ -185,12 +140,10 @@
 </head>
 <body>
     <div class="container">
-        <!-- デジタル時計（地図の上に常時表示） -->
+        <!-- デジタル時計 -->
         <div class="top-right-clock" id="digitalClock">--:--</div>
 
-        <!-- 2画面分割メインディスプレイ -->
         <div class="main-display" id="mainDisplay">
-            <!-- 左画面：地図領域 -->
             <div id="mapScreen" class="map-screen dark-mode">
                 <div id="map"></div>
                 <div class="map-overlay-left">
@@ -200,7 +153,6 @@
                 </div>
             </div>
 
-            <!-- 右画面：オートポップアップ案内パネル -->
             <div id="infoScreen" class="info-screen">
                 <div class="info-content">
                     <div class="info-sign" id="infoSign">
@@ -218,7 +170,7 @@
             </div>
         </div>
 
-        <!-- ★ 下部：完全左右対称＆ワニ柄レザーパネル -->
+        <!-- ★ 下部：完全左右対称カーボン調ハードウェアパネル -->
         <div class="hardware-panel">
             <!-- 左グループ -->
             <div class="hw-group left-group">
@@ -228,7 +180,7 @@
                 <div class="hw-btn sound-btn neon-blue" style="font-size: 1.8rem;" onclick="openYouTubeMusic()">♪</div>
             </div>
 
-            <!-- ★ 中央の超絶ギラギラ時計（iPadのはみ出しバグを完全解決） -->
+            <!-- ★ 中央の超絶ギラギラ時計 -->
             <div class="analog-clock" onclick="showToast('気象・方位取得中...')">
                 <div class="clock-facets"></div>
                 <div class="clock-face">
@@ -328,21 +280,45 @@
 
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx = new AudioContext();
+        
         function unlockAudio() { if(audioCtx.state === 'suspended') audioCtx.resume(); }
         document.body.addEventListener('touchstart', unlockAudio, { capture: true, passive: true });
         document.body.addEventListener('click', unlockAudio, { capture: true, passive: true });
 
+        // ★ 音の遅延ゼロ！高級車風の「コッ」という上品なハイエンド・サウンド
         function playBeep() {
+            if(!audioCtx) return;
             if(audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(2000, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            let t = audioCtx.currentTime;
+            
+            // 低音の響き（コクッというベース音）
+            let osc1 = audioCtx.createOscillator();
+            let gain1 = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(1000, t);
+            osc1.frequency.exponentialRampToValueAtTime(150, t + 0.04);
+            gain1.gain.setValueAtTime(0.6, t);
+            gain1.gain.exponentialRampToValueAtTime(0.01, t + 0.04);
+            osc1.connect(gain1); gain1.connect(audioCtx.destination);
+            osc1.start(t); osc1.stop(t + 0.05);
+
+            // 高音の反射音（チッというガラスのような音）
+            let osc2 = audioCtx.createOscillator();
+            let gain2 = audioCtx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(3000, t);
+            gain2.gain.setValueAtTime(0.15, t);
+            gain2.gain.exponentialRampToValueAtTime(0.01, t + 0.06);
+            osc2.connect(gain2); gain2.connect(audioCtx.destination);
+            osc2.start(t); osc2.stop(t + 0.08);
         }
 
+        // ★ 遅延を無くすため、pointerdown（指が触れた瞬間）に音を鳴らす
         window.onload = function() {
             const buttons = document.querySelectorAll('.sound-btn');
-            buttons.forEach(function(btn) { btn.addEventListener('pointerdown', function() { playBeep(); }); btn.addEventListener('touchstart', function() { playBeep(); }, {passive: true}); });
+            buttons.forEach(function(btn) { 
+                btn.addEventListener('pointerdown', function() { playBeep(); }); 
+            });
         }
 
         function openYouTubeMusic() { showToast('🎵 YouTube Musicを起動します'); speak('ユーチューブミュージックを開きます'); setTimeout(() => { window.location.href = 'youtubemusic://'; setTimeout(() => { window.location.href = 'https://music.youtube.com'; }, 1000); }, 500); }
