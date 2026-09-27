@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER プレミアム版（実写デリカOP）</title>
+    <title>純正風カーナビ - TOYOTA CHASER プレミアム版（背景透過OP）</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -33,8 +33,15 @@
             85%, 100% { opacity: 0; transform: scale(1.2); filter: blur(10px); } 
         }
 
-        /* 画像を闇に溶け込ませるためのマスク処理 */
-        .car-image { width: 100%; height: 100%; object-fit: contain; -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 75%); filter: brightness(0.1); animation: carImgAnim 6s forwards; }
+        /* ★ 背景を削り、車体だけを浮かび上がらせる強力なマスク処理 */
+        .car-image { 
+            width: 100%; height: 100%; 
+            object-fit: contain; 
+            /* 背景の自然や木々を黒く溶かし、真ん中の車体だけにフォーカスを当てる */
+            -webkit-mask-image: radial-gradient(ellipse 40% 65% at 50% 50%, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 75%); 
+            filter: brightness(0.1); 
+            animation: carImgAnim 6s forwards; 
+        }
         @keyframes carImgAnim {
             0%, 40% { filter: brightness(0.1); }
             60% { filter: brightness(0.6); }
@@ -42,7 +49,7 @@
             85%, 100% { filter: brightness(2) blur(10px); }
         }
         
-        /* ★ 縦型ヘッドライトの強烈なフレア（画像の上に被せる光） */
+        /* ★ 縦型ヘッドライトの強烈なフレア */
         .headlight { position: absolute; top: 48%; width: 45px; height: 90px; background: #fff; border-radius: 5px; opacity: 0; animation: lightAnim 6s forwards; z-index: 5; }
         .left-light { left: 20%; } .right-light { right: 20%; }
         @keyframes lightAnim { 
@@ -63,7 +70,7 @@
         }
 
         /* ★ 最後を飾るフラッシュ光線 */
-        .flash-line { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); width: 0; height: 2px; background: #fff; box-shadow: 0 0 20px 5px #00d4ff, 0 0 40px 10px #fff; opacity: 0; animation: flashAnim 6s forwards; z-index: 10; }
+        .flash-line { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 0; height: 2px; background: #fff; box-shadow: 0 0 20px 5px #00d4ff, 0 0 40px 10px #fff; opacity: 0; animation: flashAnim 6s forwards; z-index: 10; }
         @keyframes flashAnim { 
             0%, 70% { opacity: 0; width: 0; } 
             75% { opacity: 1; width: 150vw; height: 8px; } 
@@ -111,7 +118,7 @@
         /* 右上のデジタル時計 */
         .top-right-clock { position: absolute; top: 20px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
 
-        /* 下部：完全左右対称カーボン調ハードウェアパネル */
+        /* ★ 下部：完全左右対称カーボン調ハードウェアパネル */
         .hardware-panel { height: 95px; width: 100%; background: repeating-linear-gradient(45deg, #111 0px, #111 5px, #1a1a1a 5px, #1a1a1a 10px); border-top: 2px solid #000; box-shadow: 0 -5px 25px rgba(0,0,0,1); display: flex; justify-content: space-between; align-items: center; padding: 0 10px; z-index: 9999; position: relative; flex-shrink: 0; }
         
         .hw-group { position: absolute; display: flex; align-items: center; gap: 8px; height: 100%; top: 0; width: calc(50% - 55px); }
@@ -131,17 +138,14 @@
         .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: colorShift 5s infinite ease-in-out; opacity: 1; }
         .neon-blue::after { animation: colorShift 3.5s infinite ease-in-out; }
 
-        /* 中央の超絶ギラギラ時計（iPadのはみ出しバグを完全防止するカプセル構造） */
-        .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #e0e0e0; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), 0 0 30px rgba(0,212,255,0.8); z-index: 10000; background: #000; display: flex; justify-content: center; align-items: center; }
+        /* 中央の超絶ギラギラ時計 */
+        .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #e0e0e0; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,212,255,1), 0 0 30px rgba(0,212,255,0.8); z-index: 10000; overflow: hidden; background: #000; transform: translateZ(0); -webkit-mask-image: -webkit-radial-gradient(white, black); }
         
-        /* 光を丸く閉じ込めるインナーコンテナ */
-        .clock-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; z-index: 1; -webkit-mask-image: -webkit-radial-gradient(white, black); transform: translateZ(0); box-shadow: inset 0 0 20px rgba(0,212,255,1); }
-
-        .clock-inner::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, #0a1128, #2a5298, #8ec5fc, #00f2fe, #2a5298, #0a1128, #8ec5fc, #00f2fe, #2a5298, #0a1128); animation: radarShine 6s linear infinite; z-index: 1; }
+        .analog-clock::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, #0a1128, #2a5298, #8ec5fc, #00f2fe, #2a5298, #0a1128, #8ec5fc, #00f2fe, #2a5298, #0a1128); animation: radarShine 6s linear infinite; z-index: 1; }
         @keyframes radarShine { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .clock-facets { position: absolute; top:0; left:0; width:100%; height:100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0) 0deg 10deg, rgba(255,255,255,0.4) 10deg 20deg); mix-blend-mode: overlay; z-index: 2; pointer-events: none; }
-        .clock-inner::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); transform: rotate(30deg); animation: gemShine 4s infinite linear; pointer-events: none; z-index: 20; }
+        .analog-clock::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); transform: rotate(30deg); animation: gemShine 4s infinite linear; pointer-events: none; z-index: 20; }
         @keyframes gemShine { 0% { transform: translateX(-100%) rotate(30deg); } 20% { transform: translateX(100%) rotate(30deg); } 100% { transform: translateX(100%) rotate(30deg); } }
 
         .clock-face { width: 100%; height: 100%; position: relative; z-index: 5; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%); border-radius: 50%; }
