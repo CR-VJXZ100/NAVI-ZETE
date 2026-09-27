@@ -3,31 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - 2画面＆上部ネオン特化版</title>
+    <title>純正風カーナビ - オート2画面＆上部立体ボタン版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
         .container { display: flex; flex-direction: column; height: 100vh; }
         
-        /* ★ 上部に移動したハードウェアパネル */
-        .hardware-panel { height: 90px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #0a0a0a 100%); border-bottom: 2px solid #444; box-shadow: 0 5px 15px rgba(0,0,0,0.8); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 9999; position: relative; }
-        .hw-btn { background: linear-gradient(to bottom, #111 0%, #222 100%); border: 1px solid #000; border-top: 1px solid #444; color: #ccc; height: 55px; min-width: 65px; margin: 0 4px; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 5px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.2); cursor: pointer; position: relative; }
-        .hw-btn:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.9); color: #fff; }
-        .hw-btn-text { font-size: 0.9rem; padding: 0 15px; }
+        /* ★ 上部：超立体感ハードウェアパネル */
+        .hardware-panel { height: 100px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #050505 100%); border-bottom: 2px solid #000; box-shadow: 0 5px 20px rgba(0,0,0,0.9); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 9999; position: relative; }
+        .hw-btn { background: linear-gradient(to bottom, #444 0%, #222 50%, #111 100%); border: 1px solid #000; border-top: 1px solid #666; border-bottom: 2px solid #000; color: #eee; height: 60px; min-width: 70px; margin: 0 5px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 1.3rem; font-weight: 900; box-shadow: 0 8px 15px rgba(0,0,0,0.8), inset 0 3px 4px rgba(255,255,255,0.2), inset 0 -3px 4px rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.1s; }
+        .hw-btn:active { transform: translateY(4px); box-shadow: 0 2px 4px rgba(0,0,0,0.9), inset 0 4px 8px rgba(0,0,0,0.8); background: linear-gradient(to bottom, #222 0%, #111 100%); border-top: 1px solid #111; }
+        .hw-btn-text { font-size: 1rem; padding: 0 15px; }
         .neon-blue { color: #e0f7ff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff, 0 0 20px #0044ff, 0 0 30px #0022cc; }
 
         /* ★ ネオンアニメーションの大型化・高輝度化 */
-        @keyframes colorShift { 0% { background-color: #ff3333; box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; } 33% { background-color: #00d4ff; box-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff; } 66% { background-color: #b000ff; box-shadow: 0 0 10px #b000ff, 0 0 20px #b000ff; } 100% { background-color: #ff3333; box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; } }
-        .hw-btn::after { content: ''; position: absolute; bottom: 0px; left: 50%; transform: translateX(-50%); width: 75%; height: 6px; border-radius: 3px; animation: colorShift 6s infinite ease-in-out; opacity: 1; }
-        .neon-blue::after { animation: colorShift 4s infinite ease-in-out; }
+        @keyframes colorShift { 0% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 33% { background-color: #00d4ff; box-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff; } 66% { background-color: #b000ff; box-shadow: 0 0 15px #b000ff, 0 0 30px #b000ff; } 100% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } }
+        .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 6px; border-radius: 4px; animation: colorShift 5s infinite ease-in-out; opacity: 1; }
+        .neon-blue::after { animation: colorShift 3.5s infinite ease-in-out; }
         
         /* 2画面構成のメインエリア */
-        .main-display { display: flex; flex: 1; overflow: hidden; position: relative; }
+        .main-display { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
         
-        /* 左画面：地図 */
-        .map-screen { flex: 7; position: relative; overflow: hidden; background-color: #111; }
-        #map { position: absolute; top: -35%; left: -35%; width: 170%; height: 170%; transition: transform 0.3s linear; transform-origin: center center; }
+        /* 左画面：地図（白い線バグ対策済み） */
+        .map-screen { flex: 1; position: relative; overflow: hidden; background-color: #111; transition: flex 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        /* GPUレンダリング安定化で白い謎の線を消す */
+        #map { position: absolute; top: -35%; left: -35%; width: 170%; height: 170%; transition: transform 0.3s linear; transform-origin: center center; transform: translateZ(0); will-change: transform; backface-visibility: hidden; }
+        .leaflet-tile { outline: 1px solid transparent; backface-visibility: hidden; }
         .dark-mode .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
         
         .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9900; display: flex; flex-direction: column; gap: 8px; }
@@ -35,36 +37,35 @@
         .map-btn:active { background: rgba(0, 0, 0, 0.9); transform: scale(0.95); }
         .btn-active-mode { border: 1px solid #00d4ff; color: #00d4ff; box-shadow: 0 0 10px rgba(0,212,255,0.4); }
 
-        /* ★ 右画面：情報パネル（1257.png風） */
-        .info-screen { flex: 3; background: linear-gradient(to bottom, #1a1a1a, #050505); border-left: 3px solid #333; display: flex; flex-direction: column; padding: 15px; box-shadow: inset 10px 0 20px rgba(0,0,0,0.8); z-index: 9000;}
+        /* ★ 右画面：オートポップアップ情報パネル */
+        .info-screen { width: 0; opacity: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); background: linear-gradient(to bottom, #1a1a1a, #050505); border-left: 0px solid #00d4ff; display: flex; flex-direction: column; box-shadow: inset 10px 0 20px rgba(0,0,0,0.8); z-index: 9000;}
+        .main-display.active-2screen .info-screen { width: 350px; opacity: 1; border-left: 3px solid #00d4ff; }
+        .info-content { min-width: 320px; padding: 15px; display: flex; flex-direction: column; height: 100%; opacity: 0; transition: opacity 0.3s ease; }
+        .main-display.active-2screen .info-content { opacity: 1; transition-delay: 0.2s; }
+        
         .info-clock { font-size: 3rem; text-align: right; color: #fff; margin-bottom: 20px; font-family: 'Helvetica Neue', Arial, sans-serif; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
         
-        /* 待機中の表示 */
-        .info-idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; }
-        .info-idle-icon { font-size: 5rem; opacity: 0.3; margin-bottom: 15px; }
-        
         /* 案内中の緑看板＆道路 */
-        .info-sign { background: linear-gradient(to bottom, #009944, #007733); border-radius: 6px; border: 2px solid #fff; padding: 15px; display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100px; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.7);}
-        .info-sign-arrow { font-size: 3rem; color: #fff; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .info-sign { background: linear-gradient(to bottom, #009944, #007733); border-radius: 6px; border: 2px solid #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100px; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.7);}
+        .info-sign-arrow { font-size: 3.5rem; color: #fff; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-weight: bold; }
         .info-sign-text { font-size: 1.6rem; color: #fff; font-weight: bold; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-top: 5px;}
         
-        .info-road-view { flex: 1; border-radius: 6px; position: relative; overflow: hidden; border: 2px solid #333; display: none; perspective: 300px; background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 40%, #555 40%, #222 100%);}
+        .info-road-view { flex: 1; border-radius: 6px; position: relative; overflow: hidden; border: 2px solid #333; display: block; perspective: 300px; background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 40%, #555 40%, #222 100%);}
         .road-surface { position: absolute; bottom: -50px; left: -50%; width: 200%; height: 120%; background: #444; transform: rotateX(70deg); border-left: 8px solid #fff; border-right: 8px solid #fff; box-shadow: inset 0 20px 50px rgba(0,0,0,0.8);}
         .road-lane { position: absolute; top: 0; left: 50%; width: 6px; height: 100%; background: linear-gradient(to bottom, transparent 50%, #fff 50%); background-size: 100% 80px; transform: translateX(-50%); animation: moveLine 0.4s linear infinite; }
         @keyframes moveLine { 0% { background-position: 0 0; } 100% { background-position: 0 80px; } }
         
-        .info-bottom { background: rgba(0,0,0,0.8); padding: 15px; border-radius: 6px; margin-top: 15px; display: none; text-align: center; border: 1px solid #444;}
-        .info-dist-label { font-size: 1rem; color: #aaa; }
-        .info-dist { font-size: 2.2rem; color: #fff; font-weight: bold; text-shadow: 0 0 10px #00d4ff; margin: 5px 0;}
-        .info-time { font-size: 1.2rem; color: #00d4ff; font-weight: bold;}
+        .info-bottom { background: rgba(0,0,0,0.8); padding: 15px; border-radius: 6px; margin-top: 15px; text-align: center; border: 1px solid #444;}
+        .info-dist-label { font-size: 1.2rem; color: #aaa; }
+        .info-dist { font-size: 2.5rem; color: #fff; font-weight: bold; text-shadow: 0 0 15px #00d4ff; margin: 5px 0;}
 
-        #toast { visibility: hidden; min-width: 300px; background-color: rgba(0, 0, 0, 0.85); color: #fff; text-align: center; border-radius: 10px; padding: 20px; position: fixed; z-index: 10000; left: 50%; bottom: 120px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #00d4ff; box-shadow: 0 5px 20px rgba(0,0,0,0.7); opacity: 0; transition: opacity 0.3s, bottom 0.3s; line-height: 1.5; }
-        #toast.show { visibility: visible; opacity: 1; bottom: 140px; }
+        #toast { visibility: hidden; min-width: 300px; background-color: rgba(0, 0, 0, 0.85); color: #fff; text-align: center; border-radius: 10px; padding: 20px; position: fixed; z-index: 10000; left: 50%; bottom: 60px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #00d4ff; box-shadow: 0 5px 20px rgba(0,0,0,0.7); opacity: 0; transition: opacity 0.3s, bottom 0.3s; line-height: 1.5; }
+        #toast.show { visibility: visible; opacity: 1; bottom: 80px; }
 
         .navi-marker-icon { display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; }
         .navi-arrow { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #00d4ff; filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.8)); transform-origin: center 70%; transition: transform 0.2s ease-out; }
 
-        .system-modal { position: fixed; top: 12%; left: 5%; right: 5%; bottom: 5%; background: linear-gradient(135deg, #1f1f1f 0%, #0d0d0d 100%); border: 2px solid #444; box-shadow: 0 15px 40px rgba(0,0,0,0.9); border-radius: 8px; z-index: 100000; display: none; flex-direction: column; padding: 25px; overflow-y: auto; }
+        .system-modal { position: fixed; top: 15%; left: 5%; right: 5%; bottom: 5%; background: linear-gradient(135deg, #1f1f1f 0%, #0d0d0d 100%); border: 2px solid #444; box-shadow: 0 15px 40px rgba(0,0,0,0.9); border-radius: 8px; z-index: 100000; display: none; flex-direction: column; padding: 25px; overflow-y: auto; }
         .modal-header { font-size: 1.6rem; border-bottom: 2px solid #00d4ff; padding-bottom: 15px; margin-bottom: 20px; color: #fff; text-shadow: 0 0 10px #00d4ff; font-weight: bold; }
         .modal-btn { background: linear-gradient(to bottom, #333, #222); padding: 20px 25px; margin-bottom: 15px; border-radius: 5px; font-size: 1.3rem; border: 1px solid #555; cursor: pointer; display: flex; align-items: center; color: #ddd; transition: 0.1s;}
         .modal-btn:active { background: #00d4ff; color: #000; border-color: #00d4ff; }
@@ -77,7 +78,6 @@
         .search-btn { background: #00d4ff; color: #000; padding: 15px 25px; border-radius: 5px; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
         .search-btn:active { background: #00a0cc; }
 
-        /* ★ 追加：詳細ジャンル検索グリッド */
         .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
         .cat-btn { background: #2a2a2a; border: 1px solid #444; border-radius: 5px; padding: 15px; text-align: center; font-size: 1.1rem; color: #eee; cursor: pointer; }
         .cat-btn:active { background: #00d4ff; color: #000; border-color: #00d4ff; }
@@ -103,7 +103,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- ★ 上部に配置したハードウェアパネル -->
+        <!-- ★ 上部：超立体感ハードウェアパネル -->
         <div class="hardware-panel">
             <div class="hw-btn sound-btn" onclick="showToast('◀◀')">⏮</div>
             <div class="hw-btn sound-btn" onclick="showToast('▶▶')">⏭</div>
@@ -120,8 +120,8 @@
             <div class="hw-btn sound-btn" onclick="changeVolume(1)">＋</div>
         </div>
 
-        <!-- 2画面分割メインディスプレイ -->
-        <div class="main-display">
+        <!-- メインディスプレイ -->
+        <div class="main-display" id="mainDisplay">
             <!-- 左画面：地図領域 -->
             <div id="mapScreen" class="map-screen dark-mode">
                 <div id="map"></div>
@@ -133,28 +133,24 @@
                 </div>
             </div>
 
-            <!-- 右画面：案内＆情報パネル -->
+            <!-- ★ 右画面：オートポップアップ案内パネル -->
             <div id="infoScreen" class="info-screen">
-                <div class="info-clock" id="clockDisplay">--:--</div>
-                
-                <!-- 案内待機時 -->
-                <div class="info-idle" id="infoIdle">
-                    <div class="info-idle-icon">NEON</div>
-                    <div>ナビゲーション待機中</div>
-                </div>
-
-                <!-- ルート案内時 -->
-                <div class="info-sign" id="infoSign">
-                    <div class="info-sign-arrow">↑</div>
-                    <div class="info-sign-text" id="infoSignText">目的地</div>
-                </div>
-                <div class="info-road-view" id="infoRoad">
-                    <div class="road-surface"><div class="road-lane"></div></div>
-                </div>
-                <div class="info-bottom" id="infoBottom">
-                    <div class="info-dist-label">残り 約</div>
-                    <div class="info-dist"><span id="infoDistVal">--</span> km</div>
-                    <div class="info-time" id="infoTimeVal">到着予想: --:--</div>
+                <div class="info-content">
+                    <div class="info-clock" id="clockDisplay">--:--</div>
+                    <!-- 案内時の緑看板 -->
+                    <div class="info-sign" id="infoSign">
+                        <div class="info-sign-arrow" id="infoSignArrow">↑</div>
+                        <div class="info-sign-text" id="infoSignText">交差点</div>
+                    </div>
+                    <!-- 3D道路アニメーション -->
+                    <div class="info-road-view">
+                        <div class="road-surface"><div class="road-lane"></div></div>
+                    </div>
+                    <!-- 残り距離 -->
+                    <div class="info-bottom">
+                        <div class="info-dist-label">分岐まで 残り</div>
+                        <div class="info-dist"><span id="infoDistVal">--</span> m</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -174,13 +170,10 @@
 
         <div id="navModal" class="system-modal">
             <div class="modal-header">🧭 目的地検索</div>
-            
             <div class="search-container">
                 <input type="text" id="searchInput" class="search-input" placeholder="名称・番地 (例: トヨタ博物館, 北栄4-9-1)...">
                 <button class="search-btn sound-btn" onclick="smartSearchLocation()">🔍 検索</button>
             </div>
-
-            <!-- ★ ジャンル検索を充実化 -->
             <div class="category-grid">
                 <div class="cat-btn sound-btn" onclick="directSearch('コンビニ')">🏪 コンビニ</div>
                 <div class="cat-btn sound-btn" onclick="directSearch('ガソリンスタンド')">⛽ ガソリンスタンド</div>
@@ -189,7 +182,6 @@
                 <div class="cat-btn sound-btn" onclick="directSearch('レストラン')">🍽️ レストラン</div>
                 <div class="cat-btn sound-btn" onclick="directSearch('トイレ')">🚻 公衆トイレ</div>
             </div>
-
             <div class="modal-btn sound-btn" onclick="goHome()"><span class="modal-icon">🏠</span>自宅へ帰る（宮野木町）</div>
             <div class="modal-btn sound-btn" onclick="stopGuidance()"><span class="modal-icon">🛑</span>ルート案内 ストップ</div>
             <div class="modal-close sound-btn" onclick="closeModal('navModal')">閉じる</div>
@@ -216,11 +208,9 @@
         document.addEventListener('visibilitychange', async () => { if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock(); });
         requestWakeLock();
 
-        // ★ 時計の更新機能
+        // 時計更新
         setInterval(() => {
-            let d = new Date();
-            let h = ('0' + d.getHours()).slice(-2);
-            let m = ('0' + d.getMinutes()).slice(-2);
+            let d = new Date(); let h = ('0' + d.getHours()).slice(-2); let m = ('0' + d.getMinutes()).slice(-2);
             document.getElementById('clockDisplay').innerText = h + ':' + m;
         }, 1000);
 
@@ -269,6 +259,7 @@
             else { btn.innerHTML = '<span class="modal-icon">🔇</span>音声案内：OFF'; showToast('🔇 音声案内をオフにしました'); }
         }
 
+        // --- 地図エンジン ---
         var map = L.map('map', { zoomControl: false }).setView([35.6074, 140.1065], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
 
@@ -279,6 +270,9 @@
 
         let destLatObj = null; let destLngObj = null; let destNameObj = '';
         let routeLineCoords = []; let offRouteCount = 0; let isRecalculating = false;
+        
+        // ★ 自動2画面ポップアップ用変数
+        let routeSteps = []; let currentStepIndex = 0; let isInfoScreenActive = false;
 
         function distToSegmentSquared(p, v, w) {
             let l2 = Math.pow(v.lng - w.lng, 2) + Math.pow(v.lat - w.lat, 2);
@@ -297,6 +291,31 @@
             return Math.sqrt(minDistSq) * 111; 
         }
 
+        // 右パネル（2画面）の自動開閉ロジック
+        function toggleInfoPanel(show, distance, instruction, icon) {
+            const mainDisplay = document.getElementById('mainDisplay');
+            if (show) {
+                if(!isInfoScreenActive) { mainDisplay.classList.add('active-2screen'); isInfoScreenActive = true; }
+                document.getElementById('infoDistVal').innerText = distance;
+                document.getElementById('infoSignText').innerText = instruction;
+                document.getElementById('infoSignArrow').innerText = icon;
+            } else {
+                if(isInfoScreenActive) { mainDisplay.classList.remove('active-2screen'); isInfoScreenActive = false; }
+            }
+        }
+
+        // OSRMのステップ情報から看板の文字と矢印を生成
+        function getManeuverIcon(type, modifier) {
+            if (type === 'arrive') return '🏁'; if (type === 'depart') return '🚗';
+            switch (modifier) { case 'uturn': return '↩️'; case 'sharp right': return '↱'; case 'right': return '→'; case 'slight right': return '↗'; case 'slight left': return '↖'; case 'left': return '←'; case 'sharp left': return '↰'; default: return '↑'; }
+        }
+        function getManeuverText(type, modifier, name) {
+            if (type === 'arrive') return '目的地周辺です';
+            let t = '直進'; if (modifier) { if(modifier.includes('right')) t = '右方向'; if(modifier.includes('left')) t = '左方向'; }
+            if (type === 'merge') t = '合流'; if (type === 'ramp') t = '分岐・出口';
+            return name ? `${name}を${t}` : t;
+        }
+
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(function(position) {
                 userLat = position.coords.latitude; userLng = position.coords.longitude;
@@ -304,15 +323,31 @@
                 if(isTracking) map.setView([userLat, userLng]);
                 if (position.coords.heading !== null) updateArrowRotation(position.coords.heading);
 
-                // ★ 右パネルのリアルタイム残り距離更新
+                // ★ リルート判定＆自動2画面ポップアップ制御
                 if (isRouting && destLatObj !== null) {
-                    let remainDist = calculateDistance(userLat, userLng, destLatObj, destLngObj);
-                    document.getElementById('infoDistVal').innerText = remainDist.toFixed(1);
-                    
                     let distKM = getDistToRouteKM(userLat, userLng);
                     if (distKM > 0.05) {
                         offRouteCount++; if (offRouteCount >= 2) triggerReroute();
-                    } else { offRouteCount = 0; }
+                    } else {
+                        offRouteCount = 0;
+                        // 分岐や交差点（Step）が近づいたら2画面を出す処理
+                        if (routeSteps && currentStepIndex < routeSteps.length) {
+                            let step = routeSteps[currentStepIndex];
+                            let stepLat = step.maneuver.location[1]; let stepLng = step.maneuver.location[0];
+                            let distToStepMeters = calculateDistance(userLat, userLng, stepLat, stepLng) * 1000;
+
+                            // 残り300mを切ったら右画面をスッと出す
+                            if (distToStepMeters < 300 && distToStepMeters > 20) {
+                                toggleInfoPanel(true, Math.round(distToStepMeters), getManeuverText(step.maneuver.type, step.maneuver.modifier, step.name), getManeuverIcon(step.maneuver.type, step.maneuver.modifier));
+                            } else if (distToStepMeters <= 20) {
+                                // 通過したら次のステップへ、パネルはいったん閉じる
+                                currentStepIndex++; toggleInfoPanel(false);
+                            } else {
+                                // まだ遠いときは1画面のまま
+                                toggleInfoPanel(false);
+                            }
+                        }
+                    }
                 }
             }, function(error) {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
         }
@@ -355,16 +390,7 @@
         var routeLayer = null; var destinationMarker = null; var poiMarkers = []; var isRouting = false;
         let currentRouteDist = 0; let currentRouteTime = 0; let currentRouteMode = 'toll';
 
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            var R = 6371; var dLat = (lat2 - lat1) * Math.PI / 180; var dLon = (lon2 - lon1) * Math.PI / 180;
-            var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c;
-        }
-
-        function directSearch(query) {
-            document.getElementById('searchInput').value = query;
-            smartSearchLocation();
-        }
+        function directSearch(query) { document.getElementById('searchInput').value = query; smartSearchLocation(); }
 
         function smartSearchLocation() {
             var rawKeyword = document.getElementById('searchInput').value.trim();
@@ -419,10 +445,11 @@
             destinationMarker = L.marker([destLat, destLng]).addTo(map).bindPopup('🏁 ' + destName).openPopup();
             showToast('ルート探索中...');
             
-            var primaryUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
+            // ★ APIに steps=true を追加して、曲がり角の情報を取得する
+            var primaryUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true`;
             fetch(primaryUrl).then(res => res.json()).then(data => { processRouteData(data, destName, false); })
             .catch(err => {
-                var backupUrl = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
+                var backupUrl = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true`;
                 fetch(backupUrl).then(res => res.json()).then(data => { processRouteData(data, destName, false); })
                 .catch(fallbackErr => { showToast('ルート検索に失敗しました'); speak('ルート計算に失敗しました'); });
             });
@@ -430,7 +457,7 @@
 
         function triggerReroute() {
             isRecalculating = true; offRouteCount = 0; showToast('ルートを外れました。再探索します...'); speak('ルートを外れました。リルートします。');
-            var url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLngObj},${destLatObj}?overview=full&geometries=geojson`;
+            var url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLngObj},${destLatObj}?overview=full&geometries=geojson&steps=true`;
             fetch(url).then(res => res.json()).then(data => {
                 if(routeLayer) map.removeLayer(routeLayer);
                 processRouteData(data, destNameObj, true); isRecalculating = false;
@@ -445,6 +472,12 @@
                 
                 currentRouteDist = data.routes[0].distance / 1000;
                 currentRouteTime = Math.round(data.routes[0].duration / 60);
+                
+                // ★ 曲がり角のステップ情報を保存
+                if(data.routes[0].legs && data.routes[0].legs[0].steps) {
+                    routeSteps = data.routes[0].legs[0].steps;
+                    currentStepIndex = 0;
+                }
                 
                 if (!isReroute) {
                     map.fitBounds(routeLayer.getBounds(), {padding: [50, 50]});
@@ -476,17 +509,6 @@
             isRouting = true; isTracking = true; offRouteCount = 0;
             map.setView([userLat, userLng], 16);
             let timeMin = currentRouteMode === 'local' ? Math.round(currentRouteTime * 1.5) : currentRouteTime;
-            
-            // ★ 右側情報パネルの表示切替
-            document.getElementById('infoIdle').style.display = 'none';
-            document.getElementById('infoSign').style.display = 'flex';
-            document.getElementById('infoRoad').style.display = 'block';
-            document.getElementById('infoBottom').style.display = 'block';
-            document.getElementById('infoSignText').innerText = destNameObj;
-            document.getElementById('infoDistVal').innerText = currentRouteDist.toFixed(1);
-            
-            let d = new Date(); d.setMinutes(d.getMinutes() + timeMin);
-            document.getElementById('infoTimeVal').innerText = `到着予想: ${('0'+d.getHours()).slice(-2)}:${('0'+d.getMinutes()).slice(-2)}`;
 
             speak(`ルート案内を開始します。目的地まで、約 ${Math.round(currentRouteDist)}キロ、時間は ${timeMin}分です。`);
             showToast('🏁 案内を開始しました');
@@ -500,14 +522,10 @@
             document.getElementById('routePreview').classList.remove('show');
             if(routeLayer) map.removeLayer(routeLayer);
             if(destinationMarker) map.removeLayer(destinationMarker);
-            destLatObj = null; destLngObj = null; routeLineCoords = [];
+            destLatObj = null; destLngObj = null; routeLineCoords = []; routeSteps = [];
             isRouting = false; offRouteCount = 0;
             
-            // ★ 右側パネルを待機状態に戻す
-            document.getElementById('infoIdle').style.display = 'flex';
-            document.getElementById('infoSign').style.display = 'none';
-            document.getElementById('infoRoad').style.display = 'none';
-            document.getElementById('infoBottom').style.display = 'none';
+            toggleInfoPanel(false); // 2画面を閉じる
 
             if(!silent) { showToast('🛑 案内を終了しました'); resetCamera(); }
         }
