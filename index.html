@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon HUD - Googleマップ × ネオンオーバーレイ</title>
+    <title>Neon HUD - 1本指操作完全対応版</title>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #000; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
         .container { display: flex; flex-direction: column; height: 100vh; position: relative; }
         
-        /* 背景のGoogleマップ（iframeで全画面表示し、自由にタッチ操作可能に） */
+        /* 背景のGoogleマップエリア */
         .map-screen { flex: 1; position: relative; width: 100%; height: 100%; z-index: 1; }
-        #googleMapFrame { width: 100%; height: 100%; border: none; }
+        #googleMapFrame { width: 100%; height: 100%; border: none; pointer-events: auto; }
 
-        /* 画面上に浮かぶネオン操作パネル（HUDスタイル） */
+        /* ★ 1本指操作を可能にするための透明タッチシールド（地図操作中は一時的に透過してクリックを地図に渡す） */
+        #touchShield { position: absolute; top: 0; left: 0; right: 0; bottom: 90px; z-index: 500; display: none; background: rgba(0,0,0,0.01); }
+
+        /* 画面上部に浮かぶネオン操作パネル（HUDスタイル） */
         .hud-overlay-top { position: absolute; top: 15px; left: 15px; right: 15px; z-index: 9900; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
         .hud-brand { background: rgba(0, 0, 0, 0.75); border: 1px solid #00d4ff; color: #00d4ff; padding: 8px 15px; font-size: 0.9rem; font-weight: bold; border-radius: 4px; box-shadow: 0 0 10px rgba(0,212,255,0.4); text-shadow: 0 0 5px #00d4ff; pointer-events: auto; }
         
@@ -29,7 +32,6 @@
         .hw-btn-text { font-size: 0.9rem; padding: 0 15px; }
         .neon-blue { color: #e0f7ff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff, 0 0 20px #0044ff, 0 0 30px #0022cc; }
 
-        /* 下部のネオンアニメーションライン */
         @keyframes colorShift {
             0% { background-color: #ff3333; box-shadow: 0 0 4px #ff0000; }
             33% { background-color: #00d4ff; box-shadow: 0 0 4px #00d4ff; }
@@ -55,18 +57,19 @@
 </head>
 <body>
     <div class="container">
-        <!-- 画面上部のネオンHUD（クイック検索バーなど） -->
+        <!-- 画面上部のネオンHUD -->
         <div class="hud-overlay-top">
-            <div class="hud-brand">NEON HUD SYSTEM</div>
+            <div class="hud-brand">NEON HUD 1-TOUCH</div>
             <div class="hud-search-quick">
                 <input type="text" id="hudInput" class="hud-input" placeholder="Googleで検索・番地入力...">
                 <button class="hud-search-btn sound-btn" onclick="hudSearch()">🔍 検索</button>
             </div>
         </div>
 
-        <!-- 裏側のGoogleマップ表示エリア -->
+        <!-- 背景のGoogleマップ -->
         <div class="map-screen">
-            <iframe id="googleMapFrame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.8280336041697!2d140.1043!3d35.6074!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sMzXCsDM2JzI2LjYiTiAxNDDCsDA2JzE1LjUiRQ!5e0!3m2!1sja!2sjp!4v1650000000000!5m2!1sja!2sjp" allowfullscreen="" loading="lazy"></iframe>
+            <div id="touchShield"></div>
+            <iframe id="googleMapFrame" src="" allowfullscreen="" loading="lazy"></iframe>
         </div>
 
         <!-- ナビゲーションメニューモーダル -->
@@ -94,16 +97,12 @@
             <div class="hw-btn sound-btn" onclick="showToast('地点登録完了')">★</div>
             <div class="hw-btn sound-btn hw-btn-text" onclick="showToast('ソース切替 (ダミー)')">AV</div>
             
-            <!-- ♪マーク：YouTube Music起動 -->
             <div class="hw-btn sound-btn neon-blue" style="font-size: 1.5rem;" onclick="openYouTubeMusic()">♪</div>
-            
-            <!-- 〇マーク：メニューを開く -->
             <div class="hw-btn sound-btn neon-blue" style="font-size: 1.3rem;" onclick="openModal('navModal')">▲<br><span style="font-size:0.5rem; position:absolute; top:8px;">◯</span></div>
             
             <div class="hw-btn sound-btn hw-btn-text" onclick="resetMapToCurrent()">現在地</div>
             <div class="hw-btn sound-btn" style="font-size: 1.5rem;" onclick="openModal('settingsModal')">⚙</div>
             
-            <!-- 音量ボタン -->
             <div class="hw-btn sound-btn" onclick="changeVolume(-1)">－</div>
             <div class="hw-btn sound-btn" onclick="changeVolume(1)">＋</div>
         </div>
@@ -120,7 +119,40 @@
         });
         requestWakeLock();
 
-        // 操作音システム
+        let userLat = 35.6074;
+        let userLng = 140.1065;
+        let mapInitialized = false;
+
+        function updateMapLocation(lat, lng, query = '') {
+            let mapUrl = '';
+            if (query) {
+                mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+            } else {
+                mapUrl = `https://www.google.com/maps?q=${lat},${lng}&z=16&output=embed`;
+            }
+            document.getElementById('googleMapFrame').src = mapUrl;
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(function(position) {
+                userLat = position.coords.latitude;
+                userLng = position.coords.longitude;
+                if (!mapInitialized) {
+                    mapInitialized = true;
+                    updateMapLocation(userLat, userLng);
+                    showToast('📍 現在地を取得しました');
+                }
+            }, function(error) {
+                if (!mapInitialized) {
+                    mapInitialized = true;
+                    updateMapLocation(userLat, userLng);
+                    showToast('※GPS取得中のためデフォルト位置を表示します');
+                }
+            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+        } else {
+            updateMapLocation(userLat, userLng);
+        }
+
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx = new AudioContext();
         function unlockAudio() { if(audioCtx.state === 'suspended') audioCtx.resume(); }
@@ -194,24 +226,23 @@
         function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
-        // 上部HUDからの検索
         function hudSearch() {
             var keyword = document.getElementById('hudInput').value.trim();
             if(!keyword) return;
             showToast('Googleマップで検索中...');
             speak(keyword + 'を検索します');
-            document.getElementById('googleMapFrame').src = `https://www.google.com/maps?q=${encodeURIComponent(keyword)}&output=embed`;
+            updateMapLocation(userLat, userLng, keyword);
         }
 
         function mapDirectAction(query) {
             closeModal('navModal');
             showToast(query + 'を検索中...');
-            document.getElementById('googleMapFrame').src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+            updateMapLocation(userLat, userLng, query);
         }
 
         function resetMapToCurrent() {
-            showToast('📍 現在地周辺を表示します');
-            document.getElementById('googleMapFrame').src = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.8280336041697!2d140.1043!3d35.6074!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sMzXCsDM2JzI2LjYiTiAxNDDCsDA2JzE1LjUiRQ!5e0!3m2!1sja!2sjp!4v1650000000000!5m2!1sja!2sjp`;
+            showToast('📍 現在地を表示します');
+            updateMapLocation(userLat, userLng);
         }
 
         let toastTimeout;
