@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - ロケーション最適化版</title>
+    <title>純正風カーナビ - ジオ・サーチ完全版</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -105,7 +105,7 @@
             <div class="modal-header">🧭 ナビゲーションメニュー</div>
             
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="名称 または エリア名 (例: 山岡家 花見川)...">
+                <input type="text" id="searchInput" class="search-input" placeholder="名称 または エリア名 (例: 山岡家、一蘭)...">
                 <button class="search-btn sound-btn" onclick="searchLocation()">🔍 検索</button>
             </div>
 
@@ -294,39 +294,74 @@
             return R * c;
         }
 
-        // ★ 近い順＆エリア指定（花見川など）に対応した賢い検索エンジン
+        // ★ 完全なローカル地理優先＆Overpass APIを駆使したスマート検索
         function searchLocation() {
             var keyword = document.getElementById('searchInput').value;
             if(!keyword) return;
-            showToast('検索中...');
+            showToast('周辺の店舗・施設を検索中...');
             
-            // 現在地周辺（千葉県周辺）の座標範囲を限定して検索（viewbox指定）
-            // 緯度・経度の幅を設定して、遠くの東京や浅草が勝手に入り込まないようにする
-            let minLon = userLng - 0.8;
-            let maxLon = userLng + 0.8;
-            let minLat = userLat - 0.8;
-            let maxLat = userLat + 0.8;
+            // 1. まずは現在地から半径20km以内の「名前にキーワードを含むスポット」をOverpass API（店舗データベース）から直接直撃検索
+            var overpassQuery = `[out:json];(node["name"~"${keyword}", i](around:30000,${userLat},${userLng});way["name"~"${keyword}", i](around:30000,${userLat},${userLng});relation["name"~"${keyword}", i](around:30000,${userLat},${userLng}););out body;>;out skel qt;`;
+            var overpassUrl = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(overpassQuery);
 
-            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(keyword)}&countrycodes=jp&viewbox=${minLon},${minLat},${maxLon},${maxLat}&bounded=1&limit=15`;
-            
-            fetch(searchUrl)
+            fetch(overpassUrl)
             .then(res => res.json())
             .then(data => {
-                if(data.length > 0) {
-                    // 距離を正確に計算
-                    data.forEach(item => {
-                        item.dist = calculateDistance(userLat, userLng, parseFloat(item.lat), parseFloat(item.lon));
+                let results = [];
+                if (data.elements && data.elements.length > 0) {
+                    // 緯度経度を持つ要素を抽出
+                    let nodes = {};
+                    data.elements.forEach(el => { if(el.lat && el.lon) nodes[el.id] = {lat: el.lat, lon: el.lon}; });
+                    
+                    data.elements.forEach(el => {
+                        let name = el.tags ? el.tags.name : null;
+                        let lat = el.lat;
+                        let lon = el.lon;
+                        // wayやrelationの中心座標がない場合の簡易処理
+                        if (!lat && el.nodes && el.nodes.length > 0 && nodes[el.nodes[0]]) {
+                            lat = nodes[el.nodes[0]].lat;
+                            lon = nodes[el.nodes[0]].lon;
+                        }
+                        if (name && lat && lon) {
+                            let dist = calculateDistance(userLat, userLng, lat, lon);
+                            results.push({ name: name, display_name: name + ' (周辺店舗)', lat: lat, lon: lon, dist: dist });
+                        }
                     });
-                    // 近い順に強制ソート
-                    data.sort((a, b) => a.dist - b.dist);
+                }
+
+                // もし店舗データベースで見つからない場合は、通常の地図検索を「ごく近距離(半径15km)」に限定して実行
+                if (results.length === 0) {
+                    let minLon = userLng - 0.2; let maxLon = userLng + 0.2;
+                    let minLat = userLat - 0.2; let maxLat = userLat + 0.2;
+                    let nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(keyword)}&countrycodes=jp&viewbox=${minLon},${minLat},${maxLon},${maxLat}&bounded=1&limit=15`;
+                    
+                    return fetch(nominatimUrl).then(res => res.json()).then(nomData => {
+                        nomData.forEach(item => {
+                            let dist = calculateDistance(userLat, userLng, parseFloat(item.lat), parseFloat(item.lon));
+                            results.push({ name: item.display_name.split(',')[0], display_name: item.display_name, lat: item.lat, lon: item.lon, dist: dist });
+                        });
+                        return results;
+                    });
+                } else {
+                    return results;
+                }
+            })
+            .then(finalResults => {
+                if (finalResults && finalResults.length > 0) {
+                    // 重複を整理し、現在地からの距離が近い順に確実にソート
+                    let uniqueMap = new Map();
+                    finalResults.forEach(item => {
+                        let key = Math.round(item.lat*1000) + "_" + Math.round(item.lon*1000);
+                        if (!uniqueMap.has(key)) uniqueMap.set(key, item);
+                    });
+                    let sortedData = Array.from(uniqueMap.values());
+                    sortedData.sort((a, b) => a.dist - b.dist);
 
                     let listHtml = '';
-                    data.forEach((item) => {
-                        let shortName = item.display_name.split(',')[0];
-                        let fullName = item.display_name;
+                    sortedData.forEach((item) => {
                         listHtml += `
-                            <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${shortName.replace(/'/g, "")}')">
-                                <div class="result-name">📍 ${shortName}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
+                            <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${item.name.replace(/'/g, "")}')">
+                                <div class="result-name">📍 ${item.name}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${item.display_name}</span></div>
                                 <div class="result-dist">約 ${item.dist.toFixed(1)} km</div>
                             </div>
                         `;
@@ -336,15 +371,16 @@
                     document.getElementById('resultsListContainer').innerHTML = listHtml;
                     openModal('resultsModal');
 
-                    showToast(data.length + '件見つかりました（近い順）');
+                    showToast(sortedData.length + '件見つかりました（近い順）');
                     speak('候補が見つかりました。リストから選択してください。');
-
                 } else {
                     showToast('見つかりませんでした。別の言葉で試してください。');
                     speak('目的地が見つかりませんでした。');
                 }
             })
-            .catch(err => { showToast('検索エラーが発生しました'); });
+            .catch(err => {
+                showToast('検索エラーが発生しました');
+            });
         }
 
         function selectSearchResult(lat, lon, name) {
@@ -418,7 +454,7 @@
             map.setView([userLat, userLng], 15);
             
             let timeMin = currentRouteMode === 'local' ? Math.round(currentRouteTime * 1.5) : currentRouteTime;
-            speak(`ルート案内を開始します。目的地まで、約 ${Math.round(currentRouteDist)}キロ、時間は ${timeMin}分です。`);
+            speak(`ルート案内を開始します。目的地まで, 約 ${Math.round(currentRouteDist)}キロ, 時間は ${timeMin}分です。`);
             showToast('🏁 案内を開始しました');
         }
 
