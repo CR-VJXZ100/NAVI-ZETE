@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - リアルGPS＆コンパス版</title>
+    <title>純正風カーナビ - メニュー実装版</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -17,11 +17,11 @@
         /* ダークテーマ風裏技 */
         .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
         
-        .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 5px; }
+        .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9990; display: flex; flex-direction: column; gap: 5px; }
         .map-btn { background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: white; padding: 10px 15px; font-size: 1rem; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; }
         .map-btn:active { background: rgba(0, 0, 0, 0.9); }
         
-        .hardware-panel { height: 90px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #0a0a0a 100%); border-top: 2px solid #444; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 9999; position: relative; }
+        .hardware-panel { height: 90px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #0a0a0a 100%); border-top: 2px solid #444; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 9990; position: relative; }
         .hw-btn { background: linear-gradient(to bottom, #111 0%, #222 100%); border: 1px solid #000; border-top: 1px solid #444; color: #ccc; height: 55px; min-width: 65px; margin: 0 4px; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 5px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.2); cursor: pointer; position: relative; }
         .hw-btn:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.9); color: #fff; }
         .hw-btn-text { font-size: 0.9rem; padding: 0 15px; }
@@ -29,29 +29,49 @@
         .hw-btn::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 30px; height: 2px; background-color: #ff3333; box-shadow: 0 0 3px #ff0000; opacity: 0.7; }
         .neon-blue::after { background-color: #008cff; box-shadow: 0 0 3px #008cff; }
         
-        #toast { visibility: hidden; min-width: 250px; background-color: rgba(0, 0, 0, 0.8); color: #fff; text-align: center; border-radius: 30px; padding: 15px; position: fixed; z-index: 10000; left: 50%; bottom: 120px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #444; box-shadow: 0 5px 15px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
+        #toast { visibility: hidden; min-width: 250px; background-color: rgba(0, 0, 0, 0.8); color: #fff; text-align: center; border-radius: 30px; padding: 15px; position: fixed; z-index: 9999; left: 50%; bottom: 120px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #444; box-shadow: 0 5px 15px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
         #toast.show { visibility: visible; opacity: 1; bottom: 140px; }
 
-        /* ★ 追加：自車位置マーカー（▲）のスタイル */
-        .navi-marker-icon {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 40px;
-            height: 40px;
+        .navi-marker-icon { display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; }
+        .navi-arrow { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #00d4ff; filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.8)); transform-origin: center 70%; transition: transform 0.2s ease-out; }
+
+        /* =========================================
+           ★ ここから：本格的なメニュー画面のデザイン 
+           ========================================= */
+        .system-modal {
+            position: fixed; top: 5%; left: 8%; right: 8%; bottom: 110px;
+            background: linear-gradient(135deg, #1f1f1f 0%, #0d0d0d 100%);
+            border: 2px solid #444; box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+            border-radius: 8px; z-index: 100000; display: none; /* 初期状態は非表示 */
+            flex-direction: column; padding: 25px;
         }
-        .navi-arrow {
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-bottom: 30px solid #00d4ff; /* 青色 */
-            /* 影をつけて少し立体的に */
-            filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.8));
-            /* アイコンの中心が実際の座標になるように調整 */
-            transform-origin: center 70%;
-            transition: transform 0.2s ease-out; /* 回転を滑らかにする */
+        /* メニューのタイトル部分 */
+        .modal-header { 
+            font-size: 1.6rem; border-bottom: 2px solid #00d4ff; 
+            padding-bottom: 15px; margin-bottom: 20px; color: #fff; 
+            text-shadow: 0 0 10px #00d4ff; font-weight: bold; 
         }
+        .modal-header.settings-header { border-bottom: 2px solid #aaa; text-shadow: none; color: #eee; }
+        
+        /* メニューの各ボタン */
+        .modal-btn { 
+            background: linear-gradient(to bottom, #333, #222); 
+            padding: 20px 25px; margin-bottom: 15px; border-radius: 5px; 
+            font-size: 1.3rem; border: 1px solid #555; cursor: pointer; 
+            display: flex; align-items: center; color: #ddd; transition: 0.1s;
+        }
+        .modal-btn:active { background: #00d4ff; color: #000; border-color: #00d4ff; }
+        .modal-btn.settings-btn:active { background: #888; color: #fff; }
+        .modal-icon { margin-right: 20px; font-size: 1.8rem; }
+        
+        /* 閉じるボタン */
+        .modal-close { 
+            background: linear-gradient(to bottom, #800, #500); 
+            padding: 18px; border-radius: 5px; text-align: center; 
+            font-size: 1.3rem; margin-top: auto; cursor: pointer; 
+            border: 1px solid #f55; color: #fff; font-weight: bold; 
+        }
+        .modal-close:active { background: #f00; transform: scale(0.98); }
     </style>
 </head>
 <body>
@@ -62,150 +82,116 @@
                 <div class="map-btn" onclick="zoomInMap()">広域表示(＋)</div>
                 <div class="map-btn" onclick="zoomOutMap()">詳細表示(－)</div>
                 <div class="map-btn" style="margin-top: 15px;" onclick="requestDeviceOrientation()">コンパス許可</div>
-                <div class="map-btn" style="margin-top: 15px;" onclick="resetCamera()">ON 》</div>
             </div>
         </div>
+
+        <!-- =========================================
+             ★ ここから：各メニューのHTML構造
+             ========================================= -->
+        <!-- ① ナビゲーションメニュー画面 (▲ボタンで起動) -->
+        <div id="navModal" class="system-modal">
+            <div class="modal-header">🧭 ナビゲーションメニュー</div>
+            <div class="modal-btn" onclick="showToast('現在地の周辺施設を検索します')"><span class="modal-icon">🏪</span>周辺施設を探す</div>
+            <div class="modal-btn" onclick="showToast('自宅へのルート探索を開始します')"><span class="modal-icon">🏠</span>自宅へ帰る</div>
+            <div class="modal-btn" onclick="showToast('過去の履歴から目的地を選びます')"><span class="modal-icon">🕒</span>目的地履歴</div>
+            <div class="modal-btn" onclick="showToast('ルート案内を中止しました')"><span class="modal-icon">🛑</span>案内ストップ</div>
+            <div class="modal-close" onclick="closeModal('navModal')">閉じる</div>
+        </div>
+
+        <!-- ② システム設定画面 (⚙ボタンで起動) -->
+        <div id="settingsModal" class="system-modal">
+            <div class="modal-header settings-header">⚙ システム設定</div>
+            <div class="modal-btn settings-btn" onclick="showToast('昼/夜の地図表示を切り替えます')"><span class="modal-icon">🌙</span>地図カラー設定</div>
+            <div class="modal-btn settings-btn" onclick="showToast('音声案内の音量設定を開きます')"><span class="modal-icon">🔊</span>音声案内 音量</div>
+            <div class="modal-btn settings-btn" onclick="showToast('Bluetooth接続機器を探しています...')"><span class="modal-icon">📱</span>Bluetooth 機器登録</div>
+            <div class="modal-btn settings-btn" onclick="showToast('MITSUBISHI DELICA NAVI Ver.1.0')"><span class="modal-icon">ℹ️</span>バージョン情報</div>
+            <div class="modal-close" onclick="closeModal('settingsModal')">閉じる</div>
+        </div>
+        <!-- ========================================= -->
+
         <div class="hardware-panel">
-            <div class="hw-btn" onclick="showToast('前の曲へスキップ')">⏮</div>
-            <div class="hw-btn" onclick="showToast('次の曲へスキップ')">⏭</div>
-            <div class="hw-btn" onclick="showToast('お気に入りに登録しました')">★</div>
-            <div class="hw-btn hw-btn-text" onclick="showToast('AVソース切り替え画面')">AV</div>
-            <div class="hw-btn neon-blue" style="font-size: 1.5rem;" onclick="showToast('🎵 音楽プレーヤーを起動')">♪</div>
-            <div class="hw-btn neon-blue" style="font-size: 1.3rem;" onclick="showToast('🧭 ナビゲーションメニューを起動')">▲<br><span style="font-size:0.5rem; position:absolute; top:8px;">◯</span></div>
+            <div class="hw-btn" onclick="showToast('◀◀')">⏮</div>
+            <div class="hw-btn" onclick="showToast('▶▶')">⏭</div>
+            <div class="hw-btn" onclick="showToast('地点登録完了')">★</div>
+            <div class="hw-btn hw-btn-text" onclick="showToast('ソース切替 (ダミー)')">AV</div>
+            <div class="hw-btn neon-blue" style="font-size: 1.5rem;" onclick="window.location.href='music://'">♪</div>
+            
+            <!-- ★ 変更：▲ボタンでナビメニューを開く -->
+            <div class="hw-btn neon-blue" style="font-size: 1.3rem;" onclick="openModal('navModal')">▲<br><span style="font-size:0.5rem; position:absolute; top:8px;">◯</span></div>
+            
             <div class="hw-btn hw-btn-text" onclick="resetCamera()">現在地</div>
-            <div class="hw-btn" style="font-size: 1.5rem;" onclick="showToast('システム設定')">⚙</div>
-            <div class="hw-btn" onclick="showToast('音量を下げました')">－</div>
-            <div class="hw-btn" onclick="showToast('音量を上げました')">＋</div>
+            
+            <!-- ★ 変更：⚙ボタンで設定メニューを開く -->
+            <div class="hw-btn" style="font-size: 1.5rem;" onclick="openModal('settingsModal')">⚙</div>
+            
+            <div class="hw-btn" onclick="showToast('※本体のボタンで調整してください')">－</div>
+            <div class="hw-btn" onclick="showToast('※本体のボタンで調整してください')">＋</div>
         </div>
     </div>
     <div id="toast">通知メッセージ</div>
 
     <script>
-        // --- 1. 地図の初期化 ---
+        // 地図とGPSの基本設定
         var map = L.map('map', { zoomControl: false }).setView([35.6074, 140.1065], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
-        // --- 2. GPS用変数の準備 ---
-        var userLat = 35.6074;
-        var userLng = 140.1065;
-        var isTracking = true;
-
-        // ★ 変更：自車位置マーカーをカスタマイズしたHTML（▲）にする
-        var naviIcon = L.divIcon({
-            className: 'navi-marker-icon',
-            html: '<div id="navi-arrow" class="navi-arrow"></div>',
-            iconSize: [40, 40],
-            iconAnchor: [20, 20] // アイコンの中心
-        });
-
+        var userLat = 35.6074; var userLng = 140.1065; var isTracking = true;
+        var naviIcon = L.divIcon({ className: 'navi-marker-icon', html: '<div id="navi-arrow" class="navi-arrow"></div>', iconSize: [40, 40], iconAnchor: [20, 20] });
         var userMarker = L.marker([userLat, userLng], {icon: naviIcon}).addTo(map);
 
-        // --- 3. リアルタイムGPS取得 ---
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(function(position) {
-                userLat = position.coords.latitude;
-                userLng = position.coords.longitude;
-                
-                // ピンの位置を移動
+                userLat = position.coords.latitude; userLng = position.coords.longitude;
                 userMarker.setLatLng([userLat, userLng]);
-                
-                // 追従モードなら中心を移動
-                if(isTracking) {
-                    map.setView([userLat, userLng]);
-                }
-                
-                // ※移動速度がある程度（時速数km）出ている場合は、GPSの進行方向(heading)が取得できる
-                if (position.coords.heading !== null && !isCompassActive) {
-                     updateArrowRotation(position.coords.heading);
-                }
-                
-            }, function(error) {
-                console.log('GPS取得エラー');
-            }, {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 5000
-            });
+                if(isTracking) map.setView([userLat, userLng]);
+                if (position.coords.heading !== null && !isCompassActive) updateArrowRotation(position.coords.heading);
+            }, function(error) {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
         }
 
-        // --- 4. コンパス（ジャイロセンサー）の取得とアイコンの回転 ---
         var isCompassActive = false;
-
-        // iOS(iPadOS)向けに、センサー使用の許可を求める関数
         function requestDeviceOrientation() {
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission()
-                    .then(permissionState => {
-                        if (permissionState === 'granted') {
-                            window.addEventListener('deviceorientation', handleOrientation, false);
-                            isCompassActive = true;
-                            showToast('コンパスをオンにしました');
-                            // ボタンを隠す（または色を変える）
-                            event.target.style.display = 'none';
-                        } else {
-                            showToast('コンパスの許可が拒否されました');
-                        }
-                    })
-                    .catch(console.error);
+                DeviceOrientationEvent.requestPermission().then(permissionState => {
+                    if (permissionState === 'granted') { window.addEventListener('deviceorientation', handleOrientation, false); isCompassActive = true; event.target.style.display = 'none'; }
+                }).catch(console.error);
             } else {
-                // iOS13未満やAndroidの場合、許可不要でそのままリスナー追加
-                window.addEventListener('deviceorientation', handleOrientation, false);
-                isCompassActive = true;
-                showToast('コンパスをオンにしました');
-                event.target.style.display = 'none';
+                window.addEventListener('deviceorientation', handleOrientation, false); isCompassActive = true; event.target.style.display = 'none';
             }
         }
 
         function handleOrientation(event) {
-            var heading = 0;
-            
-            // iOS向けのwebkitCompassHeading（北が0度）を優先
-            if (event.webkitCompassHeading) {
-                heading = event.webkitCompassHeading;
-            } else if (event.alpha) {
-                // Androidなどの場合 (簡易的な計算)
-                heading = 360 - event.alpha;
-            }
+            var heading = event.webkitCompassHeading ? event.webkitCompassHeading : (event.alpha ? 360 - event.alpha : 0);
             updateArrowRotation(heading);
         }
 
-        // アイコンを回転させる関数
         function updateArrowRotation(degree) {
             var arrowElement = document.getElementById('navi-arrow');
-            if (arrowElement) {
-                // CSSのtransformで回転させる
-                arrowElement.style.transform = 'rotate(' + degree + 'deg)';
-            }
+            if (arrowElement) arrowElement.style.transform = 'rotate(' + degree + 'deg)';
         }
 
+        map.on('dragstart', function() { isTracking = false; });
+        function resetCamera() { isTracking = true; map.setView([userLat, userLng], 15); showToast('📍 現在地にフォーカスしました'); }
+        function zoomInMap() { map.zoomIn(); }
+        function zoomOutMap() { map.zoomOut(); }
 
-        // --- 5. ナビ特有の操作感 ---
-        map.on('dragstart', function() {
-            isTracking = false; 
-        });
-
-        function resetCamera() {
-            isTracking = true;
-            map.setView([userLat, userLng], 15);
-            showToast('📍 現在地にフォーカスしました');
+        // =========================================
+        // ★ メニュー画面を開く・閉じる機能
+        // =========================================
+        function openModal(modalId) {
+            // 指定されたIDの画面を表示（flex）にする
+            document.getElementById(modalId).style.display = 'flex';
         }
-
-        function zoomInMap() { map.zoomIn(); showToast('詳細表示にします'); }
-        function zoomOutMap() { map.zoomOut(); showToast('広域表示にします'); }
+        function closeModal(modalId) {
+            // 指定されたIDの画面を非表示（none）にする
+            document.getElementById(modalId).style.display = 'none';
+        }
 
         let toastTimeout;
         function showToast(message) {
             const toast = document.getElementById("toast");
-            toast.innerText = message;
-            toast.className = "show";
+            toast.innerText = message; toast.className = "show";
             clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(function(){ 
-                toast.className = toast.className.replace("show", ""); 
-            }, 2500);
+            toastTimeout = setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 2500);
         }
     </script>
 </body>
