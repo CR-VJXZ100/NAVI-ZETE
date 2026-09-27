@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - JZX100 完全シンメトリー＆ハイエンド仕様</title>
+    <title>純正風カーナビ - TOYOTA CHASER ボトムパネル仕様</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -11,61 +11,7 @@
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
         .container { display: flex; flex-direction: column; height: 100vh; position: relative; width: 100vw; }
         
-        /* ★ 上部：完全左右対称カーボン調ハードウェアパネル */
-        .hardware-panel { height: 95px; width: 100%; background: repeating-linear-gradient(45deg, #111 0px, #111 5px, #1a1a1a 5px, #1a1a1a 10px); border-bottom: 2px solid #000; box-shadow: 0 5px 25px rgba(0,0,0,1); display: flex; justify-content: center; align-items: center; padding: 0; z-index: 9999; position: relative; flex-shrink: 0; }
-        
-        /* 左右のボタングループを絶対配置にして、時計を完璧な中央に！ */
-        .hw-group { position: absolute; display: flex; align-items: center; gap: 8px; height: 100%; top: 0; width: calc(50% - 55px); }
-        .left-group { left: 10px; justify-content: flex-start; }
-        .right-group { right: 10px; justify-content: flex-end; }
-
-        /* メタルエンブレム */
-        .luxury-badge { background: linear-gradient(135deg, #444, #111); padding: 0 12px; border-radius: 4px; border: 1px solid #666; border-bottom: 2px solid #000; color: #d4d4d4; font-family: 'Times New Roman', serif; font-size: clamp(0.7rem, 1.2vw, 0.9rem); letter-spacing: 2px; text-shadow: -1px -1px 1px #000, 1px 1px 1px #666; box-shadow: 0 4px 8px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; height: 40px; white-space: nowrap; flex-shrink: 0; font-weight: bold; }
-
-        /* ボタン */
-        .hw-btn { flex: 1; min-width: 45px; max-width: 80px; background: linear-gradient(to bottom, #444 0%, #222 50%, #111 100%); border: 1px solid #000; border-top: 1px solid #666; border-bottom: 2px solid #000; color: #eee; height: 55px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: clamp(1rem, 2.5vw, 1.4rem); font-weight: 900; box-shadow: 0 8px 15px rgba(0,0,0,0.8), inset 0 3px 4px rgba(255,255,255,0.2), inset 0 -3px 4px rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.1s; white-space: nowrap; }
-        .hw-btn:active { transform: translateY(4px); box-shadow: 0 2px 4px rgba(0,0,0,0.9), inset 0 4px 8px rgba(0,0,0,0.8); background: linear-gradient(to bottom, #222 0%, #111 100%); border-top: 1px solid #111; }
-        .hw-btn-text { font-size: clamp(0.7rem, 1.5vw, 0.9rem); padding: 0 5px; }
-        .neon-blue { color: #e0f7ff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff, 0 0 20px #0044ff, 0 0 30px #0022cc; }
-
-        @keyframes colorShift { 0% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 33% { background-color: #00d4ff; box-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff; } 66% { background-color: #b000ff; box-shadow: 0 0 15px #b000ff, 0 0 30px #b000ff; } 100% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } }
-        .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: colorShift 5s infinite ease-in-out; opacity: 1; }
-        .neon-blue::after { animation: colorShift 3.5s infinite ease-in-out; }
-
-        /* ★ 中央に配置された超絶ギラギラ時計（絶対的中央） */
-        .analog-clock { width: 85px; height: 85px; border-radius: 50%; border: 3px solid #e0e0e0; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,212,255,1), 0 0 30px rgba(0,212,255,0.8); z-index: 10000; overflow: hidden; background: #000; margin: 0 auto; }
-        
-        .analog-clock::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, #0a1128, #2a5298, #8ec5fc, #00f2fe, #2a5298, #0a1128, #8ec5fc, #00f2fe, #2a5298, #0a1128); animation: radarShine 6s linear infinite; z-index: 1; }
-        @keyframes radarShine { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .clock-facets { position: absolute; top:0; left:0; width:100%; height:100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0) 0deg 10deg, rgba(255,255,255,0.4) 10deg 20deg); mix-blend-mode: overlay; z-index: 2; pointer-events: none; }
-        .analog-clock::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); transform: rotate(30deg); animation: gemShine 4s infinite linear; pointer-events: none; z-index: 20; }
-        @keyframes gemShine { 0% { transform: translateX(-100%) rotate(30deg); } 20% { transform: translateX(100%) rotate(30deg); } 100% { transform: translateX(100%) rotate(30deg); } }
-
-        .clock-face { width: 100%; height: 100%; position: relative; z-index: 5; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%); border-radius: 50%; }
-        .clock-ring { position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.7); pointer-events: none; z-index: 6; }
-        .clock-index { position: absolute; background: #fff; box-shadow: 0 0 5px rgba(255,255,255,0.9); z-index: 7; }
-        .index-12 { top: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 10px; }
-        .index-6 { bottom: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 10px; }
-        .index-3 { right: 3px; top: 50%; transform: translateY(-50%); width: 10px; height: 4px; }
-        .index-9 { left: 3px; top: 50%; transform: translateY(-50%); width: 10px; height: 4px; }
-        
-        .sub-dial { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.8); position: absolute; left: 50%; transform: translateX(-50%); background: radial-gradient(circle, rgba(26,42,108,0.8) 0%, rgba(0,0,0,0.9) 100%); box-shadow: inset 0 0 8px rgba(0,0,0,1); z-index: 8; }
-        .top-dial { top: 12px; } .bottom-dial { bottom: 12px; }
-        .sub-label { position: absolute; bottom: 1px; width: 100%; text-align: center; font-size: 5px; color: #fff; line-height: 1; font-weight: bold; text-shadow: 0 0 4px #00d4ff; }
-        .sub-hand { width: 2px; height: 9px; background: #fff; position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.5s; box-shadow: 0 0 3px #000; }
-        
-        /* ★ 高級時計のような細くて立体的な剣型の針 */
-        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.8)); }
-        .hour-hand { width: 4px; height: 20px; clip-path: polygon(50% 0%, 100% 20%, 50% 100%, 0% 20%); z-index: 10; background: linear-gradient(to right, #ccc 50%, #fff 50%); }
-        .minute-hand { width: 3px; height: 28px; clip-path: polygon(50% 0%, 100% 15%, 50% 100%, 0% 15%); z-index: 11; background: linear-gradient(to right, #ccc 50%, #fff 50%); }
-        .second-hand { width: 1px; height: 32px; background: #ff4500; filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.8)); z-index: 12; }
-        .center-dot { width: 5px; height: 5px; border-radius: 50%; background: #ff4500; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; box-shadow: 0 0 5px rgba(0,0,0,0.9); border: 1px solid #fff; }
-
-        /* 右上のデジタル時計 */
-        .top-right-clock { position: absolute; top: 115px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
-
-        /* メインエリア */
+        /* メインエリア（地図＆2画面パネル） */
         .main-display { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
         
         .map-screen { flex: 1; position: relative; overflow: hidden; background-color: #111; transition: flex 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
@@ -97,14 +43,81 @@
         .info-dist-label { font-size: 1.2rem; color: #aaa; }
         .info-dist { font-size: 2.5rem; color: #fff; font-weight: bold; text-shadow: 0 0 15px #00d4ff; margin: 5px 0;}
 
-        /* ★ 新規：立体的な赤い三角形の自車アイコン（1261.png風） */
+        /* 立体的な赤い三角形の自車アイコン */
         .navi-marker-icon { display: flex; justify-content: center; align-items: center; width: 60px; height: 60px; }
         .navi-arrow { width: 45px; height: 45px; transform-origin: center 55%; transition: transform 0.2s ease-out; }
 
-        #toast { visibility: hidden; min-width: 300px; background-color: rgba(0, 0, 0, 0.85); color: #fff; text-align: center; border-radius: 10px; padding: 20px; position: fixed; z-index: 10000; left: 50%; bottom: 60px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #00d4ff; box-shadow: 0 5px 20px rgba(0,0,0,0.7); opacity: 0; transition: opacity 0.3s, bottom 0.3s; line-height: 1.5; }
-        #toast.show { visibility: visible; opacity: 1; bottom: 80px; }
+        /* 右上のデジタル時計 */
+        .top-right-clock { position: absolute; top: 20px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
 
-        .system-modal { position: fixed; top: 15%; left: 5%; right: 5%; bottom: 5%; background: linear-gradient(135deg, #1f1f1f 0%, #0d0d0d 100%); border: 2px solid #444; box-shadow: 0 15px 40px rgba(0,0,0,0.9); border-radius: 8px; z-index: 100000; display: none; flex-direction: column; padding: 25px; overflow-y: auto; }
+        /* ★ 下部：完全左右対称カーボン調ハードウェアパネル（下に配置） */
+        .hardware-panel { height: 95px; width: 100%; background: repeating-linear-gradient(45deg, #111 0px, #111 5px, #1a1a1a 5px, #1a1a1a 10px); border-top: 2px solid #000; box-shadow: 0 -5px 25px rgba(0,0,0,1); display: flex; justify-content: space-between; align-items: center; padding: 0 10px; z-index: 9999; position: relative; flex-shrink: 0; }
+        
+        /* 左右のボタングループ：これで絶対に左右均等の幅になる */
+        .hw-group { position: absolute; display: flex; align-items: center; gap: 8px; height: 100%; top: 0; width: calc(50% - 55px); }
+        .left-group { left: 10px; justify-content: flex-start; }
+        .right-group { right: 10px; justify-content: flex-end; }
+
+        /* メタルエンブレム */
+        .luxury-badge { background: linear-gradient(135deg, #444, #111); padding: 0 12px; border-radius: 4px; border: 1px solid #666; border-bottom: 2px solid #000; color: #d4d4d4; font-family: 'Times New Roman', serif; font-size: clamp(0.7rem, 1.2vw, 0.85rem); letter-spacing: 2px; text-shadow: -1px -1px 1px #000, 1px 1px 1px #666; box-shadow: 0 4px 8px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; height: 40px; white-space: nowrap; flex-shrink: 1; font-weight: bold; overflow: hidden; }
+
+        /* ボタン */
+        .hw-btn { flex: 1; min-width: 45px; max-width: 80px; background: linear-gradient(to bottom, #444 0%, #222 50%, #111 100%); border: 1px solid #000; border-top: 1px solid #666; border-bottom: 2px solid #000; color: #eee; height: 55px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: clamp(1rem, 2.5vw, 1.4rem); font-weight: 900; box-shadow: 0 8px 15px rgba(0,0,0,0.8), inset 0 3px 4px rgba(255,255,255,0.2), inset 0 -3px 4px rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.1s; white-space: nowrap; }
+        .hw-btn:active { transform: translateY(4px); box-shadow: 0 2px 4px rgba(0,0,0,0.9), inset 0 4px 8px rgba(0,0,0,0.8); background: linear-gradient(to bottom, #222 0%, #111 100%); border-top: 1px solid #111; }
+        .hw-btn-text { font-size: clamp(0.7rem, 1.5vw, 0.9rem); padding: 0 5px; }
+        .neon-blue { color: #e0f7ff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff, 0 0 20px #0044ff, 0 0 30px #0022cc; }
+
+        @keyframes colorShift { 0% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 33% { background-color: #00d4ff; box-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff; } 66% { background-color: #b000ff; box-shadow: 0 0 15px #b000ff, 0 0 30px #b000ff; } 100% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } }
+        .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: colorShift 5s infinite ease-in-out; opacity: 1; }
+        .neon-blue::after { animation: colorShift 3.5s infinite ease-in-out; }
+
+        /* ★ 中央に配置された超絶ギラギラ時計（絶対に楕円にならない・ド真ん中） */
+        .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #e0e0e0; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,212,255,1), 0 0 30px rgba(0,212,255,0.8); z-index: 10000; overflow: hidden; background: #000; }
+        
+        .analog-clock::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, #0a1128, #2a5298, #8ec5fc, #00f2fe, #2a5298, #0a1128, #8ec5fc, #00f2fe, #2a5298, #0a1128); animation: radarShine 6s linear infinite; z-index: 1; }
+        @keyframes radarShine { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .clock-facets { position: absolute; top:0; left:0; width:100%; height:100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0) 0deg 10deg, rgba(255,255,255,0.4) 10deg 20deg); mix-blend-mode: overlay; z-index: 2; pointer-events: none; }
+        .analog-clock::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); transform: rotate(30deg); animation: gemShine 4s infinite linear; pointer-events: none; z-index: 20; }
+        @keyframes gemShine { 0% { transform: translateX(-100%) rotate(30deg); } 20% { transform: translateX(100%) rotate(30deg); } 100% { transform: translateX(100%) rotate(30deg); } }
+
+        .clock-face { width: 100%; height: 100%; position: relative; z-index: 5; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%); border-radius: 50%; }
+        .clock-ring { position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.7); pointer-events: none; z-index: 6; }
+        .clock-index { position: absolute; background: #fff; box-shadow: 0 0 5px rgba(255,255,255,0.9); z-index: 7; }
+        .index-12 { top: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 10px; }
+        .index-6 { bottom: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 10px; }
+        .index-3 { right: 3px; top: 50%; transform: translateY(-50%); width: 10px; height: 4px; }
+        .index-9 { left: 3px; top: 50%; transform: translateY(-50%); width: 10px; height: 4px; }
+        
+        .sub-dial { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.8); position: absolute; left: 50%; transform: translateX(-50%); background: radial-gradient(circle, rgba(26,42,108,0.8) 0%, rgba(0,0,0,0.9) 100%); box-shadow: inset 0 0 8px rgba(0,0,0,1); z-index: 8; }
+        .top-dial { top: 12px; } .bottom-dial { bottom: 12px; }
+        .sub-label { position: absolute; bottom: 1px; width: 100%; text-align: center; font-size: 5px; color: #fff; line-height: 1; font-weight: bold; text-shadow: 0 0 4px #00d4ff; }
+        .sub-hand { width: 2px; height: 9px; background: #fff; position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.5s; box-shadow: 0 0 3px #000; }
+        
+        /* 高級時計のような細くて立体的な剣型の針 */
+        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.8)); }
+        .hour-hand { width: 4px; height: 20px; clip-path: polygon(50% 0%, 100% 20%, 50% 100%, 0% 20%); z-index: 10; background: linear-gradient(to right, #ccc 50%, #fff 50%); }
+        .minute-hand { width: 3px; height: 28px; clip-path: polygon(50% 0%, 100% 15%, 50% 100%, 0% 15%); z-index: 11; background: linear-gradient(to right, #ccc 50%, #fff 50%); }
+        .second-hand { width: 1px; height: 32px; background: #ff4500; filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.8)); z-index: 12; }
+        .center-dot { width: 5px; height: 5px; border-radius: 50%; background: #ff4500; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; box-shadow: 0 0 5px rgba(0,0,0,0.9); border: 1px solid #fff; }
+
+        /* モーダルやプレビュー */
+        .route-preview { position: fixed; bottom: -350px; left: 0; right: 0; background: linear-gradient(to bottom, #1a1a1a, #050505); border-top: 3px solid #00d4ff; z-index: 9950; padding: 20px; display: flex; flex-direction: column; gap: 15px; transition: bottom 0.3s ease-in-out; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
+        .route-preview.show { bottom: 95px; } 
+        .preview-header { font-size: 1.4rem; font-weight: bold; color: #fff; text-align: center; }
+        .preview-tabs { display: flex; gap: 10px; }
+        .preview-tab { flex: 1; text-align: center; padding: 15px; background: #333; border: 2px solid #555; border-radius: 5px; font-size: 1.2rem; font-weight: bold; color: #aaa; cursor: pointer; }
+        .preview-tab.active { background: #00d4ff; color: #000; border-color: #00d4ff; }
+        .preview-info { font-size: 1.4rem; text-align: center; color: #eee; padding: 15px; background: #000; border-radius: 5px; border: 1px solid #444; font-weight: bold;}
+        .preview-actions { display: flex; gap: 15px; }
+        .preview-btn { flex: 1; padding: 18px; text-align: center; font-size: 1.5rem; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        .preview-btn.cancel { background: #555; color: #fff; border: 1px solid #777;}
+        .preview-btn.start { background: #00d4ff; color: #000; box-shadow: 0 0 15px #00d4ff; }
+
+        #toast { visibility: hidden; min-width: 300px; background-color: rgba(0, 0, 0, 0.85); color: #fff; text-align: center; border-radius: 10px; padding: 20px; position: fixed; z-index: 10000; left: 50%; bottom: 115px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #00d4ff; box-shadow: 0 5px 20px rgba(0,0,0,0.7); opacity: 0; transition: opacity 0.3s, bottom 0.3s; line-height: 1.5; }
+        #toast.show { visibility: visible; opacity: 1; bottom: 115px; }
+
+        .system-modal { position: fixed; top: 15%; left: 5%; right: 5%; bottom: 15%; background: linear-gradient(135deg, #1f1f1f 0%, #0d0d0d 100%); border: 2px solid #444; box-shadow: 0 15px 40px rgba(0,0,0,0.9); border-radius: 8px; z-index: 100000; display: none; flex-direction: column; padding: 25px; overflow-y: auto; }
         .modal-header { font-size: 1.6rem; border-bottom: 2px solid #00d4ff; padding-bottom: 15px; margin-bottom: 20px; color: #fff; text-shadow: 0 0 10px #00d4ff; font-weight: bold; }
         .modal-btn { background: linear-gradient(to bottom, #333, #222); padding: 20px 25px; margin-bottom: 15px; border-radius: 5px; font-size: 1.3rem; border: 1px solid #555; cursor: pointer; display: flex; align-items: center; color: #ddd; transition: 0.1s;}
         .modal-btn:active { background: #00d4ff; color: #000; border-color: #00d4ff; }
@@ -125,28 +138,45 @@
         .result-item:active { background: #00d4ff; color: #000; }
         .result-name { font-size: 1.25rem; font-weight: bold; }
         .result-dist { font-size: 1.1rem; color: #00d4ff; background: rgba(0,212,255,0.1); padding: 6px 12px; border-radius: 20px; border: 1px solid #00d4ff; white-space: nowrap; margin-left: 15px; }
-
-        .route-preview { position: fixed; bottom: -350px; left: 0; right: 0; background: linear-gradient(to bottom, #1a1a1a, #050505); border-top: 3px solid #00d4ff; z-index: 9950; padding: 20px; display: flex; flex-direction: column; gap: 15px; transition: bottom 0.3s ease-in-out; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
-        .route-preview.show { bottom: 0px; } 
-        .preview-header { font-size: 1.4rem; font-weight: bold; color: #fff; text-align: center; }
-        .preview-tabs { display: flex; gap: 10px; }
-        .preview-tab { flex: 1; text-align: center; padding: 15px; background: #333; border: 2px solid #555; border-radius: 5px; font-size: 1.2rem; font-weight: bold; color: #aaa; cursor: pointer; }
-        .preview-tab.active { background: #00d4ff; color: #000; border-color: #00d4ff; }
-        .preview-info { font-size: 1.4rem; text-align: center; color: #eee; padding: 15px; background: #000; border-radius: 5px; border: 1px solid #444; font-weight: bold;}
-        .preview-actions { display: flex; gap: 15px; }
-        .preview-btn { flex: 1; padding: 18px; text-align: center; font-size: 1.5rem; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        .preview-btn.cancel { background: #555; color: #fff; border: 1px solid #777;}
-        .preview-btn.start { background: #00d4ff; color: #000; box-shadow: 0 0 15px #00d4ff; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- デジタル時計常時表示 -->
+        <!-- デジタル時計（地図の上に常時表示） -->
         <div class="top-right-clock" id="digitalClock">--:--</div>
 
-        <!-- ★ 上部：完全左右対称カーボン調ハードウェアパネル -->
+        <!-- 2画面分割メインディスプレイ -->
+        <div class="main-display" id="mainDisplay">
+            <!-- 左画面：地図領域 -->
+            <div id="mapScreen" class="map-screen dark-mode">
+                <div id="map"></div>
+                <div class="map-overlay-left">
+                    <div class="map-btn sound-btn" onclick="zoomInMap()">広域表示(＋)</div>
+                    <div class="map-btn sound-btn" onclick="zoomOutMap()">詳細表示(－)</div>
+                    <div class="map-btn sound-btn btn-active-mode" id="headingToggleBtn" onclick="toggleHeadingMode()" style="margin-top: 15px;">🧭 進行方向上</div>
+                </div>
+            </div>
+
+            <!-- 右画面：オートポップアップ案内パネル -->
+            <div id="infoScreen" class="info-screen">
+                <div class="info-content">
+                    <div class="info-sign" id="infoSign">
+                        <div class="info-sign-arrow" id="infoSignArrow">↑</div>
+                        <div class="info-sign-text" id="infoSignText">交差点</div>
+                    </div>
+                    <div class="info-road-view">
+                        <div class="road-surface"><div class="road-lane"></div></div>
+                    </div>
+                    <div class="info-bottom">
+                        <div class="info-dist-label">分岐まで 残り</div>
+                        <div class="info-dist"><span id="infoDistVal">--</span> m</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ★ 下部：完全左右対称カーボン調ハードウェアパネル -->
         <div class="hardware-panel">
-            
             <!-- 左グループ -->
             <div class="hw-group left-group">
                 <div class="luxury-badge">NEON EXCLUSIVE</div>
@@ -155,7 +185,7 @@
                 <div class="hw-btn sound-btn neon-blue" style="font-size: 1.8rem;" onclick="openYouTubeMusic()">♪</div>
             </div>
 
-            <!-- ★ 中央の超絶ギラギラ時計（絶対的ド真ん中） -->
+            <!-- ★ 中央の超絶ギラギラ時計（絶対に潰れずド真ん中） -->
             <div class="analog-clock" onclick="showToast('気象・方位取得中...')">
                 <div class="clock-facets"></div>
                 <div class="clock-face">
@@ -187,35 +217,7 @@
                 <div class="hw-btn sound-btn neon-blue" style="font-size: 1.5rem;" onclick="openNavMenu()">▲<br><span style="font-size:0.6rem; position:absolute; top:8px;">◯</span></div>
                 <div class="hw-btn sound-btn hw-btn-text" onclick="resetCamera()">現在地</div>
                 <div class="hw-btn sound-btn" style="font-size: 1.8rem;" onclick="openModal('settingsModal')">⚙</div>
-                <div class="luxury-badge">JZX100</div>
-            </div>
-
-        </div>
-
-        <div class="main-display" id="mainDisplay">
-            <div id="mapScreen" class="map-screen dark-mode">
-                <div id="map"></div>
-                <div class="map-overlay-left">
-                    <div class="map-btn sound-btn" onclick="zoomInMap()">広域表示(＋)</div>
-                    <div class="map-btn sound-btn" onclick="zoomOutMap()">詳細表示(－)</div>
-                    <div class="map-btn sound-btn btn-active-mode" id="headingToggleBtn" onclick="toggleHeadingMode()" style="margin-top: 15px;">🧭 進行方向上</div>
-                </div>
-            </div>
-
-            <div id="infoScreen" class="info-screen">
-                <div class="info-content">
-                    <div class="info-sign" id="infoSign">
-                        <div class="info-sign-arrow" id="infoSignArrow">↑</div>
-                        <div class="info-sign-text" id="infoSignText">交差点</div>
-                    </div>
-                    <div class="info-road-view">
-                        <div class="road-surface"><div class="road-lane"></div></div>
-                    </div>
-                    <div class="info-bottom">
-                        <div class="info-dist-label">分岐まで 残り</div>
-                        <div class="info-dist"><span id="infoDistVal">--</span> m</div>
-                    </div>
-                </div>
+                <div class="luxury-badge">TOYOTA CHASER</div>
             </div>
         </div>
 
@@ -312,16 +314,15 @@
         var userLat = 35.6074; var userLng = 140.1065; var isTracking = true;
         let isHeadingUp = true; let lastHeading = 0; let prevLat = null; let prevLng = null;
         
-        // ★ 自車位置アイコンを高級感のあるシャープなSVGに差し替え
         var naviIconHtml = `
-            <div id="navi-arrow" class="navi-arrow" style="filter: drop-shadow(0px 6px 8px rgba(0,0,0,0.8));">
+            <div id="navi-arrow" class="navi-arrow" style="filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.8));">
                 <svg viewBox="0 0 100 100" width="100%" height="100%">
                     <polygon points="50,0 10,95 50,75" fill="#ff2a2a" />
                     <polygon points="50,0 90,95 50,75" fill="#cc0000" />
                 </svg>
             </div>
         `;
-        var naviIcon = L.divIcon({ className: 'navi-marker-icon', html: naviIconHtml, iconSize: [60, 60], iconAnchor: [30, 40] });
+        var naviIcon = L.divIcon({ className: 'navi-marker-icon', html: naviIconHtml, iconSize: [55, 55], iconAnchor: [27, 35] });
         var userMarker = L.marker([userLat, userLng], {icon: naviIcon}).addTo(map);
 
         let destLatObj = null; let destLngObj = null; let destNameObj = '';
