@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>純正風カーナビ - GitHub Pages版</title>
+    <style>
+        /* 全体の初期化と背景（ダークな車内空間をイメージ） */
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: #050505;
+            color: #fff;
+            overflow: hidden; /* スクロール禁止 */
+            user-select: none; /* テキスト選択禁止 */
+        }
+        .container {
+            display: flex; flex-direction: column; height: 100vh;
+        }
+
+        /* ----- 1. マップ表示エリア（画面上部） ----- */
+        .map-screen {
+            flex: 1;
+            position: relative;
+            background-color: #e5e3df; /* 地図のベース色 */
+            background-image: 
+                linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px),
+                linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            overflow: hidden;
+            border-bottom: 4px solid #111;
+        }
+
+        /* ダミーの地図画像（実際はMapboxなどに置き換える） */
+        .map-placeholder {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #333; font-size: 1.5rem; font-weight: bold; text-align: center;
+        }
+
+        /* 地図上のオーバーレイボタン（1230.jpg 左側を再現） */
+        .map-overlay-left {
+            position: absolute; top: 20px; left: 20px;
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .map-btn {
+            background: rgba(30, 30, 30, 0.85);
+            border: 1px solid #555;
+            color: white; padding: 10px 15px; font-size: 1rem;
+            border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+        .map-btn:active { background: rgba(0, 0, 0, 0.9); }
+
+        /* ----- 2. ハードウェアボタン風パネル（画面下部） ----- */
+        .hardware-panel {
+            height: 90px;
+            background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #0a0a0a 100%);
+            border-top: 2px solid #444;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+        }
+
+        /* 物理ボタンのデザイン */
+        .hw-btn {
+            background: linear-gradient(to bottom, #111 0%, #222 100%);
+            border: 1px solid #000;
+            border-top: 1px solid #444;
+            color: #ccc;
+            height: 55px; min-width: 65px;
+            margin: 0 4px;
+            border-radius: 4px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem; font-weight: bold;
+            box-shadow: 0 4px 5px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: all 0.1s;
+            position: relative;
+        }
+        .hw-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.9);
+            color: #fff;
+        }
+        
+        /* テキスト系のボタン（現在地など） */
+        .hw-btn-text { font-size: 0.9rem; padding: 0 15px; }
+
+        /* ★ 青いネオンエフェクト（♪ と ナビマーク） ★ */
+        .neon-blue {
+            color: #e0f7ff;
+            text-shadow: 
+                0 0 5px  #00d4ff,
+                0 0 10px #008cff,
+                0 0 20px #0044ff,
+                0 0 30px #0022cc;
+        }
+
+        /* ボタン下部の赤いイルミネーション（1230.jpgのアクセントを再現） */
+        .hw-btn::after {
+            content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+            width: 30px; height: 2px;
+            background-color: #ff3333;
+            box-shadow: 0 0 3px #ff0000;
+            opacity: 0.7;
+        }
+        /* ネオンボタンのイルミは青にする */
+        .neon-blue::after { background-color: #008cff; box-shadow: 0 0 3px #008cff; }
+
+        /* ----- 3. トースト通知（機能していることを見せるUI） ----- */
+        #toast {
+            visibility: hidden; min-width: 250px;
+            background-color: rgba(0, 0, 0, 0.8); color: #fff;
+            text-align: center; border-radius: 30px; padding: 15px;
+            position: fixed; z-index: 100; left: 50%; bottom: 120px;
+            transform: translateX(-50%); font-size: 1.2rem;
+            border: 1px solid #444; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            opacity: 0; transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast.show { visibility: visible; opacity: 1; bottom: 140px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- マップ表示エリア -->
+        <div class="map-screen">
+            <div class="map-placeholder">
+                📍 現在地：千葉県周辺<br>
+                <span style="font-size: 1rem; color: #666;">※ここにMapboxなどの地図エンジンを組み込みます</span>
+            </div>
+            
+            <!-- 画面上のタッチUI（左側） -->
+            <div class="map-overlay-left">
+                <div class="map-btn" onclick="showToast('地図を広域表示にします')">広域表示</div>
+                <div class="map-btn" onclick="showToast('地図を詳細表示にします')">詳細表示</div>
+                <div class="map-btn" style="margin-top: 15px;" onclick="showToast('設定メニューを開きます')">ON 》</div>
+            </div>
+        </div>
+
+        <!-- ハードウェアボタン風パネル -->
+        <div class="hardware-panel">
+            <div class="hw-btn" onclick="showToast('前の曲へスキップ')">⏮</div>
+            <div class="hw-btn" onclick="showToast('次の曲へスキップ')">⏭</div>
+            <div class="hw-btn" onclick="showToast('お気に入りに登録しました')">★</div>
+            <div class="hw-btn hw-btn-text" onclick="showToast('AVソース切り替え画面')">AV</div>
+            
+            <!-- 青く光るボタン -->
+            <div class="hw-btn neon-blue" style="font-size: 1.5rem;" onclick="showToast('🎵 音楽プレーヤーを起動')">♪</div>
+            <!-- コンパスマーク（ナビメニュー） -->
+            <div class="hw-btn neon-blue" style="font-size: 1.3rem;" onclick="showToast('🧭 ナビゲーションメニューを起動')">▲<br><span style="font-size:0.5rem; position:absolute; top:8px;">◯</span></div>
+            
+            <div class="hw-btn hw-btn-text" onclick="showToast('📍 現在地（千葉周辺）にフォーカスしました')">現在地</div>
+            <div class="hw-btn" style="font-size: 1.5rem;" onclick="showToast('システム設定')">⚙</div>
+            <div class="hw-btn" onclick="showToast('音量を下げました')">－</div>
+            <div class="hw-btn" onclick="showToast('音量を上げました')">＋</div>
+        </div>
+    </div>
+
+    <!-- トースト通知用の要素 -->
+    <div id="toast">通知メッセージ</div>
+
+    <script>
+        // ボタンを押したときに画面上に通知（トースト）を表示する機能
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.className = "show";
+            
+            // 既存のタイマーがあればリセット
+            clearTimeout(toastTimeout);
+            
+            // 2.5秒後に通知を消す
+            toastTimeout = setTimeout(function(){ 
+                toast.className = toast.className.replace("show", ""); 
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
