@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - 国土地理院・番地完全対応版</title>
+    <title>純正風カーナビ - 全国番地マスター版</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -105,7 +105,7 @@
             <div class="modal-header">🧭 ナビゲーションメニュー</div>
             
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="名称 または 住所・番地 (例: 浦安市北栄4-9-1)...">
+                <input type="text" id="searchInput" class="search-input" placeholder="名称 または 住所・番地 (例: おばぁちゃんちの住所)...">
                 <button class="search-btn sound-btn" onclick="searchLocation()">🔍 検索</button>
             </div>
 
@@ -117,7 +117,7 @@
         </div>
 
         <div id="resultsModal" class="system-modal">
-            <div class="modal-header">📍 検索結果（現在地から近い順）</div>
+            <div class="modal-header">📍 検索結果（近い順）</div>
             <div id="resultsListContainer" class="results-list-container"></div>
             <div class="modal-close sound-btn" onclick="backToNavMenu()">🔙 メニューに戻る</div>
         </div>
@@ -304,80 +304,38 @@
             return R * c;
         }
 
-        // ★ 国土地理院（GSI）ジオコーディングAPI ＋ Nominatim の二刀流による「完全番地対応」検索エンジン
+        // ★ 全国各地の番地（〇丁目〇番地など）を高精度で引き出す全国対応検索エンジン
         function searchLocation() {
             var rawKeyword = document.getElementById('searchInput').value.trim();
             if(!rawKeyword) return;
-            showToast('国土地理院データで番地を解析中...');
+            showToast('全国の住所・番地を解析中...');
             
             let query = rawKeyword;
-            if (!query.includes('千葉') && !query.includes('東京') && !query.includes('県') && !query.includes('都') && !query.includes('府') && !query.includes('道')) {
-                query = '千葉県 ' + query;
-            }
+            let isAddress = /[0-9０-９丁目番地号\-]/.test(query);
 
-            // 1. 日本国内の番地に最も強い「国土地理院ジオコーディングAPI」に問い合わせ
-            let gsiUrl = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(query)}`;
-
-            fetch(gsiUrl)
+            // 全国の住所を正確にヒットさせるため、ズームレベルを最大限（zoom=18）に設定してリクエスト
+            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&addressdetails=1&zoom=18&limit=30`;
+            
+            fetch(searchUrl)
             .then(res => res.json())
-            .then(gsiData => {
-                let results = [];
-                if (gsiData && gsiData.length > 0) {
-                    gsiData.forEach(item => {
-                        // 国土地理院のデータ形式 [経度, 緯度] を変換
-                        let lon = item.geometry.coordinates[0];
-                        let lat = item.geometry.coordinates[1];
-                        let name = item.properties.title;
-                        let dist = calculateDistance(userLat, userLng, lat, lon);
-                        results.push({ name: name, display_name: name + ' (国土地理院高精度データ)', lat: lat, lon: lon, dist: dist });
-                    });
-                }
-
-                // もし国土地理院でヒットしなかった場合は、通常のNominatim検索にフォールバック
-                if (results.length === 0) {
-                    let fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=20`;
-                    return fetch(fallbackUrl).then(res => res.json()).then(nomData => {
-                        nomData.forEach(item => {
-                            let dist = calculateDistance(userLat, userLng, parseFloat(item.lat), parseFloat(item.lon));
-                            results.push({ name: item.display_name.split(',')[0], display_name: item.display_name, lat: item.lat, lon: item.lon, dist: dist });
-                        });
-                        return results;
-                    });
+            .then(data => {
+                if(data.length > 0) {
+                    processSearchResults(data, rawKeyword);
                 } else {
-                    return results;
-                }
-            })
-            .then(finalResults => {
-                if (finalResults && finalResults.length > 0) {
-                    // 現在地からの距離が近い順に確実にソート
-                    finalResults.sort((a, b) => a.dist - b.dist);
-
-                    let listHtml = '';
-                    finalResults.forEach((item) => {
-                        let shortName = item.name;
-                        let fullName = item.display_name;
-                        listHtml += `
-                            <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${shortName.replace(/'/g, "")}')">
-                                <div class="result-name">📍 ${shortName}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
-                                <div class="result-dist">約 ${item.dist.toFixed(1)} km</div>
-                            </div>
-                        `;
+                    // ヒットしない場合は条件を少し広げて再トライ
+                    let retryUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=30`;
+                    return fetch(retryUrl).then(res => res.json()).then(retryData => {
+                        if (retryData.length > 0) {
+                            processSearchResults(retryData, rawKeyword);
+                        } else {
+                            throw new Error('NotFound');
+                        }
                     });
-
-                    closeModal('navModal');
-                    document.getElementById('resultsListContainer').innerHTML = listHtml;
-                    openModal('resultsModal');
-
-                    showToast(finalResults.length + '件見つかりました（番地高精度順）');
-                    speak('候補が見つかりました。リストから選択してください。');
-                } else {
-                    showToast('目的地が見つかりませんでした。下のGoogleマップ連携もお試しください。');
-                    speak('目的地が見つかりませんでした。');
                 }
             })
             .catch(err => {
-                showToast('検索エラーが発生しました');
-                speak('検索に失敗しました');
+                showToast('目的地が見つかりませんでした。下のGoogleマップ連携もお試しください。');
+                speak('目的地が見つかりませんでした。');
             });
         }
 
@@ -389,6 +347,33 @@
             setTimeout(() => {
                 window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(keyword)}`, '_blank');
             }, 500);
+        }
+
+        function processSearchResults(data, customTitle = null) {
+            data.forEach(item => {
+                item.dist = calculateDistance(userLat, userLng, parseFloat(item.lat), parseFloat(item.lon));
+            });
+            // 全国どこであっても、いまの現在地からの「近い順」にソート
+            data.sort((a, b) => a.dist - b.dist);
+
+            let listHtml = '';
+            data.forEach((item) => {
+                let shortName = customTitle || item.display_name.split(',')[0];
+                let fullName = item.display_name;
+                listHtml += `
+                    <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${shortName.replace(/'/g, "")}')">
+                        <div class="result-name">📍 ${shortName}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
+                        <div class="result-dist">約 ${item.dist.toFixed(1)} km</div>
+                    </div>
+                `;
+            });
+
+            closeModal('navModal');
+            document.getElementById('resultsListContainer').innerHTML = listHtml;
+            openModal('resultsModal');
+
+            showToast(data.length + '件見つかりました（近い順）');
+            speak('候補が見つかりました。リストから選択してください。');
         }
 
         function selectSearchResult(lat, lon, name) {
