@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - 完全内製ハイブリッドエンジン版</title>
-    <!-- 軽量地図エンジン (Leaflet) -->
+    <title>純正風カーナビ - リルート＆ヘディングアップ完全対応版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
         .container { display: flex; flex-direction: column; height: 100vh; }
         
-        .map-screen { flex: 1; position: relative; border-bottom: 4px solid #111; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
-        /* ダークモード地図フィルター */
+        /* ★ 地図を回転させるための特大コンテナ設定 */
+        .map-screen { flex: 1; position: relative; border-bottom: 4px solid #111; overflow: hidden; background-color: #111; }
+        #map { position: absolute; top: -35%; left: -35%; width: 170%; height: 170%; transition: transform 0.3s linear; transform-origin: center center; }
         .dark-mode .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
         
-        .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9900; display: flex; flex-direction: column; gap: 5px; }
-        .map-btn { background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: white; padding: 10px 15px; font-size: 1rem; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; }
-        .map-btn:active { background: rgba(0, 0, 0, 0.9); }
+        .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9900; display: flex; flex-direction: column; gap: 8px; }
+        .map-btn { background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: white; padding: 12px 15px; font-size: 1rem; font-weight: bold; border-radius: 6px; box-shadow: 2px 2px 8px rgba(0,0,0,0.6); cursor: pointer; text-align: center;}
+        .map-btn:active { background: rgba(0, 0, 0, 0.9); transform: scale(0.95); }
+        .btn-active-mode { border: 1px solid #00d4ff; color: #00d4ff; box-shadow: 0 0 10px rgba(0,212,255,0.4); }
         
         /* 下部ハードウェアパネル */
         .hardware-panel { height: 90px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #0a0a0a 100%); border-top: 2px solid #444; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 9999; position: relative; }
@@ -27,12 +27,7 @@
         .hw-btn-text { font-size: 0.9rem; padding: 0 15px; }
         .neon-blue { color: #e0f7ff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff, 0 0 20px #0044ff, 0 0 30px #0022cc; }
 
-        @keyframes colorShift {
-            0% { background-color: #ff3333; box-shadow: 0 0 4px #ff0000; }
-            33% { background-color: #00d4ff; box-shadow: 0 0 4px #00d4ff; }
-            66% { background-color: #b000ff; box-shadow: 0 0 4px #b000ff; }
-            100% { background-color: #ff3333; box-shadow: 0 0 4px #ff0000; }
-        }
+        @keyframes colorShift { 0% { background-color: #ff3333; box-shadow: 0 0 4px #ff0000; } 33% { background-color: #00d4ff; box-shadow: 0 0 4px #00d4ff; } 66% { background-color: #b000ff; box-shadow: 0 0 4px #b000ff; } 100% { background-color: #ff3333; box-shadow: 0 0 4px #ff0000; } }
         .hw-btn::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 30px; height: 3px; animation: colorShift 6s infinite ease-in-out; opacity: 0.85; }
         .neon-blue::after { animation: colorShift 4s infinite ease-in-out; }
         
@@ -47,14 +42,9 @@
         .modal-header.settings-header { border-bottom: 2px solid #aaa; text-shadow: none; color: #eee; }
         .modal-btn { background: linear-gradient(to bottom, #333, #222); padding: 20px 25px; margin-bottom: 15px; border-radius: 5px; font-size: 1.3rem; border: 1px solid #555; cursor: pointer; display: flex; align-items: center; color: #ddd; transition: 0.1s;}
         .modal-btn:active { background: #00d4ff; color: #000; border-color: #00d4ff; }
-        .modal-btn.settings-btn:active { background: #888; color: #fff; }
-        .modal-icon { margin-right: 20px; font-size: 1.8rem; }
-        .modal-close { background: linear-gradient(to bottom, #800, #500); padding: 18px; border-radius: 5px; text-align: center; font-size: 1.3rem; margin-top: auto; cursor: pointer; border: 1px solid #f55; color: #fff; font-weight: bold; }
-        .modal-close:active { background: #f00; transform: scale(0.98); }
-
+        
         .search-container { display: flex; gap: 10px; margin-bottom: 20px; }
         .search-input { flex: 1; padding: 15px; border-radius: 5px; border: 1px solid #555; background: #222; color: #fff; font-size: 1.2rem; }
-        .search-input::placeholder { color: #888; }
         .search-btn { background: #00d4ff; color: #000; padding: 15px 25px; border-radius: 5px; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
         .search-btn:active { background: #00a0cc; }
 
@@ -79,17 +69,18 @@
 </head>
 <body>
     <div class="container">
-        <!-- アプリ内完結の地図画面（1本指でスワイプ操作可能） -->
+        <!-- 地図画面（アプリ内完結型） -->
         <div id="mapScreen" class="map-screen dark-mode">
             <div id="map"></div>
             <div class="map-overlay-left">
                 <div class="map-btn sound-btn" onclick="zoomInMap()">広域表示(＋)</div>
                 <div class="map-btn sound-btn" onclick="zoomOutMap()">詳細表示(－)</div>
-                <div class="map-btn sound-btn" style="margin-top: 15px;" onclick="requestDeviceOrientation()">コンパス許可</div>
+                <!-- ★ 新搭載：ヘディングアップ（進行方向上）切替ボタン -->
+                <div class="map-btn sound-btn btn-active-mode" id="headingToggleBtn" onclick="toggleHeadingMode()" style="margin-top: 15px;">🧭 進行方向上</div>
+                <div class="map-btn sound-btn" onclick="requestDeviceOrientation()" id="compassBtn" style="margin-top: 8px;">センサー許可</div>
             </div>
         </div>
 
-        <!-- ルート案内プレビュー -->
         <div id="routePreview" class="route-preview">
             <div class="preview-header" id="previewTitle">目的地: ---</div>
             <div class="preview-tabs">
@@ -103,7 +94,6 @@
             </div>
         </div>
 
-        <!-- ナビゲーションメニュー -->
         <div id="navModal" class="system-modal">
             <div class="modal-header">🧭 ナビゲーションメニュー</div>
             
@@ -118,24 +108,20 @@
             <div class="modal-close sound-btn" onclick="closeModal('navModal')">閉じる</div>
         </div>
 
-        <!-- 検索結果リスト -->
         <div id="resultsModal" class="system-modal">
             <div class="modal-header">📍 検索結果（現在地から近い順）</div>
             <div id="resultsListContainer" class="results-list-container"></div>
             <div class="modal-close sound-btn" onclick="backToNavMenu()">🔙 メニューに戻る</div>
         </div>
 
-        <!-- システム設定 -->
         <div id="settingsModal" class="system-modal">
             <div class="modal-header settings-header">⚙ システム設定</div>
             <div class="modal-btn sound-btn settings-btn" onclick="toggleMapMode()"><span class="modal-icon">🌙</span>地図 昼/夜 切替</div>
             <div class="modal-btn sound-btn settings-btn" id="voiceBtn" onclick="toggleVoice()"><span class="modal-icon">🗣️</span>音声案内：ON</div>
-            <div class="modal-btn sound-btn settings-btn" onclick="showToast('音量は下部の ＋ / － ボタンで調整できます')"><span class="modal-icon">🔊</span>システム音量設定</div>
-            <div class="modal-btn sound-btn settings-btn" onclick="showToast('Bluetooth機器を検索中...')"><span class="modal-icon">📱</span>Bluetooth 機器登録</div>
             <div class="modal-close sound-btn" onclick="closeModal('settingsModal')">閉じる</div>
         </div>
 
-        <!-- 下部ハードウェアパネル（ネオンUI） -->
+        <!-- 下部ハードウェアパネル -->
         <div class="hardware-panel">
             <div class="hw-btn sound-btn" onclick="showToast('◀◀')">⏮</div>
             <div class="hw-btn sound-btn" onclick="showToast('▶▶')">⏭</div>
@@ -195,10 +181,7 @@
         function openYouTubeMusic() {
             showToast('🎵 YouTube Musicを起動します');
             speak('ユーチューブミュージックを開きます');
-            setTimeout(() => {
-                window.location.href = 'youtubemusic://';
-                setTimeout(() => { window.location.href = 'https://music.youtube.com'; }, 1000);
-            }, 500);
+            setTimeout(() => { window.location.href = 'youtubemusic://'; setTimeout(() => { window.location.href = 'https://music.youtube.com'; }, 1000); }, 500);
         }
 
         let appVolume = 1.0; 
@@ -208,8 +191,7 @@
                 showToast('🔊 音量: 大 (MAX)'); speak('音量を大きくしました');
             } else {
                 if (appVolume === 1.0) appVolume = 0.5; else appVolume = 0;
-                if (appVolume === 0) { showToast('🔇 音声案内: ミュート'); } 
-                else { showToast('🔉 音量: 中'); speak('音量を下げました'); }
+                if (appVolume === 0) { showToast('🔇 音声案内: ミュート'); } else { showToast('🔉 音量: 中'); speak('音量を下げました'); }
             }
         }
 
@@ -226,60 +208,134 @@
             voiceGuidance = !voiceGuidance;
             const btn = document.getElementById('voiceBtn');
             if(voiceGuidance) {
-                btn.innerHTML = '<span class="modal-icon">🗣️</span>音声案内：ON';
-                showToast('🗣️ 音声案内をオンにしました'); speak('音声案内をオンにしました');
+                btn.innerHTML = '<span class="modal-icon">🗣️</span>音声案内：ON'; showToast('🗣️ 音声案内をオンにしました'); speak('音声案内をオンにしました');
             } else {
-                btn.innerHTML = '<span class="modal-icon">🔇</span>音声案内：OFF';
-                showToast('🔇 音声案内をオフにしました');
+                btn.innerHTML = '<span class="modal-icon">🔇</span>音声案内：OFF'; showToast('🔇 音声案内をオフにしました');
             }
         }
 
-        // --- 地図エンジンのセットアップ（1本指でスワイプ操作可能！） ---
-        var map = L.map('map', { zoomControl: false }).setView([35.6074, 140.1065], 14);
+        // --- 地図エンジンのセットアップ ---
+        var map = L.map('map', { zoomControl: false }).setView([35.6074, 140.1065], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
 
-        var userLat = 35.6074; var userLng = 140.1065; var isTracking = true;
+        var userLat = 35.6074; var userLng = 140.1065; 
+        var isTracking = true;
+        let isHeadingUp = true; // デフォルトでヘディングアップ（進行方向上）モード
+        let lastHeading = 0;
+
         var naviIcon = L.divIcon({ className: 'navi-marker-icon', html: '<div id="navi-arrow" class="navi-arrow"></div>', iconSize: [40, 40], iconAnchor: [20, 20] });
         var userMarker = L.marker([userLat, userLng], {icon: naviIcon}).addTo(map);
 
-        // 長押しで目的地指定
-        map.on('contextmenu', function(e) {
-            let lat = e.latlng.lat;
-            let lon = e.latlng.lng;
-            playBeep();
-            if(confirm('この場所を目的地に設定しますか？')) {
-                startRoute(lat, lon, '指定した地点');
-            }
-        });
+        // ★ リルート用データ保管
+        let destLatObj = null; let destLngObj = null; let destNameObj = '';
+        let routeLineCoords = []; 
+        let offRouteCount = 0; let isRecalculating = false;
 
+        // ★ 自動リルート計算（ルートからの距離算出）
+        function distToSegmentSquared(p, v, w) {
+            let l2 = Math.pow(v.lng - w.lng, 2) + Math.pow(v.lat - w.lat, 2);
+            if (l2 === 0) return Math.pow(p.lng - v.lng, 2) + Math.pow(p.lat - v.lat, 2);
+            let t = ((p.lng - v.lng) * (w.lng - v.lng) + (p.lat - v.lat) * (w.lat - v.lat)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.pow(p.lng - (v.lng + t * (w.lng - v.lng)), 2) + Math.pow(p.lat - (v.lat + t * (w.lat - v.lat)), 2);
+        }
+        function getDistToRouteKM(lat, lng) {
+            if(!routeLineCoords || routeLineCoords.length < 2) return 0;
+            let p = {lat: lat, lng: lng};
+            let minDistSq = Infinity;
+            for(let i=0; i < routeLineCoords.length - 1; i++) {
+                let v = {lat: routeLineCoords[i][1], lng: routeLineCoords[i][0]};
+                let w = {lat: routeLineCoords[i+1][1], lng: routeLineCoords[i+1][0]};
+                let dSq = distToSegmentSquared(p, v, w);
+                if(dSq < minDistSq) minDistSq = dSq;
+            }
+            return Math.sqrt(minDistSq) * 111; // 1度 ≒ 111kmとして簡易計算
+        }
+
+        // GPS監視ループ
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(function(position) {
-                userLat = position.coords.latitude; userLng = position.coords.longitude;
+                userLat = position.coords.latitude; 
+                userLng = position.coords.longitude;
                 userMarker.setLatLng([userLat, userLng]);
-                if(isTracking && !isRouting) map.setView([userLat, userLng]);
-                if (position.coords.heading !== null && !isCompassActive) updateArrowRotation(position.coords.heading);
+                
+                if(isTracking) map.setView([userLat, userLng]);
+                if (position.coords.heading !== null) updateArrowRotation(position.coords.heading);
+
+                // ★ リルート判定（案内中のみ実行）
+                if (isRouting && !isRecalculating && destLatObj !== null) {
+                    let distKM = getDistToRouteKM(userLat, userLng);
+                    if (distKM > 0.05) { // 50m以上ルートから外れたら
+                        offRouteCount++;
+                        if (offRouteCount >= 2) { // 連続2回で外れたらリルート発動
+                            triggerReroute();
+                        }
+                    } else {
+                        offRouteCount = 0; // ルート上ならカウントリセット
+                    }
+                }
             }, function(error) {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
         }
 
-        var isCompassActive = false;
+        // ★ 新機能：進行方向（ヘディングアップ）と北上（ノースアップ）の切替
+        function toggleHeadingMode() {
+            isHeadingUp = !isHeadingUp;
+            let btn = document.getElementById('headingToggleBtn');
+            if(isHeadingUp) {
+                btn.innerHTML = '🧭 進行方向上';
+                btn.classList.add('btn-active-mode');
+                showToast('マップを「進行方向上」にしました');
+                updateArrowRotation(lastHeading);
+            } else {
+                btn.innerHTML = '🧭 北を上 (固定)';
+                btn.classList.remove('btn-active-mode');
+                showToast('マップを「北を上」にしました');
+                document.getElementById('map').style.transform = `rotate(0deg)`;
+                updateArrowRotation(lastHeading);
+            }
+        }
+
+        // 矢印とマップ自体の回転ロジック
+        function updateArrowRotation(degree) {
+            lastHeading = degree;
+            var arrowElement = document.getElementById('navi-arrow');
+            var mapElement = document.getElementById('map');
+            
+            if (isHeadingUp && isTracking) {
+                // 地図全体をマイナス方向に回転させて、進行方向を真上にする
+                mapElement.style.transform = `rotate(${-degree}deg)`;
+                if (arrowElement) arrowElement.style.transform = `rotate(${degree}deg)`; // 矢印は相殺して画面上を向く
+            } else {
+                mapElement.style.transform = `rotate(0deg)`; // 地図は北上
+                if (arrowElement) arrowElement.style.transform = `rotate(${degree}deg)`; // 矢印だけ回る
+            }
+        }
+
         function requestDeviceOrientation() {
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(permissionState => {
-                    if (permissionState === 'granted') { window.addEventListener('deviceorientation', handleOrientation, false); isCompassActive = true; event.target.style.display = 'none'; }
+                DeviceOrientationEvent.requestPermission().then(state => {
+                    if (state === 'granted') { window.addEventListener('deviceorientation', handleOrientation, false); document.getElementById('compassBtn').style.display='none';}
                 }).catch(console.error);
-            } else { window.addEventListener('deviceorientation', handleOrientation, false); isCompassActive = true; event.target.style.display = 'none'; }
+            } else { window.addEventListener('deviceorientation', handleOrientation, false); document.getElementById('compassBtn').style.display='none';}
         }
         function handleOrientation(event) {
             var heading = event.webkitCompassHeading ? event.webkitCompassHeading : (event.alpha ? 360 - event.alpha : 0);
             updateArrowRotation(heading);
         }
-        function updateArrowRotation(degree) {
-            var arrowElement = document.getElementById('navi-arrow');
-            if (arrowElement) arrowElement.style.transform = 'rotate(' + degree + 'deg)';
-        }
 
-        map.on('dragstart', function() { isTracking = false; });
-        function resetCamera() { isTracking = true; isRouting = false; map.setView([userLat, userLng], 15); showToast('📍 現在地にフォーカスしました'); }
+        // 手で地図を触ったときは回転をリセット（ノースアップのスクロールモード）
+        map.on('dragstart', function() { 
+            isTracking = false; 
+            document.getElementById('map').style.transform = `rotate(0deg)`;
+        });
+        
+        function resetCamera() { 
+            isTracking = true; 
+            isRouting = false; 
+            map.setView([userLat, userLng], 16); 
+            showToast('📍 現在地にフォーカスしました'); 
+            updateArrowRotation(lastHeading);
+        }
         function zoomInMap() { map.zoomIn(); }
         function zoomOutMap() { map.zoomOut(); }
         
@@ -292,8 +348,7 @@
         function toggleMapMode() {
             closeModal('settingsModal');
             var mapScreen = document.getElementById('mapScreen');
-            if (isDarkMode) { mapScreen.classList.remove('dark-mode'); showToast('🌞 昼間モード'); }
-            else { mapScreen.classList.add('dark-mode'); showToast('🌙 夜間モード'); }
+            if (isDarkMode) { mapScreen.classList.remove('dark-mode'); showToast('🌞 昼間モード'); } else { mapScreen.classList.add('dark-mode'); showToast('🌙 夜間モード'); }
             isDarkMode = !isDarkMode;
         }
 
@@ -301,215 +356,152 @@
         let currentRouteDist = 0; let currentRouteTime = 0; let currentRouteDest = ''; let currentRouteMode = 'toll';
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            var R = 6371;
-            var dLat = (lat2 - lat1) * Math.PI / 180;
-            var dLon = (lon2 - lon1) * Math.PI / 180;
-            var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                    Math.sin(dLon/2) * Math.sin(dLon/2);
-            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
+            var R = 6371; var dLat = (lat2 - lat1) * Math.PI / 180; var dLon = (lon2 - lon1) * Math.PI / 180;
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c;
         }
 
-        // ★ 国土地理院 ＆ OSM ハイブリッドAI検索エンジン（完全内蔵）
         function smartSearchLocation() {
             var rawKeyword = document.getElementById('searchInput').value.trim();
             if(!rawKeyword) return;
-            showToast('Neon独自のハイブリッドAIで検索中...');
+            showToast('AI検索エンジンで解析中...');
             
-            // 入力された文字に「数字」が含まれるか判定（番地なのか施設名なのか見分ける）
             let hasNumbers = /[0-9０-９]/.test(rawKeyword);
-
             if (hasNumbers) {
-                // 番地が含まれる場合は、番地に特化した「国土地理院API」を最優先で呼び出す
                 let gsiUrl = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(rawKeyword)}`;
                 fetch(gsiUrl).then(res => res.json()).then(data => {
                     if(data && data.length > 0) {
-                        // 国土地理院のデータを使いやすい形に変換
                         let results = data.map(item => {
-                            let lon = item.geometry.coordinates[0];
-                            let lat = item.geometry.coordinates[1];
-                            let title = item.properties.title;
-                            return { lat: lat, lon: lon, name: title, display_name: title + ' (国土地理院 高精度番地)', dist: calculateDistance(userLat, userLng, lat, lon) };
+                            let lon = item.geometry.coordinates[0]; let lat = item.geometry.coordinates[1]; let title = item.properties.title;
+                            return { lat: lat, lon: lon, name: title, display_name: title + ' (高精度番地)', dist: calculateDistance(userLat, userLng, lat, lon) };
                         });
                         processMapResults(results, rawKeyword);
-                    } else {
-                        // 万が一国土地理院で見つからなければ世界地図検索に任せる
-                        fallbackToNominatim(rawKeyword);
-                    }
+                    } else { fallbackToNominatim(rawKeyword); }
                 }).catch(e => fallbackToNominatim(rawKeyword));
-            } else {
-                // 施設名（トヨタ博物館など数字がない場合）は、全国検索が得意なNominatimを使う
-                fallbackToNominatim(rawKeyword);
-            }
+            } else { fallbackToNominatim(rawKeyword); }
         }
 
-        // 施設・名称用の検索エンジン
         function fallbackToNominatim(query) {
             let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=25`;
             fetch(searchUrl).then(res => res.json()).then(data => {
                 if(data.length > 0) {
-                    let results = data.map(item => {
-                        return { lat: item.lat, lon: item.lon, name: item.display_name.split(',')[0], display_name: item.display_name, dist: calculateDistance(userLat, userLng, item.lat, item.lon) };
-                    });
+                    let results = data.map(item => { return { lat: item.lat, lon: item.lon, name: item.display_name.split(',')[0], display_name: item.display_name, dist: calculateDistance(userLat, userLng, item.lat, item.lon) }; });
                     processMapResults(results, query);
-                } else {
-                    showToast('目的地が見つかりませんでした。別の言葉でお試しください。');
-                    speak('目的地が見つかりませんでした。');
-                }
+                } else { showToast('目的地が見つかりませんでした'); speak('目的地が見つかりませんでした。'); }
             }).catch(err => { showToast('通信エラーが発生しました'); });
         }
 
-        // 検索結果をリストに表示
         function processMapResults(dataArray, customTitle) {
-            dataArray.sort((a, b) => a.dist - b.dist); // 現在地から近い順
-
+            dataArray.sort((a, b) => a.dist - b.dist);
             let listHtml = '';
             dataArray.forEach((item) => {
-                let shortName = item.name;
-                let fullName = item.display_name;
+                let shortName = item.name; let fullName = item.display_name;
                 listHtml += `
                     <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${shortName.replace(/'/g, "")}')">
                         <div class="result-name">📍 ${shortName}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
                         <div class="result-dist">約 ${item.dist.toFixed(1)} km</div>
-                    </div>
-                `;
+                    </div>`;
             });
-
-            closeModal('navModal');
-            document.getElementById('resultsListContainer').innerHTML = listHtml;
-            openModal('resultsModal');
-
-            showToast(dataArray.length + '件見つかりました（近い順）');
-            speak('候補が見つかりました。リストから選択してください。');
+            closeModal('navModal'); document.getElementById('resultsListContainer').innerHTML = listHtml; openModal('resultsModal');
+            showToast(dataArray.length + '件見つかりました'); speak('候補が見つかりました。選択してください。');
         }
 
-        function selectSearchResult(lat, lon, name) {
-            closeModal('resultsModal');
-            startRoute(lat, lon, name);
-        }
+        function selectSearchResult(lat, lon, name) { closeModal('resultsModal'); startRoute(lat, lon, name); }
 
         function startRoute(destLat, destLng, destName) {
             stopGuidance(true); 
+            destLatObj = destLat; destLngObj = destLng; destNameObj = destName;
             destinationMarker = L.marker([destLat, destLng]).addTo(map).bindPopup('🏁 ' + destName).openPopup();
             showToast('ルート探索中...');
             
             var primaryUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
-            
-            fetch(primaryUrl)
-            .then(res => { if (!res.ok) throw new Error(); return res.json(); })
-            .then(data => { processRouteData(data, destName); })
+            fetch(primaryUrl).then(res => res.json()).then(data => { processRouteData(data, destName, false); })
             .catch(err => {
                 var backupUrl = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
-                fetch(backupUrl).then(res => res.json()).then(data => { processRouteData(data, destName); })
+                fetch(backupUrl).then(res => res.json()).then(data => { processRouteData(data, destName, false); })
                 .catch(fallbackErr => { showToast('ルート検索に失敗しました'); speak('ルート計算に失敗しました'); });
             });
         }
 
-        function processRouteData(data, destName) {
+        // ★ 自動リルート実行
+        function triggerReroute() {
+            isRecalculating = true;
+            offRouteCount = 0;
+            showToast('ルートを外れました。再探索します...');
+            speak('ルートを外れました。リルートします。');
+            
+            var url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLngObj},${destLatObj}?overview=full&geometries=geojson`;
+            fetch(url).then(res => res.json()).then(data => {
+                if(routeLayer) map.removeLayer(routeLayer);
+                processRouteData(data, destNameObj, true); // true = リルートモード
+                isRecalculating = false;
+            }).catch(err => { isRecalculating = false; });
+        }
+
+        function processRouteData(data, destName, isReroute) {
             if(data.routes && data.routes.length > 0) {
                 var routeGeoJSON = data.routes[0].geometry;
+                routeLineCoords = routeGeoJSON.coordinates; // リルート計算用に保存
                 routeLayer = L.geoJSON(routeGeoJSON, { style: {color: '#00d4ff', weight: 8, opacity: 0.8} }).addTo(map);
-                map.fitBounds(routeLayer.getBounds(), {padding: [50, 50]});
                 
                 currentRouteDist = data.routes[0].distance / 1000;
                 currentRouteTime = Math.round(data.routes[0].duration / 60);
                 currentRouteDest = destName;
                 
-                document.getElementById('previewTitle').innerText = '目的地: ' + destName;
-                selectRouteMode('toll'); 
-                document.getElementById('routePreview').classList.add('show');
-            } else {
-                showToast('ルートが見つかりませんでした');
-                speak('ルートが見つかりませんでした');
+                if (!isReroute) {
+                    map.fitBounds(routeLayer.getBounds(), {padding: [50, 50]});
+                    document.getElementById('previewTitle').innerText = '目的地: ' + destName;
+                    selectRouteMode('toll'); 
+                    document.getElementById('routePreview').classList.add('show');
+                } else {
+                    // リルートの場合はプレビュー画面を出さずにそのまま案内を継続
+                    selectRouteMode(currentRouteMode); // 距離表示だけ更新
+                    map.setView([userLat, userLng], 16);
+                }
+            } else if (!isReroute) {
+                showToast('ルートが見つかりませんでした'); speak('ルートが見つかりませんでした');
             }
         }
 
         function selectRouteMode(mode) {
             currentRouteMode = mode;
-            document.getElementById('tabToll').classList.remove('active');
-            document.getElementById('tabLocal').classList.remove('active');
-            
-            let timeMin = currentRouteTime;
-            let costText = "無料";
-            
+            document.getElementById('tabToll').classList.remove('active'); document.getElementById('tabLocal').classList.remove('active');
+            let timeMin = currentRouteTime; let costText = "無料";
             if(mode === 'toll') {
                 document.getElementById('tabToll').classList.add('active');
-                if(currentRouteDist > 5) {
-                    let cost = Math.floor((150 + (currentRouteDist * 24.6)) / 10) * 10;
-                    costText = `約 ${cost} 円`;
-                }
+                if(currentRouteDist > 5) { costText = `約 ${Math.floor((150 + (currentRouteDist * 24.6)) / 10) * 10} 円`; }
             } else {
-                document.getElementById('tabLocal').classList.add('active');
-                costText = "無料 (一般道)";
-                timeMin = Math.round(timeMin * 1.5);
+                document.getElementById('tabLocal').classList.add('active'); costText = "無料 (一般道)"; timeMin = Math.round(timeMin * 1.5);
             }
-            
             document.getElementById('previewInfo').innerText = `距離: ${currentRouteDist.toFixed(1)} km | 時間: 約 ${timeMin} 分 | 料金: ${costText}`;
         }
 
         function startGuidance() {
             document.getElementById('routePreview').classList.remove('show');
-            isRouting = true;
-            isTracking = true; 
-            map.setView([userLat, userLng], 15);
-            
+            isRouting = true; isTracking = true; offRouteCount = 0;
+            map.setView([userLat, userLng], 16);
             let timeMin = currentRouteMode === 'local' ? Math.round(currentRouteTime * 1.5) : currentRouteTime;
             speak(`ルート案内を開始します。目的地まで、約 ${Math.round(currentRouteDist)}キロ、時間は ${timeMin}分です。`);
             showToast('🏁 案内を開始しました');
+            updateArrowRotation(lastHeading); // 案内開始と同時にヘディングアップ適用
         }
 
-        function goHome() {
-            closeModal('navModal');
-            startRoute(35.6560, 140.1030, '自宅');
-        }
-
-        function findPOIs() {
-            closeModal('navModal');
-            stopGuidance(true);
-            showToast('現在地周辺の施設を検索中...');
-            var query = `[out:json];(node["amenity"="convenience"](around:3000,${userLat},${userLng});node["amenity"="fuel"](around:3000,${userLat},${userLng}););out;`;
-            var url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
-            fetch(url).then(res => res.json()).then(data => {
-                if(data.elements && data.elements.length > 0) {
-                    data.elements.forEach(e => {
-                        var name = e.tags.name || '施設';
-                        var icon = e.tags.amenity === 'fuel' ? '⛽ ' : '🏪 ';
-                        var poi = L.marker([e.lat, e.lon]).addTo(map).bindPopup(icon + name);
-                        poiMarkers.push(poi);
-                    });
-                    map.setView([userLat, userLng], 13);
-                    speak(`周辺に${data.elements.length}件の施設が見つかりました`);
-                    showToast(data.elements.length + '件の施設が見つかりました');
-                } else {
-                    showToast('近くに施設が見つかりませんでした');
-                }
-            }).catch(err => {});
-        }
+        function goHome() { closeModal('navModal'); startRoute(35.6560, 140.1030, '自宅'); }
 
         function stopGuidance(silent = false) {
-            if(!silent) {
-                closeModal('navModal');
-                closeModal('resultsModal');
-            }
+            if(!silent) { closeModal('navModal'); closeModal('resultsModal'); }
             document.getElementById('routePreview').classList.remove('show');
             if(routeLayer) map.removeLayer(routeLayer);
             if(destinationMarker) map.removeLayer(destinationMarker);
-            poiMarkers.forEach(function(poi) { map.removeLayer(poi); });
-            poiMarkers = [];
-            isRouting = false;
-            if(!silent) {
-                showToast('🛑 案内を終了しました');
-                resetCamera();
-            }
+            destLatObj = null; destLngObj = null; routeLineCoords = [];
+            isRouting = false; offRouteCount = 0;
+            if(!silent) { showToast('🛑 案内を終了しました'); resetCamera(); }
         }
 
         let toastTimeout;
         function showToast(message) {
-            const toast = document.getElementById("toast");
-            toast.innerText = message; toast.className = "show";
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3500);
+            const toast = document.getElementById("toast"); toast.innerText = message; toast.className = "show";
+            clearTimeout(toastTimeout); toastTimeout = setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3500);
         }
     </script>
 </body>
