@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - 安定ルート検索版</title>
+    <title>純正風カーナビ - アルティメット仕様</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -19,13 +19,22 @@
         .map-btn { background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: white; padding: 10px 15px; font-size: 1rem; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; }
         .map-btn:active { background: rgba(0, 0, 0, 0.9); }
         
+        /* 下部ハードウェアパネル */
         .hardware-panel { height: 90px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #0a0a0a 100%); border-top: 2px solid #444; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 9999; position: relative; }
         .hw-btn { background: linear-gradient(to bottom, #111 0%, #222 100%); border: 1px solid #000; border-top: 1px solid #444; color: #ccc; height: 55px; min-width: 65px; margin: 0 4px; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 5px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.2); cursor: pointer; position: relative; }
         .hw-btn:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.9); color: #fff; }
         .hw-btn-text { font-size: 0.9rem; padding: 0 15px; }
         .neon-blue { color: #e0f7ff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff, 0 0 20px #0044ff, 0 0 30px #0022cc; }
-        .hw-btn::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 30px; height: 2px; background-color: #ff3333; box-shadow: 0 0 3px #ff0000; opacity: 0.7; }
-        .neon-blue::after { background-color: #008cff; box-shadow: 0 0 3px #008cff; }
+
+        /* ★下部のライン：やんわり色が自動で変わるネオンアニメーション */
+        @keyframes colorShift {
+            0% { background-color: #ff3333; box-shadow: 0 0 4px #ff0000; }
+            33% { background-color: #00d4ff; box-shadow: 0 0 4px #00d4ff; }
+            66% { background-color: #b000ff; box-shadow: 0 0 4px #b000ff; }
+            100% { background-color: #ff3333; box-shadow: 0 0 4px #ff0000; }
+        }
+        .hw-btn::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 30px; height: 3px; animation: colorShift 6s infinite ease-in-out; opacity: 0.85; }
+        .neon-blue::after { animation: colorShift 4s infinite ease-in-out; }
         
         #toast { visibility: hidden; min-width: 300px; background-color: rgba(0, 0, 0, 0.85); color: #fff; text-align: center; border-radius: 10px; padding: 20px; position: fixed; z-index: 10000; left: 50%; bottom: 120px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #00d4ff; box-shadow: 0 5px 20px rgba(0,0,0,0.7); opacity: 0; transition: opacity 0.3s, bottom 0.3s; line-height: 1.5; }
         #toast.show { visibility: visible; opacity: 1; bottom: 140px; }
@@ -43,17 +52,18 @@
         .modal-close { background: linear-gradient(to bottom, #800, #500); padding: 18px; border-radius: 5px; text-align: center; font-size: 1.3rem; margin-top: auto; cursor: pointer; border: 1px solid #f55; color: #fff; font-weight: bold; }
         .modal-close:active { background: #f00; transform: scale(0.98); }
 
-        .search-container { display: flex; gap: 10px; margin-bottom: 25px; }
+        .search-container { display: flex; gap: 10px; margin-bottom: 15px; }
         .search-input { flex: 1; padding: 15px; border-radius: 5px; border: 1px solid #555; background: #222; color: #fff; font-size: 1.2rem; }
         .search-input::placeholder { color: #888; }
         .search-btn { background: #00d4ff; color: #000; padding: 15px 25px; border-radius: 5px; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
         .search-btn:active { background: #00a0cc; }
 
-        .results-list { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; margin-bottom: 15px; }
-        .result-item { background: #222; border: 1px solid #444; padding: 15px; border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        /* 検索結果リスト（スクラップ防止・スクロール対応） */
+        .results-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #444; padding: 10px; background: #111; border-radius: 5px; }
+        .result-item { background: #222; border: 1px solid #444; padding: 12px 15px; border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .result-item:active { background: #00d4ff; color: #000; }
-        .result-name { font-size: 1.2rem; font-weight: bold; }
-        .result-dist { font-size: 1rem; color: #00d4ff; }
+        .result-name { font-size: 1.1rem; font-weight: bold; }
+        .result-dist { font-size: 0.9rem; color: #00d4ff; white-space: nowrap; margin-left: 10px; }
 
         .route-preview { position: fixed; bottom: -350px; left: 0; right: 0; background: linear-gradient(to bottom, #1a1a1a, #050505); border-top: 3px solid #00d4ff; z-index: 9950; padding: 20px; display: flex; flex-direction: column; gap: 15px; transition: bottom 0.3s ease-in-out; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         .route-preview.show { bottom: 90px; } 
@@ -92,6 +102,7 @@
             </div>
         </div>
 
+        <!-- ナビゲーションメニュー -->
         <div id="navModal" class="system-modal">
             <div class="modal-header">🧭 ナビゲーションメニュー</div>
             
@@ -100,6 +111,7 @@
                 <button class="search-btn sound-btn" onclick="searchLocation()">🔍 検索</button>
             </div>
             
+            <!-- 検索結果リスト -->
             <div id="resultsList" class="results-list" style="display:none;"></div>
 
             <div class="modal-btn sound-btn" onclick="findPOIs()"><span class="modal-icon">🏪</span>現在地周辺の コンビニ・GS</div>
@@ -112,7 +124,7 @@
             <div class="modal-header settings-header">⚙ システム設定</div>
             <div class="modal-btn sound-btn settings-btn" onclick="toggleMapMode()"><span class="modal-icon">🌙</span>地図 昼/夜 切替</div>
             <div class="modal-btn sound-btn settings-btn" id="voiceBtn" onclick="toggleVoice()"><span class="modal-icon">🗣️</span>音声案内：ON</div>
-            <div class="modal-btn sound-btn settings-btn" onclick="showToast('音量はiPad本体のボタンで調整してください')"><span class="modal-icon">🔊</span>システム音量</div>
+            <div class="modal-btn sound-btn settings-btn" onclick="showToast('音量は下部の ＋ / － ボタンで調整できます')"><span class="modal-icon">🔊</span>システム音量設定</div>
             <div class="modal-btn sound-btn settings-btn" onclick="showToast('Bluetooth機器を検索中...')"><span class="modal-icon">📱</span>Bluetooth 機器登録</div>
             <div class="modal-close sound-btn" onclick="closeModal('settingsModal')">閉じる</div>
         </div>
@@ -122,28 +134,33 @@
             <div class="hw-btn sound-btn" onclick="showToast('▶▶')">⏭</div>
             <div class="hw-btn sound-btn" onclick="showToast('地点登録完了')">★</div>
             <div class="hw-btn sound-btn hw-btn-text" onclick="showToast('ソース切替 (ダミー)')">AV</div>
-            <div class="hw-btn sound-btn neon-blue" style="font-size: 1.5rem;" onclick="window.location.href='youtubemusic://'">♪</div>
+            
+            <!-- ★ ♪マーク：YouTube Musicへ強制起動 -->
+            <div class="hw-btn sound-btn neon-blue" style="font-size: 1.5rem;" onclick="openYouTubeMusic()">♪</div>
+            
             <div class="hw-btn sound-btn neon-blue" style="font-size: 1.3rem;" onclick="openModal('navModal')">▲<br><span style="font-size:0.5rem; position:absolute; top:8px;">◯</span></div>
             <div class="hw-btn sound-btn hw-btn-text" onclick="resetCamera()">現在地</div>
             <div class="hw-btn sound-btn" style="font-size: 1.5rem;" onclick="openModal('settingsModal')">⚙</div>
-            <div class="hw-btn sound-btn" onclick="showToast('音量は本体のボタンで調整してください')">－</div>
-            <div class="hw-btn sound-btn" onclick="showToast('音量は本体のボタンで調整してください')">＋</div>
+            
+            <!-- ★ 音量ダウン・アップボタン -->
+            <div class="hw-btn sound-btn" onclick="changeVolume(-1)">－</div>
+            <div class="hw-btn sound-btn" onclick="changeVolume(1)">＋</div>
         </div>
     </div>
     <div id="toast">通知メッセージ</div>
 
     <script>
+        // スリープ防止
         let wakeLock = null;
         async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
-            } catch (err) {}
+            try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
         }
         document.addEventListener('visibilitychange', async () => {
             if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock();
         });
         requestWakeLock();
 
+        // 操作音システム
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx = new AudioContext();
         function unlockAudio() { if(audioCtx.state === 'suspended') audioCtx.resume(); }
@@ -172,13 +189,48 @@
             });
         }
 
+        // ★ YouTube Music強制起動
+        function openYouTubeMusic() {
+            showToast('🎵 YouTube Musicを起動します');
+            speak('ユーチューブミュージックを開きます');
+            setTimeout(() => {
+                window.location.href = 'youtubemusic://';
+                // 万が一アプリが入っていない場合のフォールバック（ブラウザ版）
+                setTimeout(() => {
+                    window.location.href = 'https://music.youtube.com';
+                }, 1000);
+            }, 500);
+        }
+
+        // ★ 音量調整機能（＋／－ボタン）
+        let appVolume = 1.0; // 1.0 (最大), 0.5 (中), 0 (ミュート)
+        function changeVolume(direction) {
+            if (direction > 0) {
+                if (appVolume === 0) appVolume = 0.5;
+                else appVolume = 1.0;
+                showToast('🔊 音量: 大 (MAX)');
+                speak('音量を大きくしました');
+            } else {
+                if (appVolume === 1.0) appVolume = 0.5;
+                else appVolume = 0;
+                if (appVolume === 0) {
+                    showToast('🔇 音声案内: ミュート (消音)');
+                } else {
+                    showToast('🔉 音量: 中');
+                    speak('音量を下げました');
+                }
+            }
+        }
+
+        // 音声案内システム
         let voiceGuidance = true;
         function speak(text) {
-            if(!voiceGuidance) return;
+            if(!voiceGuidance || appVolume === 0) return;
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = 'ja-JP';
             msg.rate = 1.05; 
+            msg.volume = appVolume;
             window.speechSynthesis.speak(msg);
         }
 
@@ -258,12 +310,13 @@
             return R * c;
         }
 
+        // 検索とリスト表示
         function searchLocation() {
             var keyword = document.getElementById('searchInput').value;
             if(!keyword) return;
             showToast('検索中...');
             
-            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(keyword)}&countrycodes=jp&limit=10`;
+            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(keyword)}&countrycodes=jp&limit=15`;
             
             fetch(searchUrl)
             .then(res => res.json())
@@ -280,7 +333,7 @@
                         let fullName = item.display_name;
                         listHtml += `
                             <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${shortName.replace(/'/g, "")}')">
-                                <div class="result-name">📍 ${shortName}<br><span style="font-size:0.8rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
+                                <div class="result-name">📍 ${shortName}<br><span style="font-size:0.75rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
                                 <div class="result-dist">約 ${item.dist.toFixed(1)} km</div>
                             </div>
                         `;
@@ -289,7 +342,7 @@
                     let listContainer = document.getElementById('resultsList');
                     listContainer.innerHTML = listHtml;
                     listContainer.style.display = 'flex';
-                    showToast(data.length + '件見つかりました。選択してください。');
+                    showToast(data.length + '件見つかりました。リストから選択してください。');
                     speak('候補が見つかりました。リストから選択してください。');
 
                 } else {
@@ -306,35 +359,20 @@
             startRoute(lat, lon, name);
         }
 
-        // ★ 安定性の高い複数のルーティングサーバーを自動で切り替える賢いルート探索
         function startRoute(destLat, destLng, destName) {
             stopGuidance(true); 
             destinationMarker = L.marker([destLat, destLng]).addTo(map).bindPopup('🏁 ' + destName).openPopup();
             showToast('ルート探索中...');
             
-            // 第1候補の安定サーバー
             var primaryUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
             
             fetch(primaryUrl)
-            .then(res => {
-                if (!res.ok) throw new Error('Primary server error');
-                return res.json();
-            })
-            .then(data => {
-                processRouteData(data, destName);
-            })
+            .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+            .then(data => { processRouteData(data, destName); })
             .catch(err => {
-                // 第1候補がダメなら、バックアップ用の別サーバーで再試行
                 var backupUrl = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
-                fetch(backupUrl)
-                .then(res => res.json())
-                .then(data => {
-                    processRouteData(data, destName);
-                })
-                .catch(fallbackErr => {
-                    showToast('ルート検索に失敗しました。時間を置いて再度お試しください。');
-                    speak('ルートの計算に失敗しました。');
-                });
+                fetch(backupUrl).then(res => res.json()).then(data => { processRouteData(data, destName); })
+                .catch(fallbackErr => { showToast('ルート検索に失敗しました'); speak('ルート計算に失敗しました'); });
             });
         }
 
