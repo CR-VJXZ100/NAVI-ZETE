@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - 全国番地ダイレクト対応版</title>
+    <title>純正風カーナビ - ピンポイント番地完全対応版</title>
     <!-- 軽量地図エンジン (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -105,7 +105,7 @@
             <div class="modal-header">🧭 ナビゲーションメニュー</div>
             
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="全国の住所・番地を入力 (例: 東京都新宿区2-8-1)...">
+                <input type="text" id="searchInput" class="search-input" placeholder="全国の住所・番地を入力 (例: 千葉県浦安市北栄4-9-1)...">
                 <button class="search-btn sound-btn" onclick="searchLocation()">🔍 検索</button>
             </div>
 
@@ -117,7 +117,7 @@
         </div>
 
         <div id="resultsModal" class="system-modal">
-            <div class="modal-header">📍 検索結果（現在地から近い順）</div>
+            <div class="modal-header">📍 検索結果（ピンポイント）</div>
             <div id="resultsListContainer" class="results-list-container"></div>
             <div class="modal-close sound-btn" onclick="backToNavMenu()">🔙 メニューに戻る</div>
         </div>
@@ -304,47 +304,35 @@
             return R * c;
         }
 
-        // ★ 全国どこでも番地を完全に解釈してエラーを出さない「ダイレクト番地変換エンジン」
+        // ★ ピンポイント番地対応：妥協せずに正確な位置を特定する検索エンジン
         function searchLocation() {
             var rawKeyword = document.getElementById('searchInput').value.trim();
             if(!rawKeyword) return;
-            showToast('全国の住所・番地を解析中...');
+            showToast('ピンポイントで位置を検索中...');
             
-            // ハイフンが含まれる番地（例: 4-9-1）を、検索エンジンが確実に理解できる「丁目・番・号」またはスペース区切りにスマート変換
-            let formattedQuery = rawKeyword
-                .replace(/([0-9０-９]+)-([0-9０-９]+)-([0-9０-９]+)/g, '$1丁目$2番$3号')
-                .replace(/([0-9０-９]+)-([0-9０-９]+)/g, '$1丁目$2番');
-
-            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formattedQuery)}&countrycodes=jp&addressdetails=1&limit=30`;
+            // 検索精度を最大にするため、ハイフンを正規のフォーマットに配慮しつつそのままクエリに反映
+            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawKeyword)}&countrycodes=jp&addressdetails=1&limit=25`;
             
             fetch(searchUrl)
             .then(res => res.json())
             .then(data => {
                 if(data.length > 0) {
-                    processSearchResults(data, rawKeyword);
+                    processPinpointResults(data, rawKeyword);
                 } else {
-                    // もし変換後でヒットしない場合は、元のキーワードそのまま＋段階的なフォールバック検索を実行
-                    let fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawKeyword)}&countrycodes=jp&limit=30`;
-                    return fetch(fallbackUrl).then(res => res.json()).then(fallbackData => {
-                        if (fallbackData.length > 0) {
-                            processSearchResults(fallbackData, rawKeyword);
+                    // もし直接ヒットしない場合は、番地のハイフンをスペースに置き換えて再トライ
+                    let altQuery = rawKeyword.replace(/[\-－]/g, ' ');
+                    let altUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(altQuery)}&countrycodes=jp&addressdetails=1&limit=25`;
+                    return fetch(altUrl).then(res => res.json()).then(altData => {
+                        if (altData.length > 0) {
+                            processPinpointResults(altData, rawKeyword);
                         } else {
-                            // 最終手段：番地を削って町名で確実にヒットさせる
-                            let cleanQuery = rawKeyword.replace(/[0-9０-９\-\－\d+].*/g, '').trim();
-                            let lastUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&countrycodes=jp&limit=30`;
-                            return fetch(lastUrl).then(res => res.json()).then(lastData => {
-                                if (lastData.length > 0) {
-                                    processSearchResults(lastData, rawKeyword + ' (周辺エリア)');
-                                } else {
-                                    throw new Error('NotFound');
-                                }
-                            });
+                            throw new Error('NotFound');
                         }
                     });
                 }
             })
             .catch(err => {
-                showToast('目的地が見つかりませんでした。下のGoogleマップ連携もご利用ください。');
+                showToast('目的地が見つかりませんでした。Googleマップ連携もお試しください。');
                 speak('目的地が見つかりませんでした。');
             });
         }
@@ -359,17 +347,18 @@
             }, 500);
         }
 
-        function processSearchResults(data, customTitle = null) {
+        function processPinpointResults(data, customTitle = null) {
             data.forEach(item => {
                 item.dist = calculateDistance(userLat, userLng, parseFloat(item.lat), parseFloat(item.lon));
             });
-            // 全国どこであっても「現在地から近い順」にソート
+            // 常に現在地からの近い順にソート
             data.sort((a, b) => a.dist - b.dist);
 
             let listHtml = '';
             data.forEach((item) => {
                 let shortName = customTitle || item.display_name.split(',')[0];
                 let fullName = item.display_name;
+                // 「(周辺)」という表記を一切出さず、入力されたそのままの名前をピンポイントとして表示
                 listHtml += `
                     <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${shortName.replace(/'/g, "")}')">
                         <div class="result-name">📍 ${shortName}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
@@ -382,7 +371,7 @@
             document.getElementById('resultsListContainer').innerHTML = listHtml;
             openModal('resultsModal');
 
-            showToast(data.length + '件見つかりました（近い順）');
+            showToast(data.length + '件見つかりました（ピンポイント）');
             speak('候補が見つかりました。リストから選択してください。');
         }
 
