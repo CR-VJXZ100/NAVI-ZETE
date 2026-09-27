@@ -3,31 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - オート2画面＆上部立体ボタン版</title>
+    <title>純正風カーナビ - クロノグラフ搭載＆ヘディング完全対応版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
-        .container { display: flex; flex-direction: column; height: 100vh; }
+        .container { display: flex; flex-direction: column; height: 100vh; position: relative; }
         
         /* ★ 上部：超立体感ハードウェアパネル */
-        .hardware-panel { height: 100px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #050505 100%); border-bottom: 2px solid #000; box-shadow: 0 5px 20px rgba(0,0,0,0.9); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 9999; position: relative; }
-        .hw-btn { background: linear-gradient(to bottom, #444 0%, #222 50%, #111 100%); border: 1px solid #000; border-top: 1px solid #666; border-bottom: 2px solid #000; color: #eee; height: 60px; min-width: 70px; margin: 0 5px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 1.3rem; font-weight: 900; box-shadow: 0 8px 15px rgba(0,0,0,0.8), inset 0 3px 4px rgba(255,255,255,0.2), inset 0 -3px 4px rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.1s; }
+        .hardware-panel { height: 100px; background: linear-gradient(to bottom, #2b2b2b 0%, #151515 50%, #050505 100%); border-bottom: 2px solid #000; box-shadow: 0 5px 20px rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; gap: 15px; padding: 0 15px; z-index: 9999; position: relative; }
+        .hw-btn { background: linear-gradient(to bottom, #444 0%, #222 50%, #111 100%); border: 1px solid #000; border-top: 1px solid #666; border-bottom: 2px solid #000; color: #eee; height: 60px; min-width: 80px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 1.3rem; font-weight: 900; box-shadow: 0 8px 15px rgba(0,0,0,0.8), inset 0 3px 4px rgba(255,255,255,0.2), inset 0 -3px 4px rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.1s; }
         .hw-btn:active { transform: translateY(4px); box-shadow: 0 2px 4px rgba(0,0,0,0.9), inset 0 4px 8px rgba(0,0,0,0.8); background: linear-gradient(to bottom, #222 0%, #111 100%); border-top: 1px solid #111; }
-        .hw-btn-text { font-size: 1rem; padding: 0 15px; }
+        .hw-btn-text { font-size: 1.1rem; padding: 0 15px; }
         .neon-blue { color: #e0f7ff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff, 0 0 20px #0044ff, 0 0 30px #0022cc; }
 
-        /* ★ ネオンアニメーションの大型化・高輝度化 */
         @keyframes colorShift { 0% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 33% { background-color: #00d4ff; box-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff; } 66% { background-color: #b000ff; box-shadow: 0 0 15px #b000ff, 0 0 30px #b000ff; } 100% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } }
         .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 6px; border-radius: 4px; animation: colorShift 5s infinite ease-in-out; opacity: 1; }
         .neon-blue::after { animation: colorShift 3.5s infinite ease-in-out; }
+
+        /* ★ 新規：クロノグラフ風アナログ時計 (1259.jpg風) */
+        .analog-clock { width: 76px; height: 76px; border-radius: 50%; border: 4px solid #d4d4d4; background: radial-gradient(circle, #2a5298 0%, #152b57 100%); position: relative; box-shadow: 0 8px 15px rgba(0,0,0,0.8), inset 0 0 15px rgba(0,0,0,0.9); flex-shrink: 0; }
+        .clock-face { width: 100%; height: 100%; position: relative; }
+        .clock-index { position: absolute; background: #fff; box-shadow: 0 0 2px rgba(0,0,0,0.5); }
+        .index-12 { top: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 8px; }
+        .index-6 { bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 8px; }
+        .index-3 { right: 2px; top: 50%; transform: translateY(-50%); width: 8px; height: 4px; }
+        .index-9 { left: 2px; top: 50%; transform: translateY(-50%); width: 8px; height: 4px; }
         
-        /* 2画面構成のメインエリア */
+        .sub-dial { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.4); position: absolute; left: 50%; transform: translateX(-50%); background: radial-gradient(circle, #1a2a6c 0%, #0d173d 100%); box-shadow: inset 0 0 5px rgba(0,0,0,0.8); }
+        .top-dial { top: 12px; } .bottom-dial { bottom: 12px; }
+        .sub-label { position: absolute; bottom: 2px; width: 100%; text-align: center; font-size: 6px; color: #ccc; line-height: 1; font-weight: bold; }
+        .sub-hand { width: 2px; height: 10px; background: #fff; position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.5s; box-shadow: 0 0 2px #000; }
+        
+        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; background: #fff; transform: translateX(-50%) rotate(0deg); box-shadow: 0 0 4px rgba(0,0,0,0.6); }
+        .hour-hand { width: 4px; height: 18px; border-radius: 2px; z-index: 10; }
+        .minute-hand { width: 3px; height: 26px; border-radius: 2px; z-index: 11; }
+        .second-hand { width: 2px; height: 30px; background: #ff4500; z-index: 12; }
+        .center-dot { width: 6px; height: 6px; border-radius: 50%; background: #d4d4d4; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; box-shadow: 0 0 3px rgba(0,0,0,0.5); }
+
+        /* ★ 右上のデジタル時計 */
+        .top-right-clock { position: absolute; top: 115px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.4); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
+
+        /* 2画面構成メインエリア */
         .main-display { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
         
-        /* 左画面：地図（白い線バグ対策済み） */
+        /* 地図画面 */
         .map-screen { flex: 1; position: relative; overflow: hidden; background-color: #111; transition: flex 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        /* GPUレンダリング安定化で白い謎の線を消す */
         #map { position: absolute; top: -35%; left: -35%; width: 170%; height: 170%; transition: transform 0.3s linear; transform-origin: center center; transform: translateZ(0); will-change: transform; backface-visibility: hidden; }
         .leaflet-tile { outline: 1px solid transparent; backface-visibility: hidden; }
         .dark-mode .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
@@ -37,15 +58,12 @@
         .map-btn:active { background: rgba(0, 0, 0, 0.9); transform: scale(0.95); }
         .btn-active-mode { border: 1px solid #00d4ff; color: #00d4ff; box-shadow: 0 0 10px rgba(0,212,255,0.4); }
 
-        /* ★ 右画面：オートポップアップ情報パネル */
+        /* 右画面：オートポップアップ案内パネル */
         .info-screen { width: 0; opacity: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); background: linear-gradient(to bottom, #1a1a1a, #050505); border-left: 0px solid #00d4ff; display: flex; flex-direction: column; box-shadow: inset 10px 0 20px rgba(0,0,0,0.8); z-index: 9000;}
         .main-display.active-2screen .info-screen { width: 350px; opacity: 1; border-left: 3px solid #00d4ff; }
         .info-content { min-width: 320px; padding: 15px; display: flex; flex-direction: column; height: 100%; opacity: 0; transition: opacity 0.3s ease; }
         .main-display.active-2screen .info-content { opacity: 1; transition-delay: 0.2s; }
         
-        .info-clock { font-size: 3rem; text-align: right; color: #fff; margin-bottom: 20px; font-family: 'Helvetica Neue', Arial, sans-serif; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
-        
-        /* 案内中の緑看板＆道路 */
         .info-sign { background: linear-gradient(to bottom, #009944, #007733); border-radius: 6px; border: 2px solid #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100px; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.7);}
         .info-sign-arrow { font-size: 3.5rem; color: #fff; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-weight: bold; }
         .info-sign-text { font-size: 1.6rem; color: #fff; font-weight: bold; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-top: 5px;}
@@ -103,24 +121,46 @@
 </head>
 <body>
     <div class="container">
-        <!-- ★ 上部：超立体感ハードウェアパネル -->
+        <!-- 右上のデジタル時計 -->
+        <div class="top-right-clock" id="digitalClock">--:--</div>
+
+        <!-- ★ 上部ハードウェアパネル（ボタン整理＆時計追加） -->
         <div class="hardware-panel">
-            <div class="hw-btn sound-btn" onclick="showToast('◀◀')">⏮</div>
-            <div class="hw-btn sound-btn" onclick="showToast('▶▶')">⏭</div>
             <div class="hw-btn sound-btn" onclick="showToast('地点登録完了')">★</div>
             <div class="hw-btn sound-btn hw-btn-text" onclick="showToast('ソース切替 (ダミー)')">AV</div>
+            <div class="hw-btn sound-btn neon-blue" style="font-size: 1.8rem;" onclick="openYouTubeMusic()">♪</div>
             
-            <div class="hw-btn sound-btn neon-blue" style="font-size: 1.5rem;" onclick="openYouTubeMusic()">♪</div>
-            <div class="hw-btn sound-btn neon-blue" style="font-size: 1.3rem;" onclick="openNavMenu()">▲<br><span style="font-size:0.5rem; position:absolute; top:8px;">◯</span></div>
-            
+            <!-- ★ クロノグラフ風アナログ時計 -->
+            <div class="analog-clock" onclick="showToast('気象・方位取得中...')">
+                <div class="clock-face">
+                    <div class="clock-index index-12"></div>
+                    <div class="clock-index index-3"></div>
+                    <div class="clock-index index-6"></div>
+                    <div class="clock-index index-9"></div>
+                    
+                    <div class="sub-dial top-dial">
+                        <div class="sub-hand" id="tempHand"></div>
+                        <div class="sub-label">TEMP</div>
+                    </div>
+                    
+                    <div class="sub-dial bottom-dial">
+                        <div class="sub-hand" id="compassHand"></div>
+                        <div class="sub-label">DIR</div>
+                    </div>
+                    
+                    <div class="hand hour-hand" id="hourHand"></div>
+                    <div class="hand minute-hand" id="minuteHand"></div>
+                    <div class="hand second-hand" id="secondHand"></div>
+                    <div class="center-dot"></div>
+                </div>
+            </div>
+
+            <div class="hw-btn sound-btn neon-blue" style="font-size: 1.5rem;" onclick="openNavMenu()">▲<br><span style="font-size:0.6rem; position:absolute; top:8px;">◯</span></div>
             <div class="hw-btn sound-btn hw-btn-text" onclick="resetCamera()">現在地</div>
-            <div class="hw-btn sound-btn" style="font-size: 1.5rem;" onclick="openModal('settingsModal')">⚙</div>
-            
-            <div class="hw-btn sound-btn" onclick="changeVolume(-1)">－</div>
-            <div class="hw-btn sound-btn" onclick="changeVolume(1)">＋</div>
+            <div class="hw-btn sound-btn" style="font-size: 1.8rem;" onclick="openModal('settingsModal')">⚙</div>
         </div>
 
-        <!-- メインディスプレイ -->
+        <!-- 2画面分割メインディスプレイ -->
         <div class="main-display" id="mainDisplay">
             <!-- 左画面：地図領域 -->
             <div id="mapScreen" class="map-screen dark-mode">
@@ -129,24 +169,19 @@
                     <div class="map-btn sound-btn" onclick="zoomInMap()">広域表示(＋)</div>
                     <div class="map-btn sound-btn" onclick="zoomOutMap()">詳細表示(－)</div>
                     <div class="map-btn sound-btn btn-active-mode" id="headingToggleBtn" onclick="toggleHeadingMode()" style="margin-top: 15px;">🧭 進行方向上</div>
-                    <div class="map-btn sound-btn" onclick="requestDeviceOrientation()" id="compassBtn" style="margin-top: 8px;">センサー許可</div>
                 </div>
             </div>
 
-            <!-- ★ 右画面：オートポップアップ案内パネル -->
+            <!-- 右画面：オートポップアップ案内パネル -->
             <div id="infoScreen" class="info-screen">
                 <div class="info-content">
-                    <div class="info-clock" id="clockDisplay">--:--</div>
-                    <!-- 案内時の緑看板 -->
                     <div class="info-sign" id="infoSign">
                         <div class="info-sign-arrow" id="infoSignArrow">↑</div>
                         <div class="info-sign-text" id="infoSignText">交差点</div>
                     </div>
-                    <!-- 3D道路アニメーション -->
                     <div class="info-road-view">
                         <div class="road-surface"><div class="road-lane"></div></div>
                     </div>
-                    <!-- 残り距離 -->
                     <div class="info-bottom">
                         <div class="info-dist-label">分岐まで 残り</div>
                         <div class="info-dist"><span id="infoDistVal">--</span> m</div>
@@ -203,16 +238,20 @@
     <div id="toast">通知メッセージ</div>
 
     <script>
-        let wakeLock = null;
-        async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
-        document.addEventListener('visibilitychange', async () => { if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock(); });
-        requestWakeLock();
+        // デジタル時計とアナログ時計の更新
+        function updateClocks() {
+            let d = new Date();
+            let h = ('0' + d.getHours()).slice(-2);
+            let m = ('0' + d.getMinutes()).slice(-2);
+            document.getElementById('digitalClock').innerText = h + ':' + m;
 
-        // 時計更新
-        setInterval(() => {
-            let d = new Date(); let h = ('0' + d.getHours()).slice(-2); let m = ('0' + d.getMinutes()).slice(-2);
-            document.getElementById('clockDisplay').innerText = h + ':' + m;
-        }, 1000);
+            let hh = d.getHours() % 12; let mm = d.getMinutes(); let ss = d.getSeconds();
+            let hDeg = (hh * 30) + (mm * 0.5); let mDeg = mm * 6; let sDeg = ss * 6;
+            document.getElementById('hourHand').style.transform = `translateX(-50%) rotate(${hDeg}deg)`;
+            document.getElementById('minuteHand').style.transform = `translateX(-50%) rotate(${mDeg}deg)`;
+            document.getElementById('secondHand').style.transform = `translateX(-50%) rotate(${sDeg}deg)`;
+        }
+        setInterval(updateClocks, 1000); updateClocks();
 
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx = new AudioContext();
@@ -236,75 +275,81 @@
             });
         }
 
-        function openYouTubeMusic() {
-            showToast('🎵 YouTube Musicを起動します'); speak('ユーチューブミュージックを開きます');
-            setTimeout(() => { window.location.href = 'youtubemusic://'; setTimeout(() => { window.location.href = 'https://music.youtube.com'; }, 1000); }, 500);
-        }
-
-        let appVolume = 1.0; 
-        function changeVolume(direction) {
-            if (direction > 0) { if (appVolume === 0) appVolume = 0.5; else appVolume = 1.0; showToast('🔊 音量: 大 (MAX)'); speak('音量を大きくしました'); } 
-            else { if (appVolume === 1.0) appVolume = 0.5; else appVolume = 0; if (appVolume === 0) { showToast('🔇 音声案内: ミュート'); } else { showToast('🔉 音量: 中'); speak('音量を下げました'); } }
-        }
+        function openYouTubeMusic() { showToast('🎵 YouTube Musicを起動します'); speak('ユーチューブミュージックを開きます'); setTimeout(() => { window.location.href = 'youtubemusic://'; setTimeout(() => { window.location.href = 'https://music.youtube.com'; }, 1000); }, 500); }
 
         let voiceGuidance = true;
-        function speak(text) {
-            if(!voiceGuidance || appVolume === 0) return;
-            window.speechSynthesis.cancel();
-            const msg = new SpeechSynthesisUtterance(text); msg.lang = 'ja-JP'; msg.rate = 1.05; msg.volume = appVolume; window.speechSynthesis.speak(msg);
-        }
-        function toggleVoice() {
-            voiceGuidance = !voiceGuidance; const btn = document.getElementById('voiceBtn');
-            if(voiceGuidance) { btn.innerHTML = '<span class="modal-icon">🗣️</span>音声案内：ON'; showToast('🗣️ 音声案内をオンにしました'); speak('音声案内をオンにしました'); } 
-            else { btn.innerHTML = '<span class="modal-icon">🔇</span>音声案内：OFF'; showToast('🔇 音声案内をオフにしました'); }
-        }
+        function speak(text) { if(!voiceGuidance) return; window.speechSynthesis.cancel(); const msg = new SpeechSynthesisUtterance(text); msg.lang = 'ja-JP'; msg.rate = 1.05; window.speechSynthesis.speak(msg); }
+        function toggleVoice() { voiceGuidance = !voiceGuidance; const btn = document.getElementById('voiceBtn'); if(voiceGuidance) { btn.innerHTML = '<span class="modal-icon">🗣️</span>音声案内：ON'; showToast('🗣️ 音声案内をオンにしました'); speak('音声案内をオンにしました'); } else { btn.innerHTML = '<span class="modal-icon">🔇</span>音声案内：OFF'; showToast('🔇 音声案内をオフにしました'); } }
 
-        // --- 地図エンジン ---
+        // 地図エンジン
         var map = L.map('map', { zoomControl: false }).setView([35.6074, 140.1065], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
 
         var userLat = 35.6074; var userLng = 140.1065; var isTracking = true;
-        let isHeadingUp = true; let lastHeading = 0;
+        let isHeadingUp = true; let lastHeading = 0; let prevLat = null; let prevLng = null;
         var naviIcon = L.divIcon({ className: 'navi-marker-icon', html: '<div id="navi-arrow" class="navi-arrow"></div>', iconSize: [40, 40], iconAnchor: [20, 20] });
         var userMarker = L.marker([userLat, userLng], {icon: naviIcon}).addTo(map);
 
         let destLatObj = null; let destLngObj = null; let destNameObj = '';
         let routeLineCoords = []; let offRouteCount = 0; let isRecalculating = false;
-        
-        // ★ 自動2画面ポップアップ用変数
         let routeSteps = []; let currentStepIndex = 0; let isInfoScreenActive = false;
 
-        function distToSegmentSquared(p, v, w) {
-            let l2 = Math.pow(v.lng - w.lng, 2) + Math.pow(v.lat - w.lat, 2);
-            if (l2 === 0) return Math.pow(p.lng - v.lng, 2) + Math.pow(p.lat - v.lat, 2);
-            let t = ((p.lng - v.lng) * (w.lng - v.lng) + (p.lat - v.lat) * (w.lat - v.lat)) / l2;
-            t = Math.max(0, Math.min(1, t)); return Math.pow(p.lng - (v.lng + t * (w.lng - v.lng)), 2) + Math.pow(p.lat - (v.lat + t * (w.lat - v.lat)), 2);
+        // ★ 気温取得API
+        let tempFetched = false;
+        function fetchTemp(lat, lng) {
+            if(tempFetched) return;
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`).then(res => res.json()).then(data => {
+                if(data && data.current_weather) {
+                    let t = data.current_weather.temperature;
+                    let deg = (t - 15) * 4.8; deg = Math.max(-120, Math.min(120, deg));
+                    document.getElementById('tempHand').style.transform = `translateX(-50%) rotate(${deg}deg)`;
+                    tempFetched = true;
+                }
+            }).catch(e=>{});
         }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            var R = 6371; var dLat = (lat2 - lat1) * Math.PI / 180; var dLon = (lon2 - lon1) * Math.PI / 180;
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c;
+        }
+
+        // ★ GPS差分による進行方向の自前計算（センサーが動かなくても確実に回る究極ロジック）
+        function calculateHeadingFromGPS(lat1, lon1, lat2, lon2) {
+            const toRad = Math.PI / 180; const toDeg = 180 / Math.PI;
+            const dLon = (lon2 - lon1) * toRad;
+            const y = Math.sin(dLon) * Math.cos(lat2 * toRad);
+            const x = Math.cos(lat1 * toRad) * Math.sin(lat2 * toRad) - Math.sin(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.cos(dLon);
+            let brng = Math.atan2(y, x) * toDeg;
+            return (brng + 360) % 360;
+        }
+
         function getDistToRouteKM(lat, lng) {
             if(!routeLineCoords || routeLineCoords.length < 2) return 0;
             let p = {lat: lat, lng: lng}; let minDistSq = Infinity;
             for(let i=0; i < routeLineCoords.length - 1; i++) {
-                let v = {lat: routeLineCoords[i][1], lng: routeLineCoords[i][0]};
-                let w = {lat: routeLineCoords[i+1][1], lng: routeLineCoords[i+1][0]};
-                let dSq = distToSegmentSquared(p, v, w); if(dSq < minDistSq) minDistSq = dSq;
+                let v = {lat: routeLineCoords[i][1], lng: routeLineCoords[i][0]}; let w = {lat: routeLineCoords[i+1][1], lng: routeLineCoords[i+1][0]};
+                let l2 = Math.pow(v.lng - w.lng, 2) + Math.pow(v.lat - w.lat, 2);
+                let dSq = 0;
+                if (l2 === 0) dSq = Math.pow(p.lng - v.lng, 2) + Math.pow(p.lat - v.lat, 2);
+                else {
+                    let t = ((p.lng - v.lng) * (w.lng - v.lng) + (p.lat - v.lat) * (w.lat - v.lat)) / l2; t = Math.max(0, Math.min(1, t));
+                    dSq = Math.pow(p.lng - (v.lng + t * (w.lng - v.lng)), 2) + Math.pow(p.lat - (v.lat + t * (w.lat - v.lat)), 2);
+                }
+                if(dSq < minDistSq) minDistSq = dSq;
             }
             return Math.sqrt(minDistSq) * 111; 
         }
 
-        // 右パネル（2画面）の自動開閉ロジック
         function toggleInfoPanel(show, distance, instruction, icon) {
             const mainDisplay = document.getElementById('mainDisplay');
             if (show) {
                 if(!isInfoScreenActive) { mainDisplay.classList.add('active-2screen'); isInfoScreenActive = true; }
                 document.getElementById('infoDistVal').innerText = distance;
-                document.getElementById('infoSignText').innerText = instruction;
-                document.getElementById('infoSignArrow').innerText = icon;
-            } else {
-                if(isInfoScreenActive) { mainDisplay.classList.remove('active-2screen'); isInfoScreenActive = false; }
-            }
+                document.getElementById('infoSignText').innerText = instruction; document.getElementById('infoSignArrow').innerText = icon;
+            } else { if(isInfoScreenActive) { mainDisplay.classList.remove('active-2screen'); isInfoScreenActive = false; } }
         }
 
-        // OSRMのステップ情報から看板の文字と矢印を生成
         function getManeuverIcon(type, modifier) {
             if (type === 'arrive') return '🏁'; if (type === 'depart') return '🚗';
             switch (modifier) { case 'uturn': return '↩️'; case 'sharp right': return '↱'; case 'right': return '→'; case 'slight right': return '↗'; case 'slight left': return '↖'; case 'left': return '←'; case 'sharp left': return '↰'; default: return '↑'; }
@@ -312,8 +357,7 @@
         function getManeuverText(type, modifier, name) {
             if (type === 'arrive') return '目的地周辺です';
             let t = '直進'; if (modifier) { if(modifier.includes('right')) t = '右方向'; if(modifier.includes('left')) t = '左方向'; }
-            if (type === 'merge') t = '合流'; if (type === 'ramp') t = '分岐・出口';
-            return name ? `${name}を${t}` : t;
+            if (type === 'merge') t = '合流'; if (type === 'ramp') t = '分岐・出口'; return name ? `${name}を${t}` : t;
         }
 
         if (navigator.geolocation) {
@@ -321,31 +365,37 @@
                 userLat = position.coords.latitude; userLng = position.coords.longitude;
                 userMarker.setLatLng([userLat, userLng]);
                 if(isTracking) map.setView([userLat, userLng]);
-                if (position.coords.heading !== null) updateArrowRotation(position.coords.heading);
+                
+                if(!tempFetched) fetchTemp(userLat, userLng); // 初回のみ気温取得
 
-                // ★ リルート判定＆自動2画面ポップアップ制御
+                // ★ ヘディング（進行方向）の強力な自前計算
+                let calculatedHeading = lastHeading;
+                if (prevLat !== null && prevLng !== null) {
+                    let moveDist = calculateDistance(prevLat, prevLng, userLat, userLng) * 1000;
+                    if (moveDist > 2) { // 2m以上動いたら車が進んだと判定して方位を計算
+                        calculatedHeading = calculateHeadingFromGPS(prevLat, prevLng, userLat, userLng);
+                        prevLat = userLat; prevLng = userLng;
+                    }
+                } else { prevLat = userLat; prevLng = userLng; }
+
+                // センサー値が取れる場合は優先するが、取れない場合は計算値を使う
+                let currentHeading = (position.coords.heading !== null && !isNaN(position.coords.heading)) ? position.coords.heading : calculatedHeading;
+                updateArrowRotation(currentHeading);
+
                 if (isRouting && destLatObj !== null) {
                     let distKM = getDistToRouteKM(userLat, userLng);
                     if (distKM > 0.05) {
                         offRouteCount++; if (offRouteCount >= 2) triggerReroute();
                     } else {
                         offRouteCount = 0;
-                        // 分岐や交差点（Step）が近づいたら2画面を出す処理
                         if (routeSteps && currentStepIndex < routeSteps.length) {
                             let step = routeSteps[currentStepIndex];
                             let stepLat = step.maneuver.location[1]; let stepLng = step.maneuver.location[0];
                             let distToStepMeters = calculateDistance(userLat, userLng, stepLat, stepLng) * 1000;
-
-                            // 残り300mを切ったら右画面をスッと出す
                             if (distToStepMeters < 300 && distToStepMeters > 20) {
                                 toggleInfoPanel(true, Math.round(distToStepMeters), getManeuverText(step.maneuver.type, step.maneuver.modifier, step.name), getManeuverIcon(step.maneuver.type, step.maneuver.modifier));
-                            } else if (distToStepMeters <= 20) {
-                                // 通過したら次のステップへ、パネルはいったん閉じる
-                                currentStepIndex++; toggleInfoPanel(false);
-                            } else {
-                                // まだ遠いときは1画面のまま
-                                toggleInfoPanel(false);
-                            }
+                            } else if (distToStepMeters <= 20) { currentStepIndex++; toggleInfoPanel(false); } 
+                            else { toggleInfoPanel(false); }
                         }
                     }
                 }
@@ -359,17 +409,14 @@
         }
 
         function updateArrowRotation(degree) {
-            lastHeading = degree; var arrowElement = document.getElementById('navi-arrow'); var mapElement = document.getElementById('map');
+            lastHeading = degree; 
+            var arrowElement = document.getElementById('navi-arrow'); var mapElement = document.getElementById('map');
+            // ★ アナログ時計の下メーター（方位計）の針を回す
+            document.getElementById('compassHand').style.transform = `translateX(-50%) rotate(${degree}deg)`;
+
             if (isHeadingUp && isTracking) { mapElement.style.transform = `rotate(${-degree}deg)`; if (arrowElement) arrowElement.style.transform = `rotate(${degree}deg)`; } 
             else { mapElement.style.transform = `rotate(0deg)`; if (arrowElement) arrowElement.style.transform = `rotate(${degree}deg)`; }
         }
-
-        function requestDeviceOrientation() {
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(state => { if (state === 'granted') { window.addEventListener('deviceorientation', handleOrientation, false); document.getElementById('compassBtn').style.display='none';} }).catch(console.error);
-            } else { window.addEventListener('deviceorientation', handleOrientation, false); document.getElementById('compassBtn').style.display='none';}
-        }
-        function handleOrientation(event) { var heading = event.webkitCompassHeading ? event.webkitCompassHeading : (event.alpha ? 360 - event.alpha : 0); updateArrowRotation(heading); }
 
         map.on('dragstart', function() { isTracking = false; document.getElementById('map').style.transform = `rotate(0deg)`; });
         function resetCamera() { isTracking = true; map.setView([userLat, userLng], 16); showToast('📍 現在地にフォーカスしました'); updateArrowRotation(lastHeading); }
@@ -387,7 +434,7 @@
             isDarkMode = !isDarkMode;
         }
 
-        var routeLayer = null; var destinationMarker = null; var poiMarkers = []; var isRouting = false;
+        var routeLayer = null; var destinationMarker = null; var isRouting = false;
         let currentRouteDist = 0; let currentRouteTime = 0; let currentRouteMode = 'toll';
 
         function directSearch(query) { document.getElementById('searchInput').value = query; smartSearchLocation(); }
@@ -396,16 +443,11 @@
             var rawKeyword = document.getElementById('searchInput').value.trim();
             if(!rawKeyword) return;
             showToast('AI検索エンジンで解析中...');
-            
             let hasNumbers = /[0-9０-９]/.test(rawKeyword);
             if (hasNumbers) {
-                let gsiUrl = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(rawKeyword)}`;
-                fetch(gsiUrl).then(res => res.json()).then(data => {
+                fetch(`https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(rawKeyword)}`).then(res => res.json()).then(data => {
                     if(data && data.length > 0) {
-                        let results = data.map(item => {
-                            let lon = item.geometry.coordinates[0]; let lat = item.geometry.coordinates[1]; let title = item.properties.title;
-                            return { lat: lat, lon: lon, name: title, display_name: title + ' (高精度番地)', dist: calculateDistance(userLat, userLng, lat, lon) };
-                        });
+                        let results = data.map(item => { return { lat: item.geometry.coordinates[1], lon: item.geometry.coordinates[0], name: item.properties.title, display_name: item.properties.title, dist: calculateDistance(userLat, userLng, item.geometry.coordinates[1], item.geometry.coordinates[0]) }; });
                         processMapResults(results, rawKeyword);
                     } else { fallbackToNominatim(rawKeyword); }
                 }).catch(e => fallbackToNominatim(rawKeyword));
@@ -413,8 +455,7 @@
         }
 
         function fallbackToNominatim(query) {
-            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=25`;
-            fetch(searchUrl).then(res => res.json()).then(data => {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=25`).then(res => res.json()).then(data => {
                 if(data.length > 0) {
                     let results = data.map(item => { return { lat: item.lat, lon: item.lon, name: item.display_name.split(',')[0], display_name: item.display_name, dist: calculateDistance(userLat, userLng, item.lat, item.lon) }; });
                     processMapResults(results, query);
@@ -426,10 +467,9 @@
             dataArray.sort((a, b) => a.dist - b.dist);
             let listHtml = '';
             dataArray.forEach((item) => {
-                let shortName = item.name; let fullName = item.display_name;
                 listHtml += `
-                    <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${shortName.replace(/'/g, "")}')">
-                        <div class="result-name">📍 ${shortName}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${fullName}</span></div>
+                    <div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${item.name.replace(/'/g, "")}')">
+                        <div class="result-name">📍 ${item.name}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${item.display_name}</span></div>
                         <div class="result-dist">約 ${item.dist.toFixed(1)} km</div>
                     </div>`;
             });
@@ -440,12 +480,9 @@
         function selectSearchResult(lat, lon, name) { closeModal('resultsModal'); startRoute(lat, lon, name); }
 
         function startRoute(destLat, destLng, destName) {
-            stopGuidance(true); 
-            destLatObj = destLat; destLngObj = destLng; destNameObj = destName;
+            stopGuidance(true); destLatObj = destLat; destLngObj = destLng; destNameObj = destName;
             destinationMarker = L.marker([destLat, destLng]).addTo(map).bindPopup('🏁 ' + destName).openPopup();
             showToast('ルート探索中...');
-            
-            // ★ APIに steps=true を追加して、曲がり角の情報を取得する
             var primaryUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true`;
             fetch(primaryUrl).then(res => res.json()).then(data => { processRouteData(data, destName, false); })
             .catch(err => {
@@ -473,21 +510,13 @@
                 currentRouteDist = data.routes[0].distance / 1000;
                 currentRouteTime = Math.round(data.routes[0].duration / 60);
                 
-                // ★ 曲がり角のステップ情報を保存
-                if(data.routes[0].legs && data.routes[0].legs[0].steps) {
-                    routeSteps = data.routes[0].legs[0].steps;
-                    currentStepIndex = 0;
-                }
+                if(data.routes[0].legs && data.routes[0].legs[0].steps) { routeSteps = data.routes[0].legs[0].steps; currentStepIndex = 0; }
                 
                 if (!isReroute) {
                     map.fitBounds(routeLayer.getBounds(), {padding: [50, 50]});
                     document.getElementById('previewTitle').innerText = '目的地: ' + destName;
-                    selectRouteMode('toll'); 
-                    document.getElementById('routePreview').classList.add('show');
-                } else {
-                    selectRouteMode(currentRouteMode); 
-                    map.setView([userLat, userLng], 16);
-                }
+                    selectRouteMode('toll'); document.getElementById('routePreview').classList.add('show');
+                } else { selectRouteMode(currentRouteMode); map.setView([userLat, userLng], 16); }
             } else if (!isReroute) { showToast('ルートが見つかりませんでした'); speak('ルートが見つかりませんでした'); }
         }
 
@@ -495,24 +524,17 @@
             currentRouteMode = mode;
             document.getElementById('tabToll').classList.remove('active'); document.getElementById('tabLocal').classList.remove('active');
             let timeMin = currentRouteTime; let costText = "無料";
-            if(mode === 'toll') {
-                document.getElementById('tabToll').classList.add('active');
-                if(currentRouteDist > 5) { costText = `約 ${Math.floor((150 + (currentRouteDist * 24.6)) / 10) * 10} 円`; }
-            } else {
-                document.getElementById('tabLocal').classList.add('active'); costText = "無料 (一般道)"; timeMin = Math.round(timeMin * 1.5);
-            }
+            if(mode === 'toll') { document.getElementById('tabToll').classList.add('active'); if(currentRouteDist > 5) { costText = `約 ${Math.floor((150 + (currentRouteDist * 24.6)) / 10) * 10} 円`; } } 
+            else { document.getElementById('tabLocal').classList.add('active'); costText = "無料 (一般道)"; timeMin = Math.round(timeMin * 1.5); }
             document.getElementById('previewInfo').innerText = `距離: ${currentRouteDist.toFixed(1)} km | 時間: 約 ${timeMin} 分 | 料金: ${costText}`;
         }
 
         function startGuidance() {
             document.getElementById('routePreview').classList.remove('show');
-            isRouting = true; isTracking = true; offRouteCount = 0;
-            map.setView([userLat, userLng], 16);
+            isRouting = true; isTracking = true; offRouteCount = 0; map.setView([userLat, userLng], 16);
             let timeMin = currentRouteMode === 'local' ? Math.round(currentRouteTime * 1.5) : currentRouteTime;
-
             speak(`ルート案内を開始します。目的地まで、約 ${Math.round(currentRouteDist)}キロ、時間は ${timeMin}分です。`);
-            showToast('🏁 案内を開始しました');
-            updateArrowRotation(lastHeading);
+            showToast('🏁 案内を開始しました'); updateArrowRotation(lastHeading);
         }
 
         function goHome() { closeModal('navModal'); startRoute(35.6560, 140.1030, '自宅'); }
@@ -520,13 +542,9 @@
         function stopGuidance(silent = false) {
             if(!silent) { closeModal('navModal'); closeModal('resultsModal'); }
             document.getElementById('routePreview').classList.remove('show');
-            if(routeLayer) map.removeLayer(routeLayer);
-            if(destinationMarker) map.removeLayer(destinationMarker);
-            destLatObj = null; destLngObj = null; routeLineCoords = []; routeSteps = [];
-            isRouting = false; offRouteCount = 0;
-            
-            toggleInfoPanel(false); // 2画面を閉じる
-
+            if(routeLayer) map.removeLayer(routeLayer); if(destinationMarker) map.removeLayer(destinationMarker);
+            destLatObj = null; destLngObj = null; routeLineCoords = []; routeSteps = []; isRouting = false; offRouteCount = 0;
+            toggleInfoPanel(false); 
             if(!silent) { showToast('🛑 案内を終了しました'); resetCamera(); }
         }
 
