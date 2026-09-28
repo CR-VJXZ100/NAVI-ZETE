@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER プレミアム版（時計完全収まり版）</title>
+    <title>純正風カーナビ - TOYOTA CHASER 充電連動オートスタート版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -11,9 +11,11 @@
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
         .container { display: flex; flex-direction: column; height: 100vh; position: relative; width: 100vw; }
         
-        /* オープニングアニメーション（ロゴ ＆ 警告） */
-        .startup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #020202; z-index: 1000000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, visibility 0.8s; }
+        /* オープニングアニメーション（デフォルトは隠しておき、充電開始でトリガー） */
+        .startup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #020202; z-index: 1000000; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.8s ease-in-out, visibility 0.8s; }
+        .startup-overlay.active { opacity: 1; visibility: visible; }
         
+        /* フェーズ1：ロゴ画面 */
         .startup-logo-container { position: relative; width: 80%; max-width: 700px; display: flex; flex-direction: column; justify-content: center; align-items: center; animation: fadeOutPhase1 1s ease-in-out 3.5s forwards; }
         .startup-brand { font-family: 'Times New Roman', serif; font-size: clamp(1rem, 3vw, 1.5rem); color: #888; letter-spacing: 6px; opacity: 0; animation: fadeIn 1s ease-out 0.5s forwards; margin-bottom: 15px; }
         .startup-model { font-family: 'Didot', 'Bodoni MT', 'Times New Roman', serif; font-style: italic; font-size: clamp(1.8rem, 4.5vw, 3.2rem); font-weight: 600; color: #fff; letter-spacing: 10px; text-shadow: 0 0 25px rgba(0, 212, 255, 0.8); opacity: 0; animation: scaleFadeIn 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) 1.2s forwards; margin-bottom: 25px; text-align: center;}
@@ -26,6 +28,7 @@
         @keyframes expandLine { to { width: 100%; } }
         @keyframes blinkText { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
 
+        /* フェーズ2：警告画面 */
         .warning-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; animation: warningPhase2 5s ease-in-out 4.5s forwards; }
         .warning-title { font-size: clamp(4rem, 10vw, 8rem); color: #ff1a1a; font-weight: 900; letter-spacing: 20px; margin-bottom: 40px; text-shadow: 0 0 30px rgba(255, 26, 26, 0.8), 0 0 60px rgba(255, 26, 26, 0.4); }
         .warning-text { font-size: clamp(1.2rem, 3vw, 2.2rem); color: #f0f0f0; font-weight: bold; text-align: center; line-height: 1.8; letter-spacing: 4px; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); padding: 0 20px; }
@@ -37,7 +40,7 @@
             100% { opacity: 0; transform: scale(1.05); filter: blur(10px); }
         }
 
-        .startup-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .startup-overlay.hidden-op { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
 
         /* メインエリア（地図＆2画面パネル） */
         .main-display { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
@@ -98,7 +101,7 @@
         .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: colorShift 5s infinite ease-in-out; opacity: 1; }
         .neon-blue::after { animation: colorShift 3.5s infinite ease-in-out; }
 
-        /* ★ 中央の超絶ギラギラ時計（絶対に枠からみ出さない鉄壁のクリッピングマスク） */
+        /* 中央の超絶ギラギラ時計（完全に丸く収まる修正版） */
         .analog-clock { 
             flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; 
             border-radius: 50%; border: 3px solid #e0e0e0; position: relative; 
@@ -356,15 +359,41 @@
             osc2.start(t); osc2.stop(t + 0.08);
         }
 
+        // オープニングを手動または充電連動で再生する関数
+        function triggerStartupSequence() {
+            const overlay = document.getElementById('startupOverlay');
+            overlay.classList.remove('hidden-op');
+            overlay.classList.add('active');
+            
+            // 9.5秒後に自動で非表示にする
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                overlay.classList.add('hidden-op');
+            }, 9500);
+        }
+
         window.onload = function() {
             const buttons = document.querySelectorAll('.sound-btn');
             buttons.forEach(function(btn) { 
                 btn.addEventListener('pointerdown', function() { playBeep(); }); 
             });
 
-            setTimeout(() => {
-                document.getElementById('startupOverlay').classList.add('hidden');
-            }, 9500);
+            // 初回読み込み時にオープニングを再生
+            triggerStartupSequence();
+
+            // ★ 充電開始（シガーソケットやUSB給電開始）を検知して自動でオープニングを再起動する機能
+            if (navigator.getBattery) {
+                navigator.getBattery().then(function(battery) {
+                    let lastChargingState = battery.charging;
+                    battery.addEventListener('chargingchange', function() {
+                        // 以前が非充電で、新しく「充電中（エンジンON/ケーブル挿入）」になった瞬間
+                        if (!lastChargingState && battery.charging) {
+                            triggerStartupSequence();
+                        }
+                        lastChargingState = battery.charging;
+                    });
+                });
+            }
         }
 
         let voiceGuidance = true;
