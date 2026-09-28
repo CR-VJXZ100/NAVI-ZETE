@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER プレミアム版（GPS高精度検索＆無遅延サウンド）</title>
+    <title>純正風カーナビ - TOYOTA CHASER プレミアム版（時計＆サウンド完全修正）</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -132,34 +132,33 @@
         }
         .neon-blue { color: #fff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff; }
 
-        /* ★ 中央の超絶ギラギラ時計（絶対に外にはみ出さない鉄壁のクリッピング処理） */
+        /* ★ 中央の超絶ギラギラ時計（外枠） */
         .analog-clock { 
             flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; 
             border-radius: 50%; border: 3px solid #e0e0e0; position: relative; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,212,255,1), 0 0 30px rgba(0,212,255,0.8); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.9), 0 0 25px rgba(0,212,255,0.8); 
             z-index: 10000; background: #000; 
-            overflow: hidden; 
-            clip-path: circle(50% at 50% 50%); 
-            -webkit-clip-path: circle(50% at 50% 50%);
-            -webkit-mask-image: -webkit-radial-gradient(white, black);
-            transform: translateZ(0);
-            isolation: isolate;
         }
         
-        .analog-clock::before { 
-            content: ''; position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; 
+        /* ★ はみ出しを絶対に許さない鉄壁のインナーマスク */
+        .clock-inner { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            border-radius: 50%; overflow: hidden; z-index: 1; 
+            -webkit-mask-image: -webkit-radial-gradient(white, black);
+            mask-image: radial-gradient(white, black);
+            -webkit-transform: translateZ(0); transform: translateZ(0);
+            box-shadow: inset 0 0 20px rgba(0,212,255,1);
+        }
+
+        .clock-bg { 
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; 
             background: conic-gradient(from 0deg, #0a1128, #2a5298, #8ec5fc, #00f2fe, #2a5298, #0a1128, #8ec5fc, #00f2fe, #2a5298, #0a1128); 
             animation: radarShine 6s linear infinite; z-index: 1; 
         }
         @keyframes radarShine { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .clock-facets { position: absolute; top:0; left:0; width:100%; height:100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0) 0deg 10deg, rgba(255,255,255,0.4) 10deg 20deg); mix-blend-mode: overlay; z-index: 2; pointer-events: none; }
-        
-        .analog-clock::after { 
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; 
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); 
-            transform: rotate(30deg); animation: gemShine 4s infinite linear; pointer-events: none; z-index: 20; 
-        }
+        .clock-inner::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); transform: rotate(30deg); animation: gemShine 4s infinite linear; pointer-events: none; z-index: 20; }
         @keyframes gemShine { 0% { transform: translateX(-100%) rotate(30deg); } 20% { transform: translateX(100%) rotate(30deg); } 100% { transform: translateX(100%) rotate(30deg); } }
 
         .clock-face { width: 100%; height: 100%; position: relative; z-index: 5; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%); border-radius: 50%; }
@@ -372,38 +371,25 @@
         }
         setInterval(updateClocks, 1000); updateClocks();
 
-        // ★ 音の遅延を完全にゼロにするダミー再生システム
+        // ★ 音の遅延をなくしつつ、確実に鳴るように修正したサウンド初期化
         const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx = null;
-        let isAudioInitialized = false;
+        let audioCtx = new AudioContext();
         
-        function initAudio() {
-            if(isAudioInitialized) return;
-            audioCtx = new AudioContext();
-            
-            // 無音のダミー音を再生して、スピーカーを強制スタンバイ状態にする
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            gain.gain.value = 0; // 無音
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.001);
-            
-            if(audioCtx.state === 'suspended') { audioCtx.resume(); }
-            isAudioInitialized = true;
+        function unlockAudio() {
+            if(audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
         }
-        
-        // 画面に触れた瞬間にサウンドシステムをアクティブ化
-        document.body.addEventListener('touchstart', initAudio, { capture: true, once: true });
-        document.body.addEventListener('click', initAudio, { capture: true, once: true });
+        // 画面のどこかを触った瞬間にサウンドシステムを起こす
+        ['touchstart', 'touchend', 'mousedown', 'pointerdown', 'click'].forEach(evt => {
+            document.body.addEventListener(evt, unlockAudio, { capture: true, passive: true });
+        });
 
         function playBeep() {
-            initAudio();
             if(!audioCtx) return;
             if(audioCtx.state === 'suspended') audioCtx.resume();
-            
             let t = audioCtx.currentTime;
+            
             let osc1 = audioCtx.createOscillator();
             let gain1 = audioCtx.createGain();
             osc1.type = 'sine';
@@ -427,6 +413,7 @@
         window.onload = function() {
             const buttons = document.querySelectorAll('.sound-btn');
             buttons.forEach(function(btn) { 
+                // タッチとマウス両方で即座に反応するイベント
                 btn.addEventListener('pointerdown', function() { playBeep(); }); 
             });
 
@@ -440,6 +427,7 @@
         function toggleVoice() { voiceGuidance = !voiceGuidance; const btn = document.getElementById('voiceBtn'); if(voiceGuidance) { btn.innerHTML = '<span class="modal-icon">🗣️</span>音声案内：ON'; showToast('🗣️ 音声案内をオンにしました'); speak('音声案内をオンにしました'); } else { btn.innerHTML = '<span class="modal-icon">🔇</span>音声案内：OFF'; showToast('🔇 音声案内をオフにしました'); } }
 
         var map = L.map('map', { zoomControl: false }).setView([35.6074, 140.1065], 16);
+        // ★ マップを安定のOpenStreetMapに戻しました（CSSフィルターで色を変えます）
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
 
         var userLat = 35.6074; var userLng = 140.1065; var isTracking = true;
@@ -608,7 +596,6 @@
         // ★ GPS完全連動！現在地から半径5kmの施設だけを抽出する最強検索
         function searchNearby(key, value, label) {
             showToast(`周辺の ${label} を検索中...`);
-            // Overpass APIを使用して、現在地から半径5000m（5km）以内の施設を検索
             let query = `[out:json];(node["${key}"="${value}"](around:5000,${userLat},${userLng});way["${key}"="${value}"](around:5000,${userLat},${userLng}););out center;`;
             let url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
             
@@ -618,13 +605,7 @@
                         let lat = item.lat || item.center.lat;
                         let lon = item.lon || item.center.lon;
                         let name = item.tags.name || item.tags.brand || `名称不明の${label}`;
-                        return { 
-                            lat: lat, 
-                            lon: lon, 
-                            name: name, 
-                            display_name: `${label}`, 
-                            dist: calculateDistance(userLat, userLng, lat, lon) 
-                        }; 
+                        return { lat: lat, lon: lon, name: name, display_name: `${label}`, dist: calculateDistance(userLat, userLng, lat, lon) }; 
                     });
                     processMapResults(results, label);
                 } else { 
@@ -649,7 +630,7 @@
             } else { fallbackToNominatim(rawKeyword); }
         }
 
-        // ★ フリーワード検索も現在地周辺（約10km四方）を優先表示するように修正
+        // ★ フリーワード検索も現在地周辺（約10km四方）を優先表示
         function fallbackToNominatim(query) {
             let left = userLng - 0.1; let right = userLng + 0.1;
             let top = userLat + 0.1; let bottom = userLat - 0.1;
