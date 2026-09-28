@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER プレミアム版（高級ダークマップ仕様）</title>
+    <title>純正風カーナビ - TOYOTA CHASER プレミアム版（超立体ネオン＆高級マップ）</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -11,7 +11,7 @@
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
         .container { display: flex; flex-direction: column; height: 100vh; position: relative; width: 100vw; }
         
-        /* ★ 上品で高級感のあるオープニングアニメーション（警告画面） */
+        /* ★ 上品で高級感のあるオープニングアニメーション（ロゴ＆警告） */
         .startup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #020202; z-index: 1000000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, visibility 0.8s; }
         
         .startup-logo-container { position: relative; width: 80%; max-width: 700px; display: flex; flex-direction: column; justify-content: center; align-items: center; animation: fadeOutPhase1 1s ease-in-out 3.5s forwards; }
@@ -42,23 +42,20 @@
         /* メインエリア（地図＆2画面パネル） */
         .main-display { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
         
-        .map-screen { flex: 1; position: relative; overflow: hidden; background-color: #000; transition: flex 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        
-        /* ★ 高級感演出：画面四隅に黒い影（ヴィネット）を落としてインパネの奥行きを表現 */
-        .map-screen::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-shadow: inset 0 0 60px rgba(0,0,0,1); pointer-events: none; z-index: 8000; }
-
+        .map-screen { flex: 1; position: relative; overflow: hidden; background-color: #111; transition: flex 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
         #map { position: absolute; top: -35%; left: -35%; width: 170%; height: 170%; transition: transform 0.3s linear; transform-origin: center center; transform: translateZ(0); will-change: transform; backface-visibility: hidden; }
         .leaflet-tile { outline: 1px solid transparent; backface-visibility: hidden; }
+        .leaflet-control-attribution { display: none !important; }
         
-        /* ★ 究極の高級サイバーマップ（国土地理院タイルの色を反転させ、高速=緑、背景=黒に完璧に調整） */
+        /* ★ 高級感あるダークマップ（高速道路を緑に、全体をクリアなディープブルーグレーに調整！） */
         .dark-mode .leaflet-tile { 
-            filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(120%) saturate(150%); 
+            filter: invert(100%) hue-rotate(240deg) brightness(100%) contrast(120%) grayscale(30%); 
         }
         
         .map-overlay-left { position: absolute; top: 20px; left: 20px; z-index: 9900; display: flex; flex-direction: column; gap: 8px; }
-        .map-btn { background: rgba(20, 20, 20, 0.85); border: 1px solid #444; color: #ddd; padding: 12px 15px; font-size: 1rem; font-weight: bold; border-radius: 6px; box-shadow: 2px 2px 10px rgba(0,0,0,0.8); cursor: pointer; text-align: center;}
+        .map-btn { background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: white; padding: 12px 15px; font-size: 1rem; font-weight: bold; border-radius: 6px; box-shadow: 2px 2px 8px rgba(0,0,0,0.6); cursor: pointer; text-align: center;}
         .map-btn:active { background: rgba(0, 0, 0, 0.9); transform: scale(0.95); }
-        .btn-active-mode { border: 1px solid #00d4ff; color: #00d4ff; box-shadow: 0 0 15px rgba(0,212,255,0.3); }
+        .btn-active-mode { border: 1px solid #00d4ff; color: #00d4ff; box-shadow: 0 0 10px rgba(0,212,255,0.4); }
 
         /* オートポップアップ案内パネル */
         .info-screen { width: 0; opacity: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); background: linear-gradient(to bottom, #1a1a1a, #050505); border-left: 0px solid #00d4ff; display: flex; flex-direction: column; box-shadow: inset 10px 0 20px rgba(0,0,0,0.8); z-index: 9000;}
@@ -81,12 +78,12 @@
 
         /* 立体的な赤い三角形の自車アイコン */
         .navi-marker-icon { display: flex; justify-content: center; align-items: center; width: 60px; height: 60px; }
-        .navi-arrow { width: 45px; height: 45px; transform-origin: center 55%; transition: transform 0.2s ease-out; }
+        .navi-arrow { width: 45px; height: 45px; transform-origin: center 55%; transition: transform 0.2s ease-out; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.8)); }
 
         /* 右上のデジタル時計 */
         .top-right-clock { position: absolute; top: 20px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
 
-        /* ★ 下部：完全左右対称カーボン調ハードウェアパネル（V62の形） */
+        /* ★ 下部：完全左右対称カーボン調ハードウェアパネル */
         .hardware-panel { height: 95px; width: 100%; background: repeating-linear-gradient(45deg, #111 0px, #111 5px, #1a1a1a 5px, #1a1a1a 10px); border-top: 2px solid #000; box-shadow: 0 -5px 25px rgba(0,0,0,1); display: flex; justify-content: space-between; align-items: center; padding: 0 10px; z-index: 9999; position: relative; flex-shrink: 0; }
         
         .hw-group { position: absolute; display: flex; align-items: center; gap: 8px; height: 100%; top: 0; width: calc(50% - 55px); }
@@ -96,26 +93,76 @@
         /* メタルエンブレム */
         .luxury-badge { background: linear-gradient(135deg, #444, #111); padding: 0 12px; border-radius: 4px; border: 1px solid #666; border-bottom: 2px solid #000; color: #d4d4d4; font-family: 'Times New Roman', serif; font-size: clamp(0.7rem, 1.2vw, 0.85rem); letter-spacing: 2px; text-shadow: -1px -1px 1px #000, 1px 1px 1px #666; box-shadow: 0 4px 8px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; height: 40px; white-space: nowrap; flex-shrink: 1; font-weight: bold; overflow: hidden; }
 
-        /* ボタン */
-        .hw-btn { flex: 1; min-width: 45px; max-width: 80px; background: linear-gradient(to bottom, #444 0%, #222 50%, #111 100%); border: 1px solid #000; border-top: 1px solid #666; border-bottom: 2px solid #000; color: #eee; height: 55px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: clamp(1rem, 2.5vw, 1.4rem); font-weight: 900; box-shadow: 0 8px 15px rgba(0,0,0,0.8), inset 0 3px 4px rgba(255,255,255,0.2), inset 0 -3px 4px rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: all 0.1s; white-space: nowrap; }
-        .hw-btn:active { transform: translateY(4px); box-shadow: 0 2px 4px rgba(0,0,0,0.9), inset 0 4px 8px rgba(0,0,0,0.8); background: linear-gradient(to bottom, #222 0%, #111 100%); border-top: 1px solid #111; }
+        /* ★ 超立体メカニカルスイッチ（ガチッとした押し心地を表現） */
+        .hw-btn { 
+            flex: 1; min-width: 45px; max-width: 80px; 
+            background: linear-gradient(to bottom, #5a5a5a 0%, #303030 40%, #151515 100%); 
+            border: 1px solid #000; 
+            border-top: 2px solid #888; 
+            border-bottom: 4px solid #050505; /* ボタン自体の分厚さ */
+            color: #eee; height: 55px; border-radius: 6px; 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: clamp(1rem, 2.5vw, 1.4rem); font-weight: bold; 
+            box-shadow: 0 8px 15px rgba(0,0,0,0.9), inset 0 2px 4px rgba(255,255,255,0.2); 
+            cursor: pointer; position: relative; transition: all 0.1s; white-space: nowrap; 
+        }
+        /* 押し込んだ時の深い沈み込み */
+        .hw-btn:active { 
+            transform: translateY(4px); 
+            border-top: 1px solid #111; 
+            border-bottom: 1px solid #000; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.9), inset 0 5px 10px rgba(0,0,0,0.9); 
+            background: linear-gradient(to bottom, #222 0%, #0a0a0a 100%); 
+        }
         .hw-btn-text { font-size: clamp(0.7rem, 1.5vw, 0.9rem); padding: 0 5px; }
-        .neon-blue { color: #e0f7ff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff, 0 0 20px #0044ff, 0 0 30px #0022cc; }
 
-        /* ★ 七色RGBネオン発光 */
-        @keyframes colorShift { 0% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 33% { background-color: #00d4ff; box-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff; } 66% { background-color: #b000ff; box-shadow: 0 0 15px #b000ff, 0 0 30px #b000ff; } 100% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } }
-        .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: colorShift 5s infinite ease-in-out; opacity: 1; }
-        .neon-blue::after { animation: colorShift 3.5s infinite ease-in-out; }
-
-        /* 中央の超絶ギラギラ時計（時計完全マスク版） */
-        .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #e0e0e0; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), 0 0 25px rgba(0,212,255,0.8); z-index: 10000; background: #000; display: flex; justify-content: center; align-items: center; }
+        /* ★ 復活！7色に滑らかに変化するRGBネオン */
+        @keyframes rgbNeon { 
+            0%   { background-color: #ff0000; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 
+            16%  { background-color: #ff00ff; box-shadow: 0 0 15px #ff00ff, 0 0 30px #ff00ff; } 
+            33%  { background-color: #0088ff; box-shadow: 0 0 15px #0088ff, 0 0 30px #0088ff; } 
+            50%  { background-color: #00ffff; box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff; } 
+            66%  { background-color: #00ff00; box-shadow: 0 0 15px #00ff00, 0 0 30px #00ff00; } 
+            83%  { background-color: #ffff00; box-shadow: 0 0 15px #ffff00, 0 0 30px #ffff00; } 
+            100% { background-color: #ff0000; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 
+        }
+        .hw-btn::after { 
+            content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); 
+            width: 85%; height: 5px; border-radius: 3px; 
+            animation: rgbNeon 6s infinite linear; opacity: 1; 
+        }
         
-        .clock-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; z-index: 1; -webkit-mask-image: -webkit-radial-gradient(white, black); transform: translateZ(0); box-shadow: inset 0 0 20px rgba(0,212,255,1); }
-        .clock-inner::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, #0a1128, #2a5298, #8ec5fc, #00f2fe, #2a5298, #0a1128, #8ec5fc, #00f2fe, #2a5298, #0a1128); animation: radarShine 6s linear infinite; z-index: 1; }
+        .neon-blue { color: #fff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff; }
+
+        /* ★ 中央の超絶ギラギラ時計（絶対に外にはみ出さない鉄壁のクリッピング処理） */
+        .analog-clock { 
+            flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; 
+            border-radius: 50%; border: 3px solid #e0e0e0; position: relative; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,212,255,1), 0 0 30px rgba(0,212,255,0.8); 
+            z-index: 10000; background: #000; 
+            overflow: hidden; 
+            clip-path: circle(50% at 50% 50%); 
+            -webkit-clip-path: circle(50% at 50% 50%);
+            -webkit-mask-image: -webkit-radial-gradient(white, black);
+            transform: translateZ(0);
+            isolation: isolate;
+        }
+        
+        /* conic-gradientを100%サイズにして、四角の角が外にはみ出る物理的要因を排除 */
+        .analog-clock::before { 
+            content: ''; position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; 
+            background: conic-gradient(from 0deg, #0a1128, #2a5298, #8ec5fc, #00f2fe, #2a5298, #0a1128, #8ec5fc, #00f2fe, #2a5298, #0a1128); 
+            animation: radarShine 6s linear infinite; z-index: 1; 
+        }
         @keyframes radarShine { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .clock-facets { position: absolute; top:0; left:0; width:100%; height:100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0) 0deg 10deg, rgba(255,255,255,0.4) 10deg 20deg); mix-blend-mode: overlay; z-index: 2; pointer-events: none; }
-        .clock-inner::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); transform: rotate(30deg); animation: gemShine 4s infinite linear; pointer-events: none; z-index: 20; }
+        
+        .analog-clock::after { 
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; 
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); 
+            transform: rotate(30deg); animation: gemShine 4s infinite linear; pointer-events: none; z-index: 20; 
+        }
         @keyframes gemShine { 0% { transform: translateX(-100%) rotate(30deg); } 20% { transform: translateX(100%) rotate(30deg); } 100% { transform: translateX(100%) rotate(30deg); } }
 
         .clock-face { width: 100%; height: 100%; position: relative; z-index: 5; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%); border-radius: 50%; }
@@ -131,6 +178,7 @@
         .sub-label { position: absolute; bottom: 1px; width: 100%; text-align: center; font-size: 5px; color: #fff; line-height: 1; font-weight: bold; text-shadow: 0 0 4px #00d4ff; }
         .sub-hand { width: 2px; height: 9px; background: #fff; position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.5s; box-shadow: 0 0 3px #000; }
         
+        /* 高級時計のような細くて立体的な剣型の針 */
         .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.8)); }
         .hour-hand { width: 4px; height: 20px; clip-path: polygon(50% 0%, 100% 20%, 50% 100%, 0% 20%); z-index: 10; background: linear-gradient(to right, #ccc 50%, #fff 50%); }
         .minute-hand { width: 3px; height: 28px; clip-path: polygon(50% 0%, 100% 15%, 50% 100%, 0% 15%); z-index: 11; background: linear-gradient(to right, #ccc 50%, #fff 50%); }
@@ -230,30 +278,28 @@
             </div>
 
             <div class="analog-clock" onclick="showToast('気象・方位取得中...')">
-                <div class="clock-inner">
-                    <div class="clock-facets"></div>
-                    <div class="clock-face">
-                        <div class="clock-ring"></div>
-                        <div class="clock-index index-12"></div>
-                        <div class="clock-index index-3"></div>
-                        <div class="clock-index index-6"></div>
-                        <div class="clock-index index-9"></div>
-                        
-                        <div class="sub-dial top-dial">
-                            <div class="sub-hand" id="tempHand"></div>
-                            <div class="sub-label">TEMP</div>
-                        </div>
-                        
-                        <div class="sub-dial bottom-dial">
-                            <div class="sub-hand" id="compassHand"></div>
-                            <div class="sub-label">DIR</div>
-                        </div>
-                        
-                        <div class="hand hour-hand" id="hourHand"></div>
-                        <div class="hand minute-hand" id="minuteHand"></div>
-                        <div class="hand second-hand" id="secondHand"></div>
-                        <div class="center-dot"></div>
+                <div class="clock-facets"></div>
+                <div class="clock-face">
+                    <div class="clock-ring"></div>
+                    <div class="clock-index index-12"></div>
+                    <div class="clock-index index-3"></div>
+                    <div class="clock-index index-6"></div>
+                    <div class="clock-index index-9"></div>
+                    
+                    <div class="sub-dial top-dial">
+                        <div class="sub-hand" id="tempHand"></div>
+                        <div class="sub-label">TEMP</div>
                     </div>
+                    
+                    <div class="sub-dial bottom-dial">
+                        <div class="sub-hand" id="compassHand"></div>
+                        <div class="sub-label">DIR</div>
+                    </div>
+                    
+                    <div class="hand hour-hand" id="hourHand"></div>
+                    <div class="hand minute-hand" id="minuteHand"></div>
+                    <div class="hand second-hand" id="secondHand"></div>
+                    <div class="center-dot"></div>
                 </div>
             </div>
 
@@ -375,8 +421,8 @@
         function toggleVoice() { voiceGuidance = !voiceGuidance; const btn = document.getElementById('voiceBtn'); if(voiceGuidance) { btn.innerHTML = '<span class="modal-icon">🗣️</span>音声案内：ON'; showToast('🗣️ 音声案内をオンにしました'); speak('音声案内をオンにしました'); } else { btn.innerHTML = '<span class="modal-icon">🔇</span>音声案内：OFF'; showToast('🔇 音声案内をオフにしました'); } }
 
         var map = L.map('map', { zoomControl: false }).setView([35.6074, 140.1065], 16);
-        // ★ マップを「国土地理院の標準地図」に変更！
-        L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© 国土地理院' }).addTo(map);
+        // ★ マップを元の OpenStreetMap に戻し、CSSフィルターで緑の高速道路を表現！
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
 
         var userLat = 35.6074; var userLng = 140.1065; var isTracking = true;
         let isHeadingUp = true; let lastHeading = 0; let prevLat = null; let prevLng = null;
