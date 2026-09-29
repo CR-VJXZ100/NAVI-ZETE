@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER 超ゴツ・レーダー＆ネオン警告版</title>
+    <title>純正風カーナビ - TOYOTA CHASER 超ゴツ・レーダー＆絶対案内版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -38,7 +38,7 @@
         @keyframes scaleFadeIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes expandLine { to { width: 100%; } }
 
-        /* ★ 新・警告画面（赤いネオンの脈動効果） */
+        /* 新・警告画面（赤いネオンの脈動効果） */
         .warning-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; animation: warningPhase2 5s ease-in-out 4.8s forwards; }
         .warning-title-box { position: relative; display: inline-block; padding: 20px 40px; margin-bottom: 40px; }
         .warning-title-box::before {
@@ -83,7 +83,7 @@
         .radar-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #020202; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 20; opacity: 1; transition: opacity 0.4s ease; overflow: hidden; padding-top: 10px;}
         .radar-screen.hidden { opacity: 0; pointer-events: none; z-index: -1; }
 
-        /* ★ POLICE アラート背景（左側） */
+        /* POLICE アラート背景（左側うっすら） */
         .police-alert-bg { 
             position: absolute; top: 50%; left: 5%; width: 45vh; height: 60vh; 
             transform: translateY(-50%); 
@@ -105,14 +105,16 @@
         .mode-blue { animation: flashBlue 2.5s infinite ease-in-out; }
 
         @keyframes flashRed { 0%, 100% { background-color: #ff0000; box-shadow: 0 0 15px #ff0000, 0 0 30px #aa0000; opacity: 0.3; } 50% { background-color: #ffaaaa; box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; opacity: 1; } }
-        .mode-red { animation: flashRed 0.1s infinite ease-in-out; }
+        .mode-red { animation: flashRed 0.15s infinite ease-in-out; }
 
+        /* デジタルスピード */
         .digital-speed-top { text-align: center; margin-bottom: 0; z-index: 50; margin-top: 2vh;}
         .digi-speed-val { font-size: 7.5rem; font-weight: 900; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 20px var(--meter-glow-color); transition: color 0.2s, text-shadow 0.2s; }
         .digi-speed-unit { font-size: 2rem; color: #aaa; margin-left: 5px; font-weight: bold;}
         .digi-limit-box { margin-top: 5px; font-size: 1.4rem; color: #ffcc00; border: 2px solid #ffcc00; padding: 2px 20px; border-radius: 4px; display: inline-block; font-weight: bold; background: rgba(255,204,0,0.1); box-shadow: 0 0 10px rgba(255,204,0,0.2); letter-spacing: 2px;}
         .radar-warn-text { color: #ff1a1a; font-size: 1.6rem; font-weight: 900; margin-top: 5px; text-shadow: 0 0 15px #ff0000; animation: blinkText 0.5s infinite alternate; visibility: hidden; }
 
+        /* ★ メーターをゴツく、ギラギラに！ */
         .meters-dashboard { display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 1vh; gap: -6vh; z-index: 10;}
         .meter-box { display: flex; flex-direction: column; align-items: center; position: relative; }
         
@@ -122,10 +124,10 @@
         .meter-box.center-meter { z-index: 10; }
         .meter-box.center-meter .meter-gauge-container { width: 46vh; height: 46vh; border-width: 12px; }
 
-        /* メーター本体 */
+        /* ★ メーター本体（極太ベゼル＆内部シャドウで立体感MAX） */
         .meter-gauge-container { 
             position: relative; border-radius: 50%; 
-            border-style: solid; border-color: #777; 
+            border-style: solid; border-color: #777; /* ゴツいガンメタベゼル */
             border-top-color: #bbb; border-bottom-color: #333;
             box-shadow: 0 20px 40px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 10px rgba(0,212,255,0.3), 0 0 15px rgba(0,212,255,0.2); 
             background: radial-gradient(circle at 50% 60%, #001133 0%, #000a22 60%, #000000 100%); 
@@ -133,6 +135,7 @@
             overflow: hidden; 
         }
 
+        /* ビス（ネジ）装飾でメカメカしく */
         .screw { position: absolute; width: 16px; height: 16px; background: radial-gradient(circle, #999, #333); border-radius: 50%; border: 1px solid #000; box-shadow: inset 0 1px 2px rgba(255,255,255,0.5), 0 3px 5px rgba(0,0,0,0.9); z-index: 25; }
         .screw::after { content: ''; position: absolute; top: 50%; left: 15%; width: 70%; height: 2px; background: #111; box-shadow: 0 1px 0 rgba(255,255,255,0.2); transform: translateY(-50%) rotate(45deg); }
         .screw.tl { top: 8%; left: 8%; }
@@ -153,7 +156,7 @@
         }
         .center-meter .meter-ticks { background: repeating-conic-gradient(from 225deg, #fff 0deg 2deg, transparent 2deg 10deg); }
 
-        /* ★ メーターの数字（新規追加） */
+        /* ★ メーターの数字（追加） */
         .meter-num {
             position: absolute; top: 50%; left: 50%;
             font-weight: 900; color: #fff; text-shadow: 0 0 5px #00d4ff; z-index: 6;
@@ -162,6 +165,7 @@
         .center-meter .meter-num { font-size: 1.6rem; }
         .side-meter .meter-num { font-size: 1.1rem; }
 
+        /* ★ 針を分厚く、より赤くゴツく！ */
         .meter-needle { 
             position: absolute; bottom: 50%; left: 50%; 
             width: 6px; height: 42%; 
@@ -172,6 +176,7 @@
         }
         .center-meter .meter-needle { width: 8px; height: 44%; }
 
+        /* センターキャップ（スティングレー風） */
         .meter-center-cap { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
             width: 28%; height: 28%; background: radial-gradient(circle, #333, #000); 
@@ -183,13 +188,13 @@
         .center-meter .meter-title-in { top: 68%; font-size: 1.2rem; }
         .meter-bottom-val { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); font-size: 1.4rem; font-weight: bold; color: #fff; z-index: 12; font-family: 'Helvetica Neue', Arial, sans-serif;}
 
-        /* ★ 速度超過時のアラートモード（数字も赤くなる！） */
+        /* ★ 速度超過時のアラートモード（ヤバい赤色への完全上書き！） */
         .radar-screen.alert-mode { 
-            --meter-glow-color: rgba(255, 0, 0, 0.9); 
+            --meter-glow-color: rgba(255, 0, 0, 0.95); 
             --meter-glow-edge: rgba(255, 50, 50, 1); 
         }
         .radar-screen.alert-mode .meter-gauge-container { box-shadow: 0 20px 40px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 20px rgba(255,0,0,0.6), 0 0 30px rgba(255,0,0,0.5); border-color: #500; border-top-color: #f55; }
-        .radar-screen.alert-mode .digi-speed-val { color: #ff0000; text-shadow: 0 0 40px #ff0000, 0 0 20px #ff0000; }
+        .radar-screen.alert-mode .digi-speed-val { color: #ff0000; text-shadow: 0 0 30px #ff0000, 0 0 15px #ff0000; }
         .radar-screen.alert-mode .meter-bottom-val { color: #ffaaaa; text-shadow: 0 0 10px #ff0000; }
         .radar-screen.alert-mode .meter-num { color: #ffaaaa; text-shadow: 0 0 10px #ff0000; }
 
@@ -202,14 +207,17 @@
         .right-group { right: 10px; justify-content: flex-end; }
         .luxury-badge { background: linear-gradient(135deg, #444, #111); padding: 0 12px; border-radius: 4px; border: 1px solid #666; border-bottom: 2px solid #000; color: #d4d4d4; font-family: 'Times New Roman', serif; font-size: clamp(0.7rem, 1.2vw, 0.85rem); letter-spacing: 2px; text-shadow: -1px -1px 1px #000, 1px 1px 1px #666; box-shadow: 0 4px 8px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; height: 40px; white-space: nowrap; flex-shrink: 1; font-weight: bold; overflow: hidden; }
 
+        /* 超立体メカニカルスイッチ */
         .hw-btn { flex: 1; min-width: 45px; max-width: 80px; background: linear-gradient(to bottom, #5a5a5a 0%, #303030 40%, #151515 100%); border: 1px solid #000; border-top: 2px solid #888; border-bottom: 4px solid #050505; color: #eee; height: 55px; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-size: clamp(1rem, 2.5vw, 1.4rem); font-weight: bold; box-shadow: 0 8px 15px rgba(0,0,0,0.9), inset 0 2px 4px rgba(255,255,255,0.2); cursor: pointer; position: relative; transition: all 0.1s; white-space: nowrap; }
         .hw-btn:active { transform: translateY(4px); border-top: 1px solid #111; border-bottom: 1px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.9), inset 0 5px 10px rgba(0,0,0,0.9); background: linear-gradient(to bottom, #222 0%, #0a0a0a 100%); }
         .hw-btn-text { font-size: clamp(0.7rem, 1.5vw, 0.9rem); padding: 0 5px; }
 
+        /* 7色RGBネオン */
         @keyframes rgbNeon { 0%   { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 16%  { background-color: #ff00ff; box-shadow: 0 0 15px #ff00ff, 0 0 30px #ff00ff; } 33%  { background-color: #0088ff; box-shadow: 0 0 15px #0088ff, 0 0 30px #0088ff; } 50%  { background-color: #00ffff; box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff; } 66%  { background-color: #00ff00; box-shadow: 0 0 15px #00ff00, 0 0 30px #00ff00; } 83%  { background-color: #ffff00; box-shadow: 0 0 15px #ffff00, 0 0 30px #ffff00; } 100% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } }
         .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: rgbNeon 6s infinite linear; opacity: 1; }
         .neon-blue { color: #fff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff; }
 
+        /* 中央の時計：TAG Heuer カレラ クロノグラフ風 */
         .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #ccc; border-top-color: #eee; border-bottom-color: #888; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(0,0,0,0.5); z-index: 10000; background: #000; }
         .clock-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; z-index: 1; -webkit-mask-image: -webkit-radial-gradient(white, black); mask-image: radial-gradient(white, black); -webkit-transform: translateZ(0); transform: translateZ(0); }
         .clock-face { width: 100%; height: 100%; position: relative; z-index: 5; background: radial-gradient(circle, #1a3c75 0%, #0d1e3f 80%, #050b18 100%); border-radius: 50%; }
@@ -497,6 +505,7 @@
                 <input type="text" id="searchInput" class="search-input" placeholder="名称・番地 (例: トヨタ博物館, 北栄4-9-1)...">
                 <button class="search-btn sound-btn" onclick="smartSearchLocation()">🔍 検索</button>
             </div>
+            <!-- ★ 最大10件制限でエラー解消！ -->
             <div class="category-grid">
                 <div class="cat-btn sound-btn" onclick="searchNearby('shop', 'convenience', 'コンビニ')">🏪 近くのコンビニ</div>
                 <div class="cat-btn sound-btn" onclick="searchNearby('amenity', 'fuel', 'ガソリンスタンド')">⛽ 近くのGS</div>
@@ -839,7 +848,7 @@
                     updateRadarUI(realSpeed, currentLimit);
                 }
 
-                // ルート案内ロジック
+                // ★ 完璧なルート案内ロジック
                 if (isRouting && destLatObj !== null) {
                     let distKM = getDistToRouteKM(userLat, userLng);
                     if (distKM > 0.05) {
@@ -967,25 +976,66 @@
             showToast(dataArray.length + '件見つかりました'); speak('周辺の候補が見つかりました。');
         }
 
-        function selectSearchResult(lat, lon, name) { closeModal('resultsModal'); startRoute(lat, lon, name); }
+        // ★ レーダー画面からの検索時にマップ画面へ強制移行
+        function selectSearchResult(lat, lon, name) { 
+            closeModal('resultsModal'); 
+            if (isRadarMode) { toggleRadarMode(); } // マップに戻す
+            startRoute(lat, lon, name); 
+        }
+
+        // ★ 通信エラー対策：緊急直線ルート機能（フォールバック）を搭載
+        function fallbackStraightRoute(uLat, uLng, dLat, dLng, destName) {
+            let dist = calculateDistance(uLat, uLng, dLat, dLng);
+            let time = Math.round((dist / 40) * 60); // 40km/hで計算
+            
+            let mockData = {
+                routes: [{
+                    geometry: {
+                        type: "LineString",
+                        coordinates: [[uLng, uLat], [dLng, dLat]]
+                    },
+                    distance: dist * 1000,
+                    duration: time * 60,
+                    legs: [{
+                        steps: [
+                            { maneuver: { type: "depart", modifier: "straight", location: [uLng, uLat] }, name: "直線ルート" },
+                            { maneuver: { type: "arrive", modifier: "straight", location: [dLng, dLat] }, name: "目的地" }
+                        ]
+                    }]
+                }]
+            };
+            processRouteData(mockData, destName, false);
+        }
 
         function startRoute(destLat, destLng, destName) {
             stopGuidance(true); destLatObj = destLat; destLngObj = destLng; destNameObj = destName;
             destinationMarker = L.marker([destLat, destLng]).addTo(map).bindPopup('🏁 ' + destName).openPopup();
             showToast('ルート探索中...');
-            var primaryUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true`;
+            
+            let uLng = parseFloat(userLng); let uLat = parseFloat(userLat);
+            let dLng = parseFloat(destLng); let dLat = parseFloat(destLat);
+            
+            var primaryUrl = `https://router.project-osrm.org/route/v1/driving/${uLng},${uLat};${dLng},${dLat}?overview=full&geometries=geojson&steps=true`;
             
             fetch(primaryUrl).then(res => {
                 if(!res.ok) throw new Error("Network error"); return res.json();
-            }).then(data => { processRouteData(data, destName, false); })
+            }).then(data => { 
+                if(data.code !== 'Ok') throw new Error("Route not found");
+                processRouteData(data, destName, false); 
+            })
             .catch(err => {
-                var backupUrl = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true`;
+                var backupUrl = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${uLng},${uLat};${dLng},${dLat}?overview=full&geometries=geojson&steps=true`;
                 fetch(backupUrl).then(res => {
                     if(!res.ok) throw new Error("Network error"); return res.json();
-                }).then(data => { processRouteData(data, destName, false); })
+                }).then(data => { 
+                    if(data.code !== 'Ok') throw new Error("Route not found");
+                    processRouteData(data, destName, false); 
+                })
                 .catch(fallbackErr => { 
-                    showToast('ルート検索に失敗しました。'); speak('ルート計算に失敗しました'); 
-                    stopGuidance(true);
+                    // ★ 最終手段：通信エラー時は直線ルートで案内を強制開始
+                    showToast('直線ルートで案内します'); 
+                    speak('実際の道が見つからなかったため、直線ルートで案内します'); 
+                    fallbackStraightRoute(uLat, uLng, dLat, dLng, destName);
                 });
             });
         }
