@@ -4,9 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#05070b">
-<title>NAVI ZETE v86</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<title>NAVI ZETE v87</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'">
+<script>
+// OPは地図ライブラリの成否に関係なく必ず閉じる
+document.addEventListener('DOMContentLoaded',function(){
+  var op=document.getElementById('startup');
+  setTimeout(function(){if(op){op.classList.add('hide');op.style.pointerEvents='none';}},1600);
+  setTimeout(function(){if(op&&op.parentNode){op.parentNode.removeChild(op);}},2800);
+});
+</script>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070b;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}button,input{font:inherit}#app,#map{position:absolute;inset:0}#map{z-index:1;background:#111}.leaflet-control-zoom{display:none}.leaflet-control-attribution{font-size:9px!important;background:rgba(0,0,0,.65)!important;color:#ddd!important}.leaflet-control-attribution a{color:#9eeaff!important}.leaflet-tile{transition:filter .35s}body.night .leaflet-tile{filter:brightness(.5) saturate(.7) contrast(1.2) hue-rotate(175deg)}
 .glass{background:linear-gradient(180deg,rgba(13,20,32,.96),rgba(3,7,13,.94));border:1px solid rgba(144,222,255,.26);box-shadow:0 12px 35px rgba(0,0,0,.48),inset 0 0 24px rgba(0,190,255,.05);backdrop-filter:blur(10px)}
@@ -45,21 +52,19 @@
     <div class="hudline speed"><span>SPEED</span><span><b id="speed">0</b> <span class="unit">km/h</span></span></div>
     <div class="hudline"><span>GPS</span><b id="gps">待機</b></div>
     <div class="hudline"><span>精度</span><b id="acc">-- m</b></div>
-    <div class="hudline"><span>VERSION</span><b>v86</b></div>
+    <div class="hudline"><span>VERSION</span><b>v87</b></div>
   </div>
   <div class="bottom"><button id="currentBtn">現在地</button><button id="startBtn" disabled>案内開始</button><button id="menuBtn">メニュー</button></div>
   <div id="toast" class="toast"></div>
-  <div id="startup" class="startup"><div class="brand">TOYOTA CHASER</div><div class="model">NAVI ZETE <span class="v">v86</span></div><div class="line"></div></div>
+  <div id="startup" class="startup"><div class="brand">TOYOTA CHASER</div><div class="model">NAVI ZETE <span class="v">v87</span></div><div class="line"></div></div>
 </div>
 <script>
 (()=>{'use strict';
+function loadScript(src){return new Promise(function(resolve,reject){var x=document.createElement('script');x.src=src;x.onload=resolve;x.onerror=reject;document.head.appendChild(x);});}
+function fatalMapError(){var t=document.getElementById('toast');if(t){t.textContent='地図ライブラリを読み込めませんでした。通信状態を確認して再読み込みしてください。';t.classList.add('show');}console.error('Leaflet failed to load');}
+function initNavi(){
 const GSI='https://msearch.gsi.go.jp/address-search/AddressSearch';
 const NOM='https://nominatim.openstreetmap.org/search';
 const OSRM='https://router.project-osrm.org/route/v1/driving';
 const $=id=>document.getElementById(id);
-const E={q:$('q'),searchBtn:$('searchBtn'),results:$('results'),clock:$('clock'),locateBtn:$('locateBtn'),nightBtn:$('nightBtn'),voiceBtn:$('voiceBtn'),nav:$('nav'),arrow:$('arrow'),inst:$('inst'),nextDist:$('nextDist'),remain:$('remain'),eta:$('eta'),destText:$('destText'),rerouteBtn:$('rerouteBtn'),stopBtn:$('stopBtn'),speed:$('speed'),gps:$('gps'),acc:$('acc'),currentBtn:$('currentBtn'),startBtn:$('startBtn'),menuBtn:$('menuBtn'),toast:$('toast'),startup:$('startup')};
-const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([35.6812,139.7671],12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
-const carIcon=L.divIcon({className:'',html:'<div class="car"></div>',iconSize:[22,22],iconAnchor:[11,11]});
-const pinIcon=L.divIcon({className:'',html:'<div class="pin"></div>',iconSize:[20,20],iconAnchor:[6,18]});
-let userMarker=null,destMarker=null,routeLayer=null,current=null,prev=null,destination=null,route=null,steps=[],stepInd
+const E={q:$('q'),searchBtn:$('searchBtn'),results:$('results'),clock:$('clock'),locateBtn:$('locateBtn'),nightBtn:$('nightBtn'),voiceBtn:$('voiceBtn'),nav:$('nav'),arrow:$('arrow'),inst:$('inst'),nextDist:$('nextDist'),remain:$('remain'),eta:$('eta'),destText:$('destText'),rerouteBtn:$('rerouteBtn'),stopBtn:$('stopBtn'),speed:$('sp
