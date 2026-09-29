@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER 3連メーター・レーダー版</title>
+    <title>純正風カーナビ - TOYOTA CHASER 高級クロノグラフ＆3連メーター版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -52,7 +52,6 @@
         .leaflet-tile { outline: 1px solid transparent; backface-visibility: hidden; transition: filter 0.5s ease; }
         .leaflet-control-attribution { display: none !important; }
         
-        /* 高級感あるダークマップ */
         .dark-mode { background-color: #000; }
         .dark-mode .leaflet-tile { filter: invert(100%) sepia(10%) hue-rotate(250deg) saturate(250%) brightness(130%) contrast(90%); }
         
@@ -68,7 +67,7 @@
         .top-right-clock { position: absolute; top: 20px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
 
         /* ==============================================================
-           ★ 新設：3連メーター・オービスレーダー画面（1304.jpg準拠）
+           ★ 3連メーター・オービスレーダー画面
         ============================================================== */
         .radar-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 20; opacity: 1; transition: opacity 0.4s ease; overflow: hidden; padding-top: 30px;}
         .radar-screen.hidden { opacity: 0; pointer-events: none; z-index: -1; }
@@ -77,15 +76,12 @@
         .side-light.left { left: 15px; }
         .side-light.right { right: 15px; }
 
-        /* 正常時：青く淡く点滅 */
         @keyframes flashBlue { 0%, 100% { background-color: #00d4ff; box-shadow: 0 0 10px #00d4ff, 0 0 20px #0088ff; opacity: 0.2; } 50% { background-color: #e0f7ff; box-shadow: 0 0 25px #00d4ff, 0 0 45px #0088ff; opacity: 0.8; } }
         .mode-blue { animation: flashBlue 2.5s infinite ease-in-out; }
 
-        /* 警告時：真っ赤に激しく点滅（ヤバい感MAX） */
         @keyframes flashRed { 0%, 100% { background-color: #ff0000; box-shadow: 0 0 15px #ff0000, 0 0 30px #aa0000; opacity: 0.3; } 50% { background-color: #ffaaaa; box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; opacity: 1; } }
         .mode-red { animation: flashRed 0.2s infinite ease-in-out; }
 
-        /* 上部のデジタルスピード表示 */
         .digital-speed-top { text-align: center; margin-bottom: 2vh; }
         .digi-speed-val { font-size: 6rem; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 15px var(--m-color2); transition: color 0.2s, text-shadow 0.2s; }
         .digi-speed-unit { font-size: 1.8rem; color: #aaa; margin-left: 5px; }
@@ -94,38 +90,31 @@
 
         /* ★ 3連メーターのダッシュボードレイアウト */
         .meters-dashboard { display: flex; justify-content: center; align-items: flex-end; gap: 3vw; width: 100%; padding: 0 40px; margin-top: 2vh; }
-        
         .meter-box { display: flex; flex-direction: column; align-items: center; }
-        
         .meter-title { font-size: 1rem; color: #aaa; margin-bottom: 10px; font-weight: bold; letter-spacing: 2px; }
         
-        .meter-gauge-container { position: relative; width: 22vh; height: 22vh; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        /* ★ メーター内部（青から黒へのグラデーション） */
+        .meter-gauge-container { position: relative; width: 22vh; height: 22vh; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at bottom center, #002266 0%, #000a1f 60%, #000000 100%); box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 0 20px rgba(0,212,255,0.1); border: 2px solid #222;}
         
-        /* メーター背景の青い円弧（270度） */
         .meter-arc { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 225deg, var(--m-color1) 0%, var(--m-color2) 75%, transparent 75%); -webkit-mask-image: radial-gradient(transparent 55%, black 57%, black 68%, transparent 70%); transition: background 0.3s; }
         
-        /* 目盛り（破線） */
         .meter-ticks { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: repeating-conic-gradient(from 225deg, #fff 0deg 2deg, transparent 2deg 15deg); -webkit-mask-image: radial-gradient(transparent 68%, black 70%, black 75%, transparent 77%); opacity: 0.8; }
         .meter-ticks-cover { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 225deg, transparent 0%, transparent 75%, #050505 75%, #050505 100%); }
 
-        /* 針（オープニングでギュイーンと動く） */
-        .meter-needle { position: absolute; bottom: 50%; left: 50%; width: 4px; height: 42%; background: #fff; transform-origin: bottom center; transform: translateX(-50%) rotate(-135deg); border-radius: 2px; box-shadow: 0 0 5px #fff; z-index: 10; }
+        /* ★ メーターの針（銀メッキ風） */
+        .meter-needle { position: absolute; bottom: 50%; left: 50%; width: 4px; height: 42%; background: linear-gradient(to right, #888 0%, #fff 40%, #fff 60%, #555 100%); transform-origin: bottom center; transform: translateX(-50%) rotate(-135deg); border-radius: 2px 2px 0 0; box-shadow: -2px 0 4px rgba(0,0,0,0.6), 2px 0 4px rgba(0,0,0,0.6); z-index: 10; }
         
-        /* 中央のキャップ */
         .meter-center-cap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 25%; height: 25%; background: radial-gradient(circle, #444, #111); border-radius: 50%; border: 2px solid #222; box-shadow: 0 5px 10px rgba(0,0,0,0.8); z-index: 15; }
 
-        /* デジタル数値表示（メーター下部） */
         .meter-value { margin-top: 15px; font-size: 1.8rem; font-weight: bold; color: #fff; text-shadow: 0 0 10px var(--m-color2); font-family: 'Helvetica Neue', Arial, sans-serif; transition: color 0.3s, text-shadow 0.3s;}
         
-        /* 真ん中のスピードメーターは少し大きくする */
         .meter-box.center-meter .meter-gauge-container { width: 28vh; height: 28vh; }
-        .meter-box.center-meter .meter-value { display: none; } /* 中央の値は上部にデカく出すので非表示 */
+        .meter-box.center-meter .meter-value { display: none; } 
 
-        /* ★ アラートモード（ヤバい赤色へのオーバーライド） */
         .radar-screen.alert-mode { --m-color1: #a00000; --m-color2: #ff0000; }
         .radar-screen.alert-mode .digi-speed-val { color: #ff0000; text-shadow: 0 0 30px #ff0000, 0 0 10px #ff0000; }
         .radar-screen.alert-mode .meter-value { color: #ffaaaa; }
-        .radar-screen.alert-mode .meter-needle { background: #ffaaaa; box-shadow: 0 0 10px #ff0000; }
+        .radar-screen.alert-mode .meter-needle { background: linear-gradient(to right, #aa0000 0%, #ffaaaa 40%, #ffaaaa 60%, #660000 100%); box-shadow: 0 0 10px #ff0000; }
 
         /* ============================================================== */
 
@@ -154,37 +143,57 @@
         .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: rgbNeon 6s infinite linear; opacity: 1; }
         .neon-blue { color: #fff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff; }
 
-        /* ★ 中央の超絶ギラギラ時計（白飛び修正 ＆ はみ出し完全防止） */
-        .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #bbb; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,100,255,0.8), 0 0 25px rgba(0,150,255,0.5); z-index: 10000; background: #000; }
-        .clock-outer-ring { position: absolute; top: -6px; left: -6px; right: -6px; bottom: -6px; border: 2px dashed rgba(0, 150, 255, 0.4); border-radius: 50%; z-index: -1; animation: rotateReverse 15s linear infinite; }
-        @keyframes rotateReverse { 100% { transform: rotate(-360deg); } }
+        /* ==============================================================
+           ★ 中央の超絶時計：TAG Heuer カレラ クロノグラフ風に完全リメイク
+        ============================================================== */
+        .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #ccc; border-top-color: #eee; border-bottom-color: #888; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(0,0,0,0.5); z-index: 10000; background: #000; }
         
         .clock-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; z-index: 1; -webkit-mask-image: -webkit-radial-gradient(white, black); mask-image: radial-gradient(white, black); -webkit-transform: translateZ(0); transform: translateZ(0); }
         
-        /* 白飛びを抑えた、深いサファイアブルーの反射 */
-        .clock-bg { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, #02050a, #0a1528, #1a3568, #0055ff, #1a3568, #02050a, #1a3568, #0055ff, #1a3568, #02050a); animation: radarShine 8s linear infinite; z-index: 1; }
-        .clock-facets { position: absolute; top:0; left:0; width:100%; height:100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0) 0deg 10deg, rgba(255,255,255,0.1) 10deg 20deg); mix-blend-mode: overlay; z-index: 2; pointer-events: none; }
-        /* 白い光の帯も透過度を下げて上品に */
-        .clock-inner::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); transform: rotate(30deg); animation: gemShine 5s infinite linear; pointer-events: none; z-index: 20; }
+        /* 深いサファイアブルーの文字盤 */
+        .clock-face { width: 100%; height: 100%; position: relative; z-index: 5; background: radial-gradient(circle, #1a3c75 0%, #0d1e3f 80%, #050b18 100%); border-radius: 50%; }
         
-        .clock-face { width: 100%; height: 100%; position: relative; z-index: 5; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 100%); border-radius: 50%; }
-        .clock-ring { position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.4); pointer-events: none; z-index: 6; }
-        .clock-index { position: absolute; background: #ddd; box-shadow: 0 0 3px rgba(255,255,255,0.5); z-index: 7; }
-        .index-12 { top: 3px; left: 50%; transform: translateX(-50%); width: 3px; height: 10px; }
-        .index-6 { bottom: 3px; left: 50%; transform: translateX(-50%); width: 3px; height: 10px; }
-        .index-3 { right: 3px; top: 50%; transform: translateY(-50%); width: 10px; height: 3px; }
-        .index-9 { left: 3px; top: 50%; transform: translateY(-50%); width: 10px; height: 3px; }
+        /* サンレイ（放射状の反射光） */
+        .clock-sunray { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0.03) 0deg 5deg, transparent 5deg 10deg); pointer-events: none; }
         
-        .sub-dial { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); position: absolute; left: 50%; transform: translateX(-50%); background: radial-gradient(circle, rgba(10,20,40,0.8) 0%, rgba(0,0,0,0.9) 100%); box-shadow: inset 0 0 8px rgba(0,0,0,1); z-index: 8; }
-        .top-dial { top: 12px; } .bottom-dial { bottom: 12px; }
-        .sub-label { position: absolute; bottom: 1px; width: 100%; text-align: center; font-size: 5px; color: #ccc; line-height: 1; font-weight: normal; }
-        .sub-hand { width: 2px; height: 9px; background: #ddd; position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.5s; box-shadow: 0 0 2px #000; }
+        /* タキメーター風の外周目盛り */
+        .clock-tachymeter { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, #aaa 0deg 1deg, transparent 1deg 6deg); -webkit-mask-image: radial-gradient(transparent 93%, black 95%); pointer-events: none; }
         
-        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.8)); }
-        .hour-hand { width: 4px; height: 20px; clip-path: polygon(50% 0%, 100% 20%, 50% 100%, 0% 20%); z-index: 10; background: linear-gradient(to right, #aaa 50%, #eee 50%); }
-        .minute-hand { width: 3px; height: 28px; clip-path: polygon(50% 0%, 100% 15%, 50% 100%, 0% 15%); z-index: 11; background: linear-gradient(to right, #aaa 50%, #eee 50%); }
-        .second-hand { width: 1px; height: 32px; background: #cc0000; filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.8)); z-index: 12; }
-        .center-dot { width: 5px; height: 5px; border-radius: 50%; background: #cc0000; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; box-shadow: 0 0 5px rgba(0,0,0,0.9); border: 1px solid #fff; }
+        /* ガラスの反射（白飛びを抑え上品に） */
+        .clock-inner::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%); transform: rotate(30deg); animation: gemShine 5s infinite linear; pointer-events: none; z-index: 20; }
+        @keyframes gemShine { 0% { transform: translateX(-100%) rotate(30deg); } 20% { transform: translateX(100%) rotate(30deg); } 100% { transform: translateX(100%) rotate(30deg); } }
+
+        /* ブランドロゴ刻印 */
+        .clock-logo { position: absolute; top: 16px; width: 100%; text-align: center; color: #fff; font-size: 5px; font-weight: bold; letter-spacing: 0.5px; z-index: 5; font-family: 'Helvetica Neue', Arial, sans-serif; text-shadow: 0 1px 1px #000; }
+        .clock-logo span { font-size: 3px; font-weight: normal; color: #aaa; border: 0.5px solid #aaa; padding: 0 1px; border-radius: 1px; display: inline-block; margin-top: 1px; }
+
+        /* クロノグラフ：3眼インダイヤル */
+        .sub-dial { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); position: absolute; background: radial-gradient(circle, #152b60, #0b1836); box-shadow: inset 0 0 5px #000; z-index: 8; display: flex; justify-content: center; align-items: center; }
+        .sub-dial::before { content: ''; position: absolute; width: 90%; height: 90%; border-radius: 50%; background: repeating-radial-gradient(circle, transparent, transparent 1px, rgba(255,255,255,0.05) 1px, rgba(255,255,255,0.05) 2px); }
+        .left-dial { top: 50%; left: 10px; transform: translateY(-50%); }
+        .right-dial { top: 50%; right: 10px; transform: translateY(-50%); }
+        .bottom-dial { bottom: 10px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px;}
+        
+        .sub-label { position: absolute; bottom: 3px; width: 100%; text-align: center; font-size: 4px; color: #ccc; line-height: 1; font-weight: normal; z-index: 9;}
+        .sub-hand { width: 1.5px; height: 8px; background: #fff; position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.5s; box-shadow: 0 0 2px rgba(0,0,0,0.8); z-index: 10;}
+
+        /* メタリックな立体バーインデックス */
+        .clock-index { position: absolute; background: linear-gradient(to right, #aaa, #fff, #aaa); box-shadow: 0 1px 2px rgba(0,0,0,0.8); z-index: 7; border-radius: 1px; }
+        .index-12 { top: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 8px; }
+        .index-6 { bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 6px; }
+        .index-3 { right: 4px; top: 50%; transform: translateY(-50%); width: 8px; height: 4px; }
+        .index-9 { left: 4px; top: 50%; transform: translateY(-50%); width: 8px; height: 4px; }
+        
+        /* シルバーメッキの剣型針 ＋ 白の蓄光ライン */
+        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.6)); }
+        .hour-hand { width: 4px; height: 22px; z-index: 10; background: linear-gradient(to right, #888 0%, #fff 20%, #ddd 80%, #888 100%); clip-path: polygon(50% 0%, 100% 20%, 100% 100%, 0% 100%, 0% 20%); }
+        .hour-hand::after { content: ''; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 1.5px; height: 60%; background: #fff; }
+        
+        .minute-hand { width: 3px; height: 32px; z-index: 11; background: linear-gradient(to right, #888 0%, #fff 20%, #ddd 80%, #888 100%); clip-path: polygon(50% 0%, 100% 15%, 100% 100%, 0% 100%, 0% 15%); }
+        .minute-hand::after { content: ''; position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 1px; height: 70%; background: #fff; }
+        
+        .second-hand { width: 1px; height: 36px; background: #ddd; z-index: 12; }
+        .center-dot { width: 4px; height: 4px; border-radius: 50%; background: #ddd; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; box-shadow: 0 0 3px rgba(0,0,0,0.8); }
 
         /* モーダル等 */
         .system-modal { position: fixed; top: 15%; left: 5%; right: 5%; bottom: 15%; background: linear-gradient(135deg, #1f1f1f 0%, #0d0d0d 100%); border: 2px solid #444; box-shadow: 0 15px 40px rgba(0,0,0,0.9); border-radius: 8px; z-index: 100000; display: none; flex-direction: column; padding: 25px; overflow-y: auto; }
@@ -220,7 +229,7 @@
     </style>
 </head>
 <body>
-    <!-- ★ オープニング画面 -->
+    <!-- オープニング画面 -->
     <div id="startupOverlay" class="startup-overlay">
         <div class="startup-logo-container">
             <div class="startup-brand">NEON EXCLUSIVE</div>
@@ -265,7 +274,7 @@
                 </div>
             </div>
 
-            <!-- ★ 新設：3連メーター・オービスレーダー画面 -->
+            <!-- ★ 3連メーター・オービスレーダー画面 -->
             <div id="radarScreen" class="radar-screen hidden">
                 <div class="side-light left mode-blue" id="sideLightL"></div>
                 <div class="side-light right mode-blue" id="sideLightR"></div>
@@ -294,7 +303,7 @@
                         <div class="meter-value" id="valTemp">--℃</div>
                     </div>
 
-                    <!-- 中央：スピードメーター（値は上部に出すので文字なし） -->
+                    <!-- 中央：スピードメーター -->
                     <div class="meter-box center-meter">
                         <div class="meter-title">SPEED</div>
                         <div class="meter-gauge-container">
@@ -341,26 +350,35 @@
                 <div class="hw-btn sound-btn neon-blue" style="font-size: 1.8rem;" onclick="openYouTubeMusic()">♪</div>
             </div>
 
-            <!-- 中央の時計 -->
+            <!-- ★ 中央の時計：TAG Heuer カレラ ブルーダイヤル風 クロノグラフ -->
             <div class="analog-clock" onclick="showToast('気象・方位取得中...')">
-                <div class="clock-outer-ring"></div>
                 <div class="clock-inner">
-                    <div class="clock-bg"></div>
-                    <div class="clock-facets"></div>
                     <div class="clock-face">
-                        <div class="clock-ring"></div>
+                        <div class="clock-sunray"></div>
+                        <div class="clock-tachymeter"></div>
+                        
+                        <div class="clock-logo">CHASER<br><span>EXCLUSIVE</span></div>
+
                         <div class="clock-index index-12"></div>
                         <div class="clock-index index-3"></div>
                         <div class="clock-index index-6"></div>
                         <div class="clock-index index-9"></div>
-                        <div class="sub-dial top-dial">
-                            <div class="sub-hand" id="tempHand"></div>
+                        
+                        <!-- 左：TEMP -->
+                        <div class="sub-dial left-dial">
+                            <div class="sub-hand" id="clockTempHand"></div>
                             <div class="sub-label">TEMP</div>
                         </div>
-                        <div class="sub-dial bottom-dial">
-                            <div class="sub-hand" id="compassHand"></div>
-                            <div class="sub-label">DIR</div>
+                        <!-- 右：HUM -->
+                        <div class="sub-dial right-dial">
+                            <div class="sub-hand" id="clockHumHand"></div>
+                            <div class="sub-label">HUM</div>
                         </div>
+                        <!-- 下：DIR -->
+                        <div class="sub-dial bottom-dial">
+                            <div class="sub-hand" id="clockDirHand"></div>
+                        </div>
+                        
                         <div class="hand hour-hand" id="hourHand"></div>
                         <div class="hand minute-hand" id="minuteHand"></div>
                         <div class="hand second-hand" id="secondHand"></div>
@@ -547,9 +565,9 @@
         let isSpeedDemoMode = false;
         let isSweeping = false;
         
-        let tempValue = 25; // デフォルト値
-        let humValue = 50;  // デフォルト値
-        let speedValue = 0; // デフォルト値
+        let tempValue = 25; 
+        let humValue = 50;  
+        let speedValue = 0; 
 
         const orbisList = [
             { lat: 35.6150, lng: 140.1100, limit: 60, warned: false },
@@ -638,13 +656,11 @@
             let radarScreen = document.getElementById('radarScreen');
 
             if (speed > limit) {
-                // 制限速度オーバー：ブラッドレッドアラート！
                 speedText.classList.add('over');
                 sideL.className = 'side-light left mode-red';
                 sideR.className = 'side-light right mode-red';
-                radarScreen.classList.add('alert-mode'); // ★ ここでCSS変数が上書きされ、メーター全体が赤くなる！
+                radarScreen.classList.add('alert-mode'); 
             } else {
-                // 通常時：クールなアイスブルー
                 speedText.classList.remove('over');
                 sideL.className = 'side-light left mode-blue';
                 sideR.className = 'side-light right mode-blue';
@@ -669,9 +685,11 @@
                     document.getElementById('valTemp').innerText = tempValue + '℃';
                     document.getElementById('valHum').innerText = humValue + '%';
                     
-                    // 時計の中の小さな針も動かす
-                    let tDeg = (tempValue - 15) * 4.8; tDeg = Math.max(-120, Math.min(120, tDeg));
-                    document.getElementById('tempHand').style.transform = `translateX(-50%) rotate(${tDeg}deg)`;
+                    // ★ 時計の中のクロノグラフ針（左：TEMP、右：HUM）も連動させる
+                    let tDegClock = (tempValue - 15) * 4.8; tDegClock = Math.max(-120, Math.min(120, tDegClock));
+                    let hDegClock = (humValue - 50) * 2.4; hDegClock = Math.max(-120, Math.min(120, hDegClock));
+                    document.getElementById('clockTempHand').style.transform = `translateX(-50%) rotate(${tDegClock}deg)`;
+                    document.getElementById('clockHumHand').style.transform = `translateX(-50%) rotate(${hDegClock}deg)`;
                     
                     tempFetched = true;
                     updateMeterNeedles();
@@ -719,6 +737,9 @@
                 let currentHeading = (position.coords.heading !== null && !isNaN(position.coords.heading)) ? position.coords.heading : calculatedHeading;
                 updateArrowRotation(currentHeading);
                 document.getElementById('tHdg').innerText = Math.round(currentHeading);
+                
+                // 時計の下ダイヤル（DIR）を現在の方角に合わせる
+                document.getElementById('clockDirHand').style.transform = `translateX(-50%) rotate(${currentHeading}deg)`;
 
                 // オービス判定
                 let nearestOrbis = null;
