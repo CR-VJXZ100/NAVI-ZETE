@@ -3,20 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER 高級クロノグラフ＆3連メーター版</title>
+    <title>純正風カーナビ - TOYOTA CHASER 超リアル3連メーター版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root {
-            --m-color1: #0044ff;
-            --m-color2: #00d4ff;
-        }
-        
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
         .container { display: flex; flex-direction: column; height: 100vh; position: relative; width: 100vw; }
         
-        /* ★ オープニングアニメーション（ターミナル＆警告） */
+        /* ★ 上品で高級感のあるオープニングアニメーション */
         .startup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #020202; z-index: 1000000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, visibility 0.8s; }
         .startup-logo-container { position: relative; width: 80%; max-width: 700px; display: flex; flex-direction: column; justify-content: center; align-items: center; animation: fadeOutPhase1 0.5s ease-in-out 4.2s forwards; }
         .startup-brand { font-family: 'Times New Roman', serif; font-size: clamp(1rem, 3vw, 1.5rem); color: #888; letter-spacing: 6px; opacity: 0; animation: fadeIn 1s ease-out 0.5s forwards; margin-bottom: 15px; }
@@ -43,9 +38,10 @@
         @keyframes warningPhase2 { 0% { opacity: 0; transform: scale(0.95); } 10% { opacity: 1; transform: scale(1); } 85% { opacity: 1; transform: scale(1); filter: blur(0); } 100% { opacity: 0; transform: scale(1.05); filter: blur(10px); } }
         .startup-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
-        /* メインエリア（地図＆2画面パネル） */
+        /* メインエリア（地図＆レーダー） */
         .main-display { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
         
+        /* 昼夜自動切替マップ（道グレー、高速グリーン） */
         .map-screen { flex: 1; position: absolute; top:0; left:0; width:100%; height:100%; background-color: #eee; transition: background-color 0.5s ease; z-index: 10;}
         .map-screen.hidden { opacity: 0; pointer-events: none; z-index: -1; }
         #map { position: absolute; top: -35%; left: -35%; width: 170%; height: 170%; transition: transform 0.3s linear; transform-origin: center center; transform: translateZ(0); will-change: transform; backface-visibility: hidden; }
@@ -67,9 +63,9 @@
         .top-right-clock { position: absolute; top: 20px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
 
         /* ==============================================================
-           ★ 3連メーター・オービスレーダー画面
+           ★ 新設：超リアル3連メーター・オービスレーダー画面
         ============================================================== */
-        .radar-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 20; opacity: 1; transition: opacity 0.4s ease; overflow: hidden; padding-top: 30px;}
+        .radar-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 20; opacity: 1; transition: opacity 0.4s ease; overflow: hidden; padding-top: 15px;}
         .radar-screen.hidden { opacity: 0; pointer-events: none; z-index: -1; }
 
         .side-light { position: absolute; top: 5%; width: 8px; height: 90%; border-radius: 4px; z-index: 9500; transition: all 0.2s ease-in-out; }
@@ -79,42 +75,81 @@
         @keyframes flashBlue { 0%, 100% { background-color: #00d4ff; box-shadow: 0 0 10px #00d4ff, 0 0 20px #0088ff; opacity: 0.2; } 50% { background-color: #e0f7ff; box-shadow: 0 0 25px #00d4ff, 0 0 45px #0088ff; opacity: 0.8; } }
         .mode-blue { animation: flashBlue 2.5s infinite ease-in-out; }
 
+        /* 超過時のサイドライト（赤色激ヤバ点滅） */
         @keyframes flashRed { 0%, 100% { background-color: #ff0000; box-shadow: 0 0 15px #ff0000, 0 0 30px #aa0000; opacity: 0.3; } 50% { background-color: #ffaaaa; box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; opacity: 1; } }
-        .mode-red { animation: flashRed 0.2s infinite ease-in-out; }
+        .mode-red { animation: flashRed 0.15s infinite ease-in-out; }
 
-        .digital-speed-top { text-align: center; margin-bottom: 2vh; }
-        .digi-speed-val { font-size: 6rem; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 15px var(--m-color2); transition: color 0.2s, text-shadow 0.2s; }
-        .digi-speed-unit { font-size: 1.8rem; color: #aaa; margin-left: 5px; }
-        .digi-limit-box { margin-top: 5px; font-size: 1.3rem; color: #ffcc00; border: 2px solid #ffcc00; padding: 2px 15px; border-radius: 4px; display: inline-block; font-weight: bold; background: rgba(255,204,0,0.1); box-shadow: 0 0 10px rgba(255,204,0,0.2); }
-        .radar-warn-text { color: #ff1a1a; font-size: 1.3rem; font-weight: bold; margin-top: 10px; text-shadow: 0 0 10px #ff0000; animation: blinkText 0.5s infinite alternate; visibility: hidden; }
+        /* デジタルスピード（画面上部） */
+        .digital-speed-top { text-align: center; margin-bottom: 0; z-index: 50; }
+        .digi-speed-val { font-size: 5rem; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 15px #00d4ff; transition: color 0.2s, text-shadow 0.2s; }
+        .digi-speed-unit { font-size: 1.5rem; color: #aaa; margin-left: 5px; }
+        .digi-limit-box { margin-top: 5px; font-size: 1.2rem; color: #ffcc00; border: 2px solid #ffcc00; padding: 2px 15px; border-radius: 4px; display: inline-block; font-weight: bold; background: rgba(255,204,0,0.1); box-shadow: 0 0 10px rgba(255,204,0,0.2); }
+        .radar-warn-text { color: #ff1a1a; font-size: 1.2rem; font-weight: bold; margin-top: 5px; text-shadow: 0 0 10px #ff0000; animation: blinkText 0.5s infinite alternate; visibility: hidden; }
 
-        /* ★ 3連メーターのダッシュボードレイアウト */
-        .meters-dashboard { display: flex; justify-content: center; align-items: flex-end; gap: 3vw; width: 100%; padding: 0 40px; margin-top: 2vh; }
-        .meter-box { display: flex; flex-direction: column; align-items: center; }
-        .meter-title { font-size: 1rem; color: #aaa; margin-bottom: 10px; font-weight: bold; letter-spacing: 2px; }
+        /* ★ 3連メーターのダッシュボードレイアウト（重なりを表現） */
+        .meters-dashboard { display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 2vh; gap: -4vh; /* ネガティブマージンで左右を潜り込ませる */ }
         
-        /* ★ メーター内部（青から黒へのグラデーション） */
-        .meter-gauge-container { position: relative; width: 22vh; height: 22vh; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at bottom center, #002266 0%, #000a1f 60%, #000000 100%); box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 0 20px rgba(0,212,255,0.1); border: 2px solid #222;}
+        .meter-box { display: flex; flex-direction: column; align-items: center; position: relative; }
         
-        .meter-arc { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 225deg, var(--m-color1) 0%, var(--m-color2) 75%, transparent 75%); -webkit-mask-image: radial-gradient(transparent 55%, black 57%, black 68%, transparent 70%); transition: background 0.3s; }
+        /* 左右のメーターは小さく、奥に配置 */
+        .meter-box.side-meter { z-index: 5; transform: translateY(4vh); }
+        .meter-box.side-meter .meter-gauge-container { width: 20vh; height: 20vh; border-width: 3px; }
         
-        .meter-ticks { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: repeating-conic-gradient(from 225deg, #fff 0deg 2deg, transparent 2deg 15deg); -webkit-mask-image: radial-gradient(transparent 68%, black 70%, black 75%, transparent 77%); opacity: 0.8; }
-        .meter-ticks-cover { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 225deg, transparent 0%, transparent 75%, #050505 75%, #050505 100%); }
+        /* 中央のスピードメーターはデカく、手前に配置 */
+        .meter-box.center-meter { z-index: 10; }
+        .meter-box.center-meter .meter-gauge-container { width: 32vh; height: 32vh; border-width: 5px; }
 
-        /* ★ メーターの針（銀メッキ風） */
-        .meter-needle { position: absolute; bottom: 50%; left: 50%; width: 4px; height: 42%; background: linear-gradient(to right, #888 0%, #fff 40%, #fff 60%, #555 100%); transform-origin: bottom center; transform: translateX(-50%) rotate(-135deg); border-radius: 2px 2px 0 0; box-shadow: -2px 0 4px rgba(0,0,0,0.6), 2px 0 4px rgba(0,0,0,0.6); z-index: 10; }
-        
-        .meter-center-cap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 25%; height: 25%; background: radial-gradient(circle, #444, #111); border-radius: 50%; border: 2px solid #222; box-shadow: 0 5px 10px rgba(0,0,0,0.8); z-index: 15; }
+        /* メーター本体（シルバーベゼルと深い青グラデーション背景） */
+        .meter-gauge-container { 
+            position: relative; border-radius: 50%; 
+            border: solid #ccc; /* シルバーベゼル */
+            box-shadow: 0 15px 30px rgba(0,0,0,0.9), inset 0 -5px 15px rgba(255,255,255,0.2), inset 0 5px 20px rgba(0,0,0,0.8); 
+            background: radial-gradient(circle at 50% 60%, #0033aa 0%, #000a22 60%, #000000 100%); 
+            display: flex; justify-content: center; align-items: center; 
+            overflow: hidden; 
+        }
 
-        .meter-value { margin-top: 15px; font-size: 1.8rem; font-weight: bold; color: #fff; text-shadow: 0 0 10px var(--m-color2); font-family: 'Helvetica Neue', Arial, sans-serif; transition: color 0.3s, text-shadow 0.3s;}
-        
-        .meter-box.center-meter .meter-gauge-container { width: 28vh; height: 28vh; }
-        .meter-box.center-meter .meter-value { display: none; } 
+        /* 目盛り（外周の細かい白線と、内側の太い白線） */
+        .meter-ticks { position: absolute; top: 2%; left: 2%; width: 96%; height: 96%; border-radius: 50%; background: repeating-conic-gradient(from 225deg, #fff 0deg 1.5deg, transparent 1.5deg 9deg); -webkit-mask-image: radial-gradient(transparent 90%, black 92%, black 100%); opacity: 0.8; }
+        .meter-ticks-inner { position: absolute; top: 6%; left: 6%; width: 88%; height: 88%; border-radius: 50%; background: repeating-conic-gradient(from 225deg, #fff 0deg 3deg, transparent 3deg 27deg); -webkit-mask-image: radial-gradient(transparent 85%, black 87%, black 100%); opacity: 1; }
 
-        .radar-screen.alert-mode { --m-color1: #a00000; --m-color2: #ff0000; }
-        .radar-screen.alert-mode .digi-speed-val { color: #ff0000; text-shadow: 0 0 30px #ff0000, 0 0 10px #ff0000; }
-        .radar-screen.alert-mode .meter-value { color: #ffaaaa; }
-        .radar-screen.alert-mode .meter-needle { background: linear-gradient(to right, #aa0000 0%, #ffaaaa 40%, #ffaaaa 60%, #660000 100%); box-shadow: 0 0 10px #ff0000; }
+        /* ★ 数字の上の青いライン（通常時は青く淡く点滅） */
+        .meter-glow-ring { 
+            position: absolute; top: 12%; left: 12%; width: 76%; height: 76%; border-radius: 50%; 
+            background: conic-gradient(from 225deg, #00d4ff 0%, #00d4ff 75%, transparent 75%); 
+            -webkit-mask-image: radial-gradient(transparent 92%, black 94%, black 100%); 
+            animation: flashBlueRing 2.5s infinite ease-in-out; z-index: 2;
+        }
+        @keyframes flashBlueRing { 0%, 100% { filter: drop-shadow(0 0 5px #00d4ff) brightness(0.6); opacity: 0.7; } 50% { filter: drop-shadow(0 0 15px #00d4ff) brightness(1.2); opacity: 1; } }
+
+        /* ★ アラートモード：青いラインが真っ赤に激しく点滅！ */
+        .radar-screen.alert-mode .meter-glow-ring { 
+            background: conic-gradient(from 225deg, #ff0000 0%, #ff0000 75%, transparent 75%); 
+            animation: flashRedRing 0.15s infinite ease-in-out; 
+        }
+        @keyframes flashRedRing { 0%, 100% { filter: drop-shadow(0 0 10px #ff0000) brightness(1); opacity: 0.8; } 50% { filter: drop-shadow(0 0 30px #ff0000) brightness(2); opacity: 1; } }
+        .radar-screen.alert-mode .digi-speed-val { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
+
+        /* ★ シャープな赤い針 */
+        .meter-needle { 
+            position: absolute; bottom: 50%; left: 50%; 
+            width: 4px; height: 44%; 
+            background: linear-gradient(to right, #aa0000 0%, #ff3333 50%, #aa0000 100%); 
+            transform-origin: bottom center; transform: translateX(-50%) rotate(-135deg); 
+            border-radius: 2px 2px 0 0; box-shadow: 0 0 8px rgba(255,0,0,0.8); z-index: 10; 
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%); 
+            transition: transform 0.2s linear;
+        }
+        .meter-needle::after { content: ''; position: absolute; top:0; left: 40%; width: 20%; height: 100%; background: #ffaaaa; }
+        .center-meter .meter-needle { width: 5px; height: 46%; }
+
+        /* 中央のキャップ（黒とシルバーのリング） */
+        .meter-center-cap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22%; height: 22%; background: radial-gradient(circle, #333, #000); border-radius: 50%; border: 2px solid #888; box-shadow: 0 5px 15px rgba(0,0,0,0.9), inset 0 2px 4px #aaa; z-index: 15; }
+
+        /* メーター下部のデジタル値 */
+        .meter-bottom-val { position: absolute; bottom: 18%; left: 50%; transform: translateX(-50%); font-size: 1.2rem; font-weight: bold; color: #fff; text-shadow: 0 0 5px #00d4ff; z-index: 12; font-family: 'Helvetica Neue', Arial, sans-serif;}
+        .meter-title-in { position: absolute; top: 25%; left: 50%; transform: translateX(-50%); font-size: 0.7rem; font-weight: bold; color: #aaa; letter-spacing: 1px; z-index: 12;}
+        .radar-screen.alert-mode .meter-bottom-val { color: #ffaaaa; text-shadow: 0 0 10px #ff0000; }
 
         /* ============================================================== */
 
@@ -130,21 +165,13 @@
         .hw-btn:active { transform: translateY(4px); border-top: 1px solid #111; border-bottom: 1px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.9), inset 0 5px 10px rgba(0,0,0,0.9); background: linear-gradient(to bottom, #222 0%, #0a0a0a 100%); }
         .hw-btn-text { font-size: clamp(0.7rem, 1.5vw, 0.9rem); padding: 0 5px; }
 
-        /* 7色に滑らかに変化するRGBネオン */
-        @keyframes rgbNeon { 
-            0%   { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 
-            16%  { background-color: #ff00ff; box-shadow: 0 0 15px #ff00ff, 0 0 30px #ff00ff; } 
-            33%  { background-color: #0088ff; box-shadow: 0 0 15px #0088ff, 0 0 30px #0088ff; } 
-            50%  { background-color: #00ffff; box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff; } 
-            66%  { background-color: #00ff00; box-shadow: 0 0 15px #00ff00, 0 0 30px #00ff00; } 
-            83%  { background-color: #ffff00; box-shadow: 0 0 15px #ffff00, 0 0 30px #ffff00; } 
-            100% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 
-        }
+        /* 7色RGBネオン */
+        @keyframes rgbNeon { 0% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 16% { background-color: #ff00ff; box-shadow: 0 0 15px #ff00ff, 0 0 30px #ff00ff; } 33% { background-color: #0088ff; box-shadow: 0 0 15px #0088ff, 0 0 30px #0088ff; } 50% { background-color: #00ffff; box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff; } 66% { background-color: #00ff00; box-shadow: 0 0 15px #00ff00, 0 0 30px #00ff00; } 83% { background-color: #ffff00; box-shadow: 0 0 15px #ffff00, 0 0 30px #ffff00; } 100% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } }
         .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: rgbNeon 6s infinite linear; opacity: 1; }
         .neon-blue { color: #fff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff; }
 
         /* ==============================================================
-           ★ 中央の超絶時計：TAG Heuer カレラ クロノグラフ風に完全リメイク
+           ★ 中央の時計：TAG Heuer カレラ ブルーダイヤル クロノグラフ風
         ============================================================== */
         .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #ccc; border-top-color: #eee; border-bottom-color: #888; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(0,0,0,0.5); z-index: 10000; background: #000; }
         
@@ -159,7 +186,7 @@
         /* タキメーター風の外周目盛り */
         .clock-tachymeter { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, #aaa 0deg 1deg, transparent 1deg 6deg); -webkit-mask-image: radial-gradient(transparent 93%, black 95%); pointer-events: none; }
         
-        /* ガラスの反射（白飛びを抑え上品に） */
+        /* 白飛びを抑えたガラスの反射 */
         .clock-inner::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%); transform: rotate(30deg); animation: gemShine 5s infinite linear; pointer-events: none; z-index: 20; }
         @keyframes gemShine { 0% { transform: translateX(-100%) rotate(30deg); } 20% { transform: translateX(100%) rotate(30deg); } 100% { transform: translateX(100%) rotate(30deg); } }
 
@@ -212,24 +239,10 @@
 
         #toast { visibility: hidden; min-width: 300px; background-color: rgba(0, 0, 0, 0.85); color: #fff; text-align: center; border-radius: 10px; padding: 20px; position: fixed; z-index: 10000; left: 50%; bottom: 115px; transform: translateX(-50%); font-size: 1.2rem; border: 1px solid #00d4ff; box-shadow: 0 5px 20px rgba(0,0,0,0.7); opacity: 0; transition: opacity 0.3s, bottom 0.3s; line-height: 1.5; }
         #toast.show { visibility: visible; opacity: 1; bottom: 115px; }
-        
-        .info-screen { width: 0; opacity: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); background: linear-gradient(to bottom, #1a1a1a, #050505); border-left: 0px solid #00d4ff; display: flex; flex-direction: column; box-shadow: inset 10px 0 20px rgba(0,0,0,0.8); z-index: 9000;}
-        .main-display.active-2screen .info-screen { width: 350px; opacity: 1; border-left: 3px solid #00d4ff; }
-        .info-content { min-width: 320px; padding: 15px; display: flex; flex-direction: column; height: 100%; opacity: 0; transition: opacity 0.3s ease; }
-        .main-display.active-2screen .info-content { opacity: 1; transition-delay: 0.2s; }
-        .info-sign { background: linear-gradient(to bottom, #009944, #007733); border-radius: 6px; border: 2px solid #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100px; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.7);}
-        .info-sign-arrow { font-size: 3.5rem; color: #fff; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-weight: bold; }
-        .info-sign-text { font-size: 1.6rem; color: #fff; font-weight: bold; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-top: 5px;}
-        .info-road-view { flex: 1; border-radius: 6px; position: relative; overflow: hidden; border: 2px solid #333; display: block; perspective: 300px; background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 40%, #555 40%, #222 100%);}
-        .road-surface { position: absolute; bottom: -50px; left: -50%; width: 200%; height: 120%; background: #444; transform: rotateX(70deg); border-left: 8px solid #fff; border-right: 8px solid #fff; box-shadow: inset 0 20px 50px rgba(0,0,0,0.8);}
-        .road-lane { position: absolute; top: 0; left: 50%; width: 6px; height: 100%; background: linear-gradient(to bottom, transparent 50%, #fff 50%); background-size: 100% 80px; transform: translateX(-50%); animation: moveLine 0.4s linear infinite; }
-        .info-bottom { background: rgba(0,0,0,0.8); padding: 15px; border-radius: 6px; margin-top: 15px; text-align: center; border: 1px solid #444;}
-        .info-dist-label { font-size: 1.2rem; color: #aaa; }
-        .info-dist { font-size: 2.5rem; color: #fff; font-weight: bold; text-shadow: 0 0 15px #00d4ff; margin: 5px 0;}
     </style>
 </head>
 <body>
-    <!-- オープニング画面 -->
+    <!-- ★ オープニング画面 -->
     <div id="startupOverlay" class="startup-overlay">
         <div class="startup-logo-container">
             <div class="startup-brand">NEON EXCLUSIVE</div>
@@ -255,7 +268,6 @@
         <!-- デジタル時計 -->
         <div class="top-right-clock" id="digitalClock">--:--</div>
 
-        <!-- メインディスプレイエリア -->
         <div class="main-display" id="mainDisplay">
             
             <!-- マップ画面 -->
@@ -274,11 +286,12 @@
                 </div>
             </div>
 
-            <!-- ★ 3連メーター・オービスレーダー画面 -->
+            <!-- ★ 新設：超リアル3連メーター・オービスレーダー画面 -->
             <div id="radarScreen" class="radar-screen hidden">
                 <div class="side-light left mode-blue" id="sideLightL"></div>
                 <div class="side-light right mode-blue" id="sideLightR"></div>
 
+                <!-- 画面上部のデジタルスピード表示 -->
                 <div class="digital-speed-top">
                     <!-- タップでテスト速度アップ -->
                     <div onclick="demoSpeedToggle()" style="cursor:pointer;" title="タップでテスト速度アップ！">
@@ -289,48 +302,48 @@
                     <div class="radar-warn-text" id="radarWarnText">!! WARNING: ORBIS DETECTED !!</div>
                 </div>
 
+                <!-- 3連メーターダッシュボード（重なり配置） -->
                 <div class="meters-dashboard">
-                    <!-- 左：気温メーター -->
-                    <div class="meter-box">
-                        <div class="meter-title">TEMPERATURE</div>
+                    <!-- 左：気温メーター（奥） -->
+                    <div class="meter-box side-meter">
                         <div class="meter-gauge-container">
-                            <div class="meter-arc"></div>
                             <div class="meter-ticks"></div>
-                            <div class="meter-ticks-cover"></div>
+                            <div class="meter-ticks-inner"></div>
+                            <div class="meter-glow-ring"></div>
                             <div class="meter-needle" id="needleTemp"></div>
                             <div class="meter-center-cap"></div>
+                            <div class="meter-title-in">TEMP</div>
+                            <div class="meter-bottom-val" id="valTemp">--℃</div>
                         </div>
-                        <div class="meter-value" id="valTemp">--℃</div>
                     </div>
 
-                    <!-- 中央：スピードメーター -->
-                    <div class="meter-box center-meter">
-                        <div class="meter-title">SPEED</div>
+                    <!-- 中央：スピードメーター（手前に大きく） -->
+                    <div class="meter-box center-meter" onclick="demoSpeedToggle()" style="cursor:pointer;" title="タップでテスト速度アップ！">
                         <div class="meter-gauge-container">
-                            <div class="meter-arc"></div>
                             <div class="meter-ticks"></div>
-                            <div class="meter-ticks-cover"></div>
+                            <div class="meter-ticks-inner"></div>
+                            <div class="meter-glow-ring"></div>
                             <div class="meter-needle" id="needleSpeed"></div>
                             <div class="meter-center-cap"></div>
                         </div>
-                        <div class="meter-value"></div>
                     </div>
 
-                    <!-- 右：湿度メーター -->
-                    <div class="meter-box">
-                        <div class="meter-title">HUMIDITY</div>
+                    <!-- 右：湿度メーター（奥） -->
+                    <div class="meter-box side-meter">
                         <div class="meter-gauge-container">
-                            <div class="meter-arc"></div>
                             <div class="meter-ticks"></div>
-                            <div class="meter-ticks-cover"></div>
+                            <div class="meter-ticks-inner"></div>
+                            <div class="meter-glow-ring"></div>
                             <div class="meter-needle" id="needleHum"></div>
                             <div class="meter-center-cap"></div>
+                            <div class="meter-title-in">HUM</div>
+                            <div class="meter-bottom-val" id="valHum">--%</div>
                         </div>
-                        <div class="meter-value" id="valHum">--%</div>
                     </div>
                 </div>
             </div>
 
+            <!-- 案内ポップアップ -->
             <div id="infoScreen" class="info-screen">
                 <div class="info-content">
                     <div class="info-sign" id="infoSign">
@@ -350,13 +363,12 @@
                 <div class="hw-btn sound-btn neon-blue" style="font-size: 1.8rem;" onclick="openYouTubeMusic()">♪</div>
             </div>
 
-            <!-- ★ 中央の時計：TAG Heuer カレラ ブルーダイヤル風 クロノグラフ -->
+            <!-- ★ 中央の時計：TAG Heuer カレラ クロノグラフ風 -->
             <div class="analog-clock" onclick="showToast('気象・方位取得中...')">
                 <div class="clock-inner">
                     <div class="clock-face">
                         <div class="clock-sunray"></div>
                         <div class="clock-tachymeter"></div>
-                        
                         <div class="clock-logo">CHASER<br><span>EXCLUSIVE</span></div>
 
                         <div class="clock-index index-12"></div>
@@ -364,17 +376,14 @@
                         <div class="clock-index index-6"></div>
                         <div class="clock-index index-9"></div>
                         
-                        <!-- 左：TEMP -->
                         <div class="sub-dial left-dial">
                             <div class="sub-hand" id="clockTempHand"></div>
                             <div class="sub-label">TEMP</div>
                         </div>
-                        <!-- 右：HUM -->
                         <div class="sub-dial right-dial">
                             <div class="sub-hand" id="clockHumHand"></div>
                             <div class="sub-label">HUM</div>
                         </div>
-                        <!-- 下：DIR -->
                         <div class="sub-dial bottom-dial">
                             <div class="sub-hand" id="clockDirHand"></div>
                         </div>
@@ -559,7 +568,7 @@
         }
 
         // ==========================================
-        // ★ 3連メーター・システム
+        // ★ 3連メーター・システム（スイープ機能搭載）
         // ==========================================
         let isRadarMode = false;
         let isSpeedDemoMode = false;
@@ -575,7 +584,7 @@
             { lat: 35.6080, lng: 140.1070, limit: 50, warned: false } 
         ];
 
-        // メーターを開いた瞬間に針が振り切れるオープニングスイープ演出！
+        // ★ メーターを開いた瞬間に針が振り切れるオープニングスイープ演出！
         function playMeterSweep() {
             isSweeping = true;
             let needles = document.querySelectorAll('.meter-needle');
@@ -586,7 +595,7 @@
                 n.style.transform = `translateX(-50%) rotate(135deg)`;
             });
 
-            // 少し待ってから現在の値にスッと戻る
+            // 1秒待ってから現在の値にスッと戻る
             setTimeout(() => {
                 isSweeping = false;
                 needles.forEach(n => {
@@ -596,21 +605,17 @@
             }, 1000);
         }
 
-        // 実際の針の角度を計算して反映
         function updateMeterNeedles() {
             if(isSweeping) return;
 
-            // 気温：-10℃ 〜 40℃ （範囲50）を -135度 〜 +135度にマッピング
             let tDeg = -135 + ((tempValue - (-10)) / 50) * 270;
             tDeg = Math.max(-135, Math.min(135, tDeg));
             document.getElementById('needleTemp').style.transform = `translateX(-50%) rotate(${tDeg}deg)`;
 
-            // スピード：0 〜 180km/h を -135度 〜 +135度にマッピング
             let sDeg = -135 + (speedValue / 180) * 270;
             sDeg = Math.max(-135, Math.min(135, sDeg));
             document.getElementById('needleSpeed').style.transform = `translateX(-50%) rotate(${sDeg}deg)`;
 
-            // 湿度：0% 〜 100% を -135度 〜 +135度にマッピング
             let hDeg = -135 + (humValue / 100) * 270;
             hDeg = Math.max(-135, Math.min(135, hDeg));
             document.getElementById('needleHum').style.transform = `translateX(-50%) rotate(${hDeg}deg)`;
@@ -644,7 +649,7 @@
             playBeep();
         }
 
-        // 赤色警戒モードへのUI更新処理
+        // ★ 赤色警戒モードへのUI更新処理
         function updateRadarUI(speed, limit) {
             speedValue = speed;
             updateMeterNeedles();
@@ -659,7 +664,7 @@
                 speedText.classList.add('over');
                 sideL.className = 'side-light left mode-red';
                 sideR.className = 'side-light right mode-red';
-                radarScreen.classList.add('alert-mode'); 
+                radarScreen.classList.add('alert-mode'); // ここでCSS変数が上書きされ、メーター全体が赤くなる！
             } else {
                 speedText.classList.remove('over');
                 sideL.className = 'side-light left mode-blue';
@@ -668,13 +673,9 @@
             }
         }
 
-        // ==========================================
-        // GPS位置情報と天気APIの処理
-        // ==========================================
         let tempFetched = false;
         function fetchWeather(lat, lng) {
             if(tempFetched) return;
-            // 気温と湿度の両方を取得するように変更
             fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m`)
             .then(res => res.json())
             .then(data => {
@@ -685,7 +686,7 @@
                     document.getElementById('valTemp').innerText = tempValue + '℃';
                     document.getElementById('valHum').innerText = humValue + '%';
                     
-                    // ★ 時計の中のクロノグラフ針（左：TEMP、右：HUM）も連動させる
+                    // 時計のクロノグラフ針も連動
                     let tDegClock = (tempValue - 15) * 4.8; tDegClock = Math.max(-120, Math.min(120, tDegClock));
                     let hDegClock = (humValue - 50) * 2.4; hDegClock = Math.max(-120, Math.min(120, hDegClock));
                     document.getElementById('clockTempHand').style.transform = `translateX(-50%) rotate(${tDegClock}deg)`;
@@ -718,7 +719,6 @@
                 userMarker.setLatLng([userLat, userLng]);
                 if(isTracking) map.setView([userLat, userLng]);
 
-                // ★ HUDテキストの更新
                 document.getElementById('tLat').innerText = userLat.toFixed(4);
                 document.getElementById('tLon').innerText = userLng.toFixed(4);
                 if(position.coords.altitude) document.getElementById('tAlt').innerText = Math.round(position.coords.altitude);
