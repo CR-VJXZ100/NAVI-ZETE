@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b1118">
-<title>NAVI ZETE v88 CORE</title>
+<title>NAVI ZETE v89 GPS</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}
@@ -110,7 +110,8 @@ button{touch-action:manipulation;cursor:pointer}
     <div class="statusLine speedLine"><span>速度</span><span><b id="speed">0</b> km/h</span></div>
     <div class="statusLine"><span>GPS</span><b id="gpsStatus">未取得</b></div>
     <div class="statusLine"><span>精度</span><b id="accuracy">-- m</b></div>
-    <div class="statusLine"><span>VERSION</span><b id="version">v88 CORE</b></div>
+    <div class="statusLine"><span>位置許可</span><b id="permissionState">確認中</b></div>
+    <div class="statusLine"><span>VERSION</span><b id="version">v89 GPS</b></div>
   </div>
 
   <div id="bottomBar">
@@ -155,4 +156,4 @@ var searchCache={};
 var $=function(id){return document.getElementById(id);};
 var els={
   viewport:$('mapViewport'),tiles:$('tileLayer'),routeSvg:$('routeSvg'),routeShadow:$('routePathShadow'),routePath:$('routePath'),userMarker:$('userMarker'),destMarker:$('destMarker'),
-  searchBox:$('searchBox'),searchInput:$('searchInput'),searchBtn:$('searchBtn'),results:$(
+  searchBo
