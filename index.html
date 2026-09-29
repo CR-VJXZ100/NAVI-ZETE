@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER 超ゴツ・サイバーネオン版</title>
+    <title>純正風カーナビ - TOYOTA CHASER 超ゴツ・レーダー＆ネオン警告版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
-            /* ★ サイバーネオンの光の強さを定義 */
-            --meter-glow-color: rgba(0, 212, 255, 0.7);
-            --meter-glow-edge: rgba(0, 255, 255, 1);
-            --meter-bg: radial-gradient(circle at 50% 50%, #001133 0%, #000 70%);
+            /* スティングレー特有の鮮やかなブルーイルミ */
+            --meter-glow-color: rgba(0, 150, 255, 0.9);
+            --meter-glow-edge: rgba(0, 212, 255, 1);
         }
         
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background-color: #050505; color: #fff; overflow: hidden; user-select: none; touch-action: manipulation; }
         .container { display: flex; flex-direction: column; height: 100vh; position: relative; width: 100vw; }
         
-        /* ★ オープニングアニメーション */
+        /* ★ オープニングアニメーション（ターミナル＆警告） */
         .startup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #020202; z-index: 1000000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, visibility 0.8s; }
         .startup-logo-container { position: relative; width: 80%; max-width: 700px; display: flex; flex-direction: column; justify-content: center; align-items: center; animation: fadeOutPhase1 0.5s ease-in-out 4.2s forwards; }
         .startup-brand { font-family: 'Times New Roman', serif; font-size: clamp(1rem, 3vw, 1.5rem); color: #888; letter-spacing: 6px; opacity: 0; animation: fadeIn 1s ease-out 0.5s forwards; margin-bottom: 15px; }
@@ -39,10 +38,20 @@
         @keyframes scaleFadeIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes expandLine { to { width: 100%; } }
 
+        /* ★ 新・警告画面（赤いネオンの脈動効果） */
         .warning-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; animation: warningPhase2 5s ease-in-out 4.8s forwards; }
-        .warning-title { font-size: clamp(4rem, 10vw, 8rem); color: #ff1a1a; font-weight: 900; letter-spacing: 20px; margin-bottom: 40px; text-shadow: 0 0 30px rgba(255, 26, 26, 0.8), 0 0 60px rgba(255, 26, 26, 0.4); }
+        .warning-title-box { position: relative; display: inline-block; padding: 20px 40px; margin-bottom: 40px; }
+        .warning-title-box::before {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 140%; height: 150%;
+            background: radial-gradient(ellipse at center, rgba(255,0,0,0.85) 0%, rgba(255,0,0,0.3) 50%, transparent 70%);
+            z-index: -1; filter: blur(15px); animation: neonPulse 1.5s infinite alternate;
+        }
+        @keyframes neonPulse { 0% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.9); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
+        .warning-title { font-size: clamp(3rem, 8vw, 6rem); color: #fff; font-weight: 900; letter-spacing: 10px; margin: 0; text-shadow: 0 0 10px #ff0000, 0 0 30px #ff0000, 0 0 50px #ff0000; }
         .warning-text { font-size: clamp(1.2rem, 3vw, 2.2rem); color: #f0f0f0; font-weight: bold; text-align: center; line-height: 1.8; letter-spacing: 4px; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); padding: 0 20px; }
         @keyframes warningPhase2 { 0% { opacity: 0; transform: scale(0.95); } 10% { opacity: 1; transform: scale(1); } 85% { opacity: 1; transform: scale(1); filter: blur(0); } 100% { opacity: 0; transform: scale(1.05); filter: blur(10px); } }
+        
         .startup-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
         /* メインエリア（地図＆2画面パネル） */
@@ -69,19 +78,10 @@
         .top-right-clock { position: absolute; top: 20px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
 
         /* ==============================================================
-           ★ 新設：超ゴツ・サイバーネオン・オービスレーダー画面
+           ★ 超ゴツ・3連メーター・オービスレーダー画面
         ============================================================== */
         .radar-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #020202; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 20; opacity: 1; transition: opacity 0.4s ease; overflow: hidden; padding-top: 10px;}
         .radar-screen.hidden { opacity: 0; pointer-events: none; z-index: -1; }
-
-        /* サイバーグリッド背景 */
-        .radar-bg-mech { 
-            position: absolute; top:0; left:0; width:100%; height:100%; 
-            background-image: radial-gradient(circle at center, transparent 20%, #000 100%), linear-gradient(var(--meter-glow-color) 1px, transparent 1px), linear-gradient(90deg, var(--meter-glow-color) 1px, transparent 1px); 
-            background-size: 100% 100%, 60px 60px, 60px 60px; 
-            opacity: 0.15; z-index: 1; pointer-events: none; 
-            transition: background-image 0.3s;
-        }
 
         /* ★ POLICE アラート背景（左側） */
         .police-alert-bg { 
@@ -105,16 +105,14 @@
         .mode-blue { animation: flashBlue 2.5s infinite ease-in-out; }
 
         @keyframes flashRed { 0%, 100% { background-color: #ff0000; box-shadow: 0 0 15px #ff0000, 0 0 30px #aa0000; opacity: 0.3; } 50% { background-color: #ffaaaa; box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; opacity: 1; } }
-        .mode-red { animation: flashRed 0.15s infinite ease-in-out; }
+        .mode-red { animation: flashRed 0.1s infinite ease-in-out; }
 
-        /* デジタルスピード */
         .digital-speed-top { text-align: center; margin-bottom: 0; z-index: 50; margin-top: 2vh;}
-        .digi-speed-val { font-size: 7.5rem; font-weight: 900; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 20px var(--meter-glow-edge); transition: color 0.2s, text-shadow 0.2s; }
+        .digi-speed-val { font-size: 7.5rem; font-weight: 900; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 20px var(--meter-glow-color); transition: color 0.2s, text-shadow 0.2s; }
         .digi-speed-unit { font-size: 2rem; color: #aaa; margin-left: 5px; font-weight: bold;}
         .digi-limit-box { margin-top: 5px; font-size: 1.4rem; color: #ffcc00; border: 2px solid #ffcc00; padding: 2px 20px; border-radius: 4px; display: inline-block; font-weight: bold; background: rgba(255,204,0,0.1); box-shadow: 0 0 10px rgba(255,204,0,0.2); letter-spacing: 2px;}
         .radar-warn-text { color: #ff1a1a; font-size: 1.6rem; font-weight: 900; margin-top: 5px; text-shadow: 0 0 15px #ff0000; animation: blinkText 0.5s infinite alternate; visibility: hidden; }
 
-        /* ★ メーターをゴツく、ネオンギラギラに！ */
         .meters-dashboard { display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 1vh; gap: -6vh; z-index: 10;}
         .meter-box { display: flex; flex-direction: column; align-items: center; position: relative; }
         
@@ -124,78 +122,76 @@
         .meter-box.center-meter { z-index: 10; }
         .meter-box.center-meter .meter-gauge-container { width: 46vh; height: 46vh; border-width: 12px; }
 
-        /* ★ メーター本体（極太装甲 ＋ ネオン発光） */
+        /* メーター本体 */
         .meter-gauge-container { 
             position: relative; border-radius: 50%; 
-            border: solid #111; /* 極太のダークアーマー枠 */
-            /* 枠の周りから漏れ出す強烈なネオンシャドウ */
-            box-shadow: 
-                0 0 0 4px var(--meter-glow-edge), 
-                0 0 30px 10px var(--meter-glow-color), 
-                inset 0 0 30px var(--meter-glow-color), 
-                inset 0 20px 40px #000; 
-            background: var(--meter-bg); 
+            border-style: solid; border-color: #777; 
+            border-top-color: #bbb; border-bottom-color: #333;
+            box-shadow: 0 20px 40px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 10px rgba(0,212,255,0.3), 0 0 15px rgba(0,212,255,0.2); 
+            background: radial-gradient(circle at 50% 60%, #001133 0%, #000a22 60%, #000000 100%); 
             display: flex; justify-content: center; align-items: center; 
             overflow: hidden; 
-            transition: box-shadow 0.3s, background 0.3s;
         }
 
-        /* ★ サイバー・ノード（発光端子装飾） */
-        .screw { position: absolute; width: 12px; height: 12px; background: #000; border: 2px solid var(--meter-glow-edge); border-radius: 3px; box-shadow: 0 0 10px var(--meter-glow-color); z-index: 25; transition: border-color 0.3s, box-shadow 0.3s; }
-        .screw.tl { top: 12%; left: 12%; }
-        .screw.tr { top: 12%; right: 12%; }
-        .screw.bl { bottom: 12%; left: 12%; }
-        .screw.br { bottom: 12%; right: 12%; }
+        .screw { position: absolute; width: 16px; height: 16px; background: radial-gradient(circle, #999, #333); border-radius: 50%; border: 1px solid #000; box-shadow: inset 0 1px 2px rgba(255,255,255,0.5), 0 3px 5px rgba(0,0,0,0.9); z-index: 25; }
+        .screw::after { content: ''; position: absolute; top: 50%; left: 15%; width: 70%; height: 2px; background: #111; box-shadow: 0 1px 0 rgba(255,255,255,0.2); transform: translateY(-50%) rotate(45deg); }
+        .screw.tl { top: 8%; left: 8%; }
+        .screw.tr { top: 8%; right: 8%; transform: rotate(30deg); }
+        .screw.bl { bottom: 8%; left: 8%; transform: rotate(70deg); }
+        .screw.br { bottom: 8%; right: 8%; transform: rotate(-20deg); }
 
-        /* メーター内部のイルミリング */
         .meter-illumination {
-            position: absolute; top: 14%; left: 14%; width: 72%; height: 72%; border-radius: 50%;
+            position: absolute; top: 12%; left: 12%; width: 76%; height: 76%; border-radius: 50%;
             background: radial-gradient(circle, transparent 40%, var(--meter-glow-color) 75%, var(--meter-glow-edge) 95%, transparent 100%);
             z-index: 2; -webkit-mask-image: conic-gradient(from 225deg, black 0%, black 75%, transparent 75%); transition: background 0.3s;
         }
 
         .meter-ticks { 
-            position: absolute; top: 3%; left: 3%; width: 94%; height: 94%; border-radius: 50%; 
+            position: absolute; top: 2%; left: 2%; width: 96%; height: 96%; border-radius: 50%; 
             background: repeating-conic-gradient(from 225deg, #fff 0deg 1.5deg, transparent 1.5deg 8deg); 
-            -webkit-mask-image: radial-gradient(transparent 88%, black 90%, black 100%); z-index: 3;
+            -webkit-mask-image: radial-gradient(transparent 90%, black 92%, black 100%); z-index: 3;
         }
-        .center-meter .meter-ticks { background: repeating-conic-gradient(from 225deg, #fff 0deg 2.5deg, transparent 2.5deg 10deg); }
+        .center-meter .meter-ticks { background: repeating-conic-gradient(from 225deg, #fff 0deg 2deg, transparent 2deg 10deg); }
 
-        /* ★ 極太レッドニードル（発光） */
+        /* ★ メーターの数字（新規追加） */
+        .meter-num {
+            position: absolute; top: 50%; left: 50%;
+            font-weight: 900; color: #fff; text-shadow: 0 0 5px #00d4ff; z-index: 6;
+            font-family: 'Helvetica Neue', Arial, sans-serif; transition: color 0.2s, text-shadow 0.2s;
+        }
+        .center-meter .meter-num { font-size: 1.6rem; }
+        .side-meter .meter-num { font-size: 1.1rem; }
+
         .meter-needle { 
             position: absolute; bottom: 50%; left: 50%; 
-            width: 8px; height: 42%; 
-            background: linear-gradient(to right, #600 0%, #ff1a1a 50%, #600 100%); 
-            border: 1px solid rgba(255,255,255,0.5);
+            width: 6px; height: 42%; 
+            background: linear-gradient(to right, #600 0%, #f00 50%, #600 100%); 
             transform-origin: bottom center; transform: translateX(-50%) rotate(-135deg); 
-            border-radius: 4px 4px 0 0; box-shadow: 0 0 20px rgba(255,0,0,1); z-index: 10; 
+            border-radius: 3px 3px 0 0; box-shadow: 0 0 15px rgba(255,0,0,1); z-index: 10; 
             transition: transform 0.2s linear;
         }
-        .center-meter .meter-needle { width: 12px; height: 44%; }
+        .center-meter .meter-needle { width: 8px; height: 44%; }
 
-        /* センターキャップ（スピンメタル風） */
         .meter-center-cap { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            width: 28%; height: 28%; 
-            background: conic-gradient(from 0deg, #222, #666, #222, #666, #222); 
-            border-radius: 50%; border: 4px solid #050505; 
-            box-shadow: 0 10px 25px rgba(0,0,0,1), inset 0 0 10px rgba(0,0,0,0.8); z-index: 15; 
+            width: 28%; height: 28%; background: radial-gradient(circle, #333, #000); 
+            border-radius: 50%; border: 3px solid #555; box-shadow: 0 5px 20px rgba(0,0,0,1); z-index: 15; 
         }
-        .center-meter .meter-center-cap { width: 32%; height: 32%; border-width: 6px; }
+        .center-meter .meter-center-cap { width: 32%; height: 32%; }
 
-        .meter-title-in { position: absolute; top: 68%; left: 50%; transform: translateX(-50%); font-size: 1.1rem; font-weight: 900; color: #fff; text-shadow: 0 0 8px var(--meter-glow-edge); z-index: 12; letter-spacing: 2px;}
-        .center-meter .meter-title-in { top: 68%; font-size: 1.5rem; }
-        .meter-bottom-val { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); font-size: 1.6rem; font-weight: bold; color: #fff; z-index: 12; font-family: 'Helvetica Neue', Arial, sans-serif;}
+        .meter-title-in { position: absolute; top: 68%; left: 50%; transform: translateX(-50%); font-size: 0.9rem; font-weight: bold; color: #fff; text-shadow: 0 0 5px #fff; z-index: 12; letter-spacing: 2px;}
+        .center-meter .meter-title-in { top: 68%; font-size: 1.2rem; }
+        .meter-bottom-val { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); font-size: 1.4rem; font-weight: bold; color: #fff; z-index: 12; font-family: 'Helvetica Neue', Arial, sans-serif;}
 
-        /* ★ 速度超過時のアラートモード（ヤバい赤色への完全上書き！） */
+        /* ★ 速度超過時のアラートモード（数字も赤くなる！） */
         .radar-screen.alert-mode { 
-            --meter-glow-color: rgba(255, 0, 0, 0.95); 
+            --meter-glow-color: rgba(255, 0, 0, 0.9); 
             --meter-glow-edge: rgba(255, 50, 50, 1); 
-            --meter-bg: radial-gradient(circle at 50% 50%, #330000 0%, #000 70%);
         }
+        .radar-screen.alert-mode .meter-gauge-container { box-shadow: 0 20px 40px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 20px rgba(255,0,0,0.6), 0 0 30px rgba(255,0,0,0.5); border-color: #500; border-top-color: #f55; }
         .radar-screen.alert-mode .digi-speed-val { color: #ff0000; text-shadow: 0 0 40px #ff0000, 0 0 20px #ff0000; }
         .radar-screen.alert-mode .meter-bottom-val { color: #ffaaaa; text-shadow: 0 0 10px #ff0000; }
-        .radar-screen.alert-mode .meter-title-in { text-shadow: 0 0 8px #ff0000; color: #ffaaaa;}
+        .radar-screen.alert-mode .meter-num { color: #ffaaaa; text-shadow: 0 0 10px #ff0000; }
 
         /* ============================================================== */
 
@@ -206,17 +202,14 @@
         .right-group { right: 10px; justify-content: flex-end; }
         .luxury-badge { background: linear-gradient(135deg, #444, #111); padding: 0 12px; border-radius: 4px; border: 1px solid #666; border-bottom: 2px solid #000; color: #d4d4d4; font-family: 'Times New Roman', serif; font-size: clamp(0.7rem, 1.2vw, 0.85rem); letter-spacing: 2px; text-shadow: -1px -1px 1px #000, 1px 1px 1px #666; box-shadow: 0 4px 8px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; height: 40px; white-space: nowrap; flex-shrink: 1; font-weight: bold; overflow: hidden; }
 
-        /* 超立体メカニカルスイッチ */
         .hw-btn { flex: 1; min-width: 45px; max-width: 80px; background: linear-gradient(to bottom, #5a5a5a 0%, #303030 40%, #151515 100%); border: 1px solid #000; border-top: 2px solid #888; border-bottom: 4px solid #050505; color: #eee; height: 55px; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-size: clamp(1rem, 2.5vw, 1.4rem); font-weight: bold; box-shadow: 0 8px 15px rgba(0,0,0,0.9), inset 0 2px 4px rgba(255,255,255,0.2); cursor: pointer; position: relative; transition: all 0.1s; white-space: nowrap; }
         .hw-btn:active { transform: translateY(4px); border-top: 1px solid #111; border-bottom: 1px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.9), inset 0 5px 10px rgba(0,0,0,0.9); background: linear-gradient(to bottom, #222 0%, #0a0a0a 100%); }
         .hw-btn-text { font-size: clamp(0.7rem, 1.5vw, 0.9rem); padding: 0 5px; }
 
-        /* 7色RGBネオン */
         @keyframes rgbNeon { 0%   { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } 16%  { background-color: #ff00ff; box-shadow: 0 0 15px #ff00ff, 0 0 30px #ff00ff; } 33%  { background-color: #0088ff; box-shadow: 0 0 15px #0088ff, 0 0 30px #0088ff; } 50%  { background-color: #00ffff; box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff; } 66%  { background-color: #00ff00; box-shadow: 0 0 15px #00ff00, 0 0 30px #00ff00; } 83%  { background-color: #ffff00; box-shadow: 0 0 15px #ffff00, 0 0 30px #ffff00; } 100% { background-color: #ff3333; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; } }
         .hw-btn::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 85%; height: 5px; border-radius: 3px; animation: rgbNeon 6s infinite linear; opacity: 1; }
         .neon-blue { color: #fff; text-shadow: 0 0 5px #00d4ff, 0 0 10px #008cff; }
 
-        /* 中央の時計：TAG Heuer カレラ クロノグラフ風 */
         .analog-clock { flex: 0 0 85px; width: 85px; height: 85px; margin: 0 auto; border-radius: 50%; border: 3px solid #ccc; border-top-color: #eee; border-bottom-color: #888; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(0,0,0,0.5); z-index: 10000; background: #000; }
         .clock-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; z-index: 1; -webkit-mask-image: -webkit-radial-gradient(white, black); mask-image: radial-gradient(white, black); -webkit-transform: translateZ(0); transform: translateZ(0); }
         .clock-face { width: 100%; height: 100%; position: relative; z-index: 5; background: radial-gradient(circle, #1a3c75 0%, #0d1e3f 80%, #050b18 100%); border-radius: 50%; }
@@ -298,7 +291,7 @@
     </style>
 </head>
 <body>
-    <!-- オープニング画面 -->
+    <!-- ★ オープニング画面（ネオン警告仕様） -->
     <div id="startupOverlay" class="startup-overlay">
         <div class="startup-logo-container">
             <div class="startup-brand">NEON EXCLUSIVE</div>
@@ -315,7 +308,9 @@
         </div>
 
         <div class="warning-container">
-            <div class="warning-title">警告</div>
+            <div class="warning-title-box">
+                <div class="warning-title">⚠️警告⚠️</div>
+            </div>
             <div class="warning-text">飲酒状態、睡眠不足、過信した運転は危険です。<br>安全運転を心がけましょう。</div>
         </div>
     </div>
@@ -324,7 +319,6 @@
         <!-- デジタル時計 -->
         <div class="top-right-clock" id="digitalClock">--:--</div>
 
-        <!-- メインディスプレイエリア -->
         <div class="main-display" id="mainDisplay">
             
             <!-- マップ画面 -->
@@ -343,19 +337,13 @@
                 </div>
             </div>
 
-            <!-- ★ 超ゴツ・サイバーネオン メーター画面 -->
+            <!-- ★ 超ゴツ・3連メーター画面（数字入り！） -->
             <div id="radarScreen" class="radar-screen hidden">
-                
-                <div class="radar-bg-mech"></div>
-                
-                <!-- ★ 超過時に浮かび上がるPOLICE画像アラート -->
                 <div class="police-alert-bg"></div>
-
                 <div class="side-light left mode-blue" id="sideLightL"></div>
                 <div class="side-light right mode-blue" id="sideLightR"></div>
 
                 <div class="digital-speed-top">
-                    <!-- タップでテスト速度アップ -->
                     <div onclick="demoSpeedToggle()" style="cursor:pointer;" title="タップでテスト速度アップ！">
                         <span class="digi-speed-val" id="radarSpeed">0</span>
                         <span class="digi-speed-unit">km/h</span>
@@ -364,15 +352,22 @@
                     <div class="radar-warn-text" id="radarWarnText">!! WARNING: ORBIS DETECTED !!</div>
                 </div>
 
-                <!-- ★ 極太装甲 3連メーターダッシュボード -->
                 <div class="meters-dashboard">
-                    <!-- 左：気温メーター（奥） -->
+                    <!-- 左：気温メーター -->
                     <div class="meter-box side-meter">
                         <div class="meter-gauge-container">
-                            <!-- サイバーノード装飾 -->
                             <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
                             <div class="meter-ticks"></div>
                             <div class="meter-illumination"></div>
+                            
+                            <!-- ★ メーターの数字 -->
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-135deg) translateY(-10.5vh) rotate(135deg);"> -10</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-81deg) translateY(-10.5vh) rotate(81deg);"> 0</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-27deg) translateY(-10.5vh) rotate(27deg);"> 10</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(27deg) translateY(-10.5vh) rotate(-27deg);"> 20</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(81deg) translateY(-10.5vh) rotate(-81deg);"> 30</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(135deg) translateY(-10.5vh) rotate(-135deg);"> 40</div>
+
                             <div class="meter-needle" id="needleTemp"></div>
                             <div class="meter-center-cap"></div>
                             <div class="meter-title-in">TEMP</div>
@@ -380,26 +375,46 @@
                         </div>
                     </div>
 
-                    <!-- 中央：スピードメーター（超デカ＆手前） -->
+                    <!-- 中央：スピードメーター -->
                     <div class="meter-box center-meter" onclick="demoSpeedToggle()" style="cursor:pointer;">
                         <div class="meter-gauge-container">
-                            <!-- サイバーノード装飾 -->
                             <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
                             <div class="meter-ticks"></div>
                             <div class="meter-illumination"></div>
+                            
+                            <!-- ★ スピードメーターの数字 -->
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-135deg) translateY(-16.5vh) rotate(135deg);">0</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-105deg) translateY(-16.5vh) rotate(105deg);">20</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-75deg) translateY(-16.5vh) rotate(75deg);">40</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-45deg) translateY(-16.5vh) rotate(45deg);">60</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-15deg) translateY(-16.5vh) rotate(15deg);">80</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(15deg) translateY(-16.5vh) rotate(-15deg);">100</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(45deg) translateY(-16.5vh) rotate(-45deg);">120</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(75deg) translateY(-16.5vh) rotate(-75deg);">140</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(105deg) translateY(-16.5vh) rotate(-105deg);">160</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(135deg) translateY(-16.5vh) rotate(-135deg);">180</div>
+
                             <div class="meter-needle" id="needleSpeed"></div>
                             <div class="meter-center-cap"></div>
                             <div class="meter-title-in" style="top: 75%;">SPEED</div>
                         </div>
                     </div>
 
-                    <!-- 右：湿度メーター（奥） -->
+                    <!-- 右：湿度メーター -->
                     <div class="meter-box side-meter">
                         <div class="meter-gauge-container">
-                            <!-- サイバーノード装飾 -->
                             <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
                             <div class="meter-ticks"></div>
                             <div class="meter-illumination"></div>
+                            
+                            <!-- ★ 湿度メーターの数字 -->
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-135deg) translateY(-10.5vh) rotate(135deg);">0</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-81deg) translateY(-10.5vh) rotate(81deg);">20</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(-27deg) translateY(-10.5vh) rotate(27deg);">40</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(27deg) translateY(-10.5vh) rotate(-27deg);">60</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(81deg) translateY(-10.5vh) rotate(-81deg);">80</div>
+                            <div class="meter-num" style="transform: translate(-50%, -50%) rotate(135deg) translateY(-10.5vh) rotate(-135deg);">100</div>
+
                             <div class="meter-needle" id="needleHum"></div>
                             <div class="meter-center-cap"></div>
                             <div class="meter-title-in">HUMIDITY</div>
@@ -482,7 +497,6 @@
                 <input type="text" id="searchInput" class="search-input" placeholder="名称・番地 (例: トヨタ博物館, 北栄4-9-1)...">
                 <button class="search-btn sound-btn" onclick="smartSearchLocation()">🔍 検索</button>
             </div>
-            <!-- ★ 最大10件制限でエラー解消！ -->
             <div class="category-grid">
                 <div class="cat-btn sound-btn" onclick="searchNearby('shop', 'convenience', 'コンビニ')">🏪 近くのコンビニ</div>
                 <div class="cat-btn sound-btn" onclick="searchNearby('amenity', 'fuel', 'ガソリンスタンド')">⛽ 近くのGS</div>
@@ -535,8 +549,15 @@
             if(audioCtx.state === 'suspended') { audioCtx.resume(); }
         }
         
-        ['touchstart', 'mousedown'].forEach(evt => {
-            document.body.addEventListener(evt, initAudio, { capture: true, passive: true });
+        // どんな画面操作でも確実に音のシステムを起こす
+        document.body.addEventListener('touchstart', function(e) {
+            initAudio();
+            if(e.target.closest('.sound-btn')) playBeep();
+        }, {passive: true});
+        
+        document.body.addEventListener('mousedown', function(e) {
+            initAudio();
+            if(e.target.closest('.sound-btn')) playBeep();
         });
 
         function playBeep() {
@@ -572,12 +593,6 @@
         }
 
         window.onload = function() {
-            const buttons = document.querySelectorAll('.sound-btn');
-            buttons.forEach(function(btn) { 
-                btn.addEventListener('touchstart', function(e) { playBeep(); }, {passive: true}); 
-                btn.addEventListener('mousedown', function(e) { playBeep(); }); 
-            });
-
             setTimeout(() => { document.getElementById('startupOverlay').classList.add('hidden'); }, 9800);
         }
 
@@ -878,17 +893,18 @@
         function openNavMenu() { openModal('navModal'); }
         function backToNavMenu() { closeModal('resultsModal'); openModal('navModal'); }
 
-        // ★ 通信エラーフリーズ対策 ＆ 最大10件制限
+        // ★ 通信エラーフリーズ対策（最大10件制限）
         function searchNearby(key, value, label) {
             showToast(`周辺の ${label} を検索中...`);
-            // リミットを10件（out center 10;）に制限し通信負荷を激減
             let query = `[out:json][timeout:10];(node["${key}"="${value}"](around:3000,${userLat},${userLng});way["${key}"="${value}"](around:3000,${userLat},${userLng}););out center 10;`;
             let url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
             fetch(url).then(res => res.json()).then(data => {
                 if(data && data.elements && data.elements.length > 0) {
                     let results = data.elements.map(item => { 
                         let lat = item.lat || item.center.lat; let lon = item.lon || item.center.lon;
-                        return { lat: lat, lon: lon, name: item.tags.name || item.tags.brand || `名称不明の${label}`, display_name: `${label}`, dist: calculateDistance(userLat, userLng, lat, lon) }; 
+                        let rawName = item.tags.name || item.tags.brand || `名称不明の${label}`;
+                        let safeName = rawName.replace(/['"\\`]/g, " ");
+                        return { lat: lat, lon: lon, name: rawName, safeName: safeName, display_name: `${label}`, dist: calculateDistance(userLat, userLng, lat, lon) }; 
                     });
                     processMapResults(results, label);
                 } else { showToast('周辺3km以内に見つかりませんでした'); speak('周辺に見つかりませんでした'); }
@@ -906,9 +922,11 @@
                 .then(res => { if(!res.ok) throw new Error("GSI Network error"); return res.json(); })
                 .then(data => {
                     if(data && data.length > 0) {
-                        // 最大10件でカット
                         let limitedData = data.slice(0, 10); 
-                        let results = limitedData.map(item => { return { lat: item.geometry.coordinates[1], lon: item.geometry.coordinates[0], name: item.properties.title, display_name: item.properties.title, dist: calculateDistance(userLat, userLng, item.geometry.coordinates[1], item.geometry.coordinates[0]) }; });
+                        let results = limitedData.map(item => { 
+                            let safeName = item.properties.title.replace(/['"\\`]/g, " ");
+                            return { lat: item.geometry.coordinates[1], lon: item.geometry.coordinates[0], name: item.properties.title, safeName: safeName, display_name: item.properties.title, dist: calculateDistance(userLat, userLng, item.geometry.coordinates[1], item.geometry.coordinates[0]) }; 
+                        });
                         processMapResults(results, rawKeyword);
                     } else { fallbackToNominatim(rawKeyword); }
                 }).catch(e => fallbackToNominatim(rawKeyword));
@@ -918,12 +936,15 @@
         function fallbackToNominatim(query) {
             let left = userLng - 0.1; let right = userLng + 0.1; let top = userLat + 0.1; let bottom = userLat - 0.1;
             let viewbox = `${left},${top},${right},${bottom}`;
-            // limit=10に設定
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=10&viewbox=${viewbox}`)
             .then(res => { if(!res.ok) throw new Error("Network error"); return res.json(); })
             .then(data => {
                 if(data.length > 0) {
-                    let results = data.map(item => { return { lat: item.lat, lon: item.lon, name: item.display_name.split(',')[0], display_name: item.display_name, dist: calculateDistance(userLat, userLng, item.lat, item.lon) }; });
+                    let results = data.map(item => { 
+                        let rawName = item.display_name.split(',')[0];
+                        let safeName = rawName.replace(/['"\\`]/g, " ");
+                        return { lat: item.lat, lon: item.lon, name: rawName, safeName: safeName, display_name: item.display_name, dist: calculateDistance(userLat, userLng, item.lat, item.lon) }; 
+                    });
                     processMapResults(results, query);
                 } else { showToast('目的地が見つかりませんでした'); speak('目的地が見つかりませんでした。');}
             }).catch(e => { showToast('通信エラーが発生しました'); closeModal('navModal'); });
@@ -931,11 +952,18 @@
 
         function processMapResults(dataArray, customTitle) {
             dataArray.sort((a, b) => a.dist - b.dist);
-            let listHtml = '';
+            let container = document.getElementById('resultsListContainer');
+            container.innerHTML = '';
+            
             dataArray.forEach((item) => {
-                listHtml += `<div class="result-item sound-btn" onclick="selectSearchResult(${item.lat}, ${item.lon}, '${item.name.replace(/'/g, "")}')"><div class="result-name">📍 ${item.name}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${item.display_name}</span></div><div class="result-dist">約 ${item.dist.toFixed(1)} km</div></div>`;
+                let div = document.createElement('div');
+                div.className = 'result-item sound-btn';
+                div.innerHTML = `<div class="result-name">📍 ${item.name}<br><span style="font-size:0.85rem; color:#aaa; font-weight:normal;">${item.display_name}</span></div><div class="result-dist">約 ${item.dist.toFixed(1)} km</div>`;
+                div.onclick = function() { selectSearchResult(item.lat, item.lon, item.safeName); };
+                container.appendChild(div);
             });
-            closeModal('navModal'); document.getElementById('resultsListContainer').innerHTML = listHtml; openModal('resultsModal');
+            
+            closeModal('navModal'); openModal('resultsModal');
             showToast(dataArray.length + '件見つかりました'); speak('周辺の候補が見つかりました。');
         }
 
