@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER 超ゴツ・レーダー＆POLICEアラート版</title>
+    <title>純正風カーナビ - TOYOTA CHASER 重装甲メカニカルレーダー版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
-            /* スティングレー特有の鮮やかなブルーイルミ（よりギラギラに） */
-            --meter-glow-color: rgba(0, 150, 255, 0.9);
+            /* スティングレー特有の鮮やかなブルーイルミ（よりサイバーに） */
+            --meter-glow-color: rgba(0, 170, 255, 0.9);
             --meter-glow-edge: rgba(0, 212, 255, 1);
         }
         
@@ -68,7 +68,7 @@
         .top-right-clock { position: absolute; top: 20px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
 
         /* ==============================================================
-           ★ 超ゴツ・3連メーター・オービスレーダー画面
+           ★ 重装甲メカニカル・オービスレーダー画面
         ============================================================== */
         .radar-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #020202; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 20; opacity: 1; transition: opacity 0.4s ease; overflow: hidden; padding-top: 10px;}
         .radar-screen.hidden { opacity: 0; pointer-events: none; z-index: -1; }
@@ -77,18 +77,16 @@
         .police-alert-bg { 
             position: absolute; top: 50%; left: 5%; width: 45vh; height: 60vh; 
             transform: translateY(-50%); 
-            background-image: url('1308.jpg'); /* 提供された画像！ */
+            background-image: url('1308.jpg'); /* 提供された警察マーク */
             background-size: contain; background-repeat: no-repeat; background-position: center; 
             opacity: 0; z-index: 1; pointer-events: none; 
-            mix-blend-mode: screen; /* 黒背景を透過してマークだけ浮かび上がる */
+            mix-blend-mode: screen; 
         }
         /* 速度超過時：警察マークが真っ赤に激しく点滅！ */
-        .radar-screen.alert-mode .police-alert-bg { 
-            animation: policeFlash 0.15s infinite alternate; 
-        }
+        .radar-screen.alert-mode .police-alert-bg { animation: policeFlash 0.15s infinite alternate; }
         @keyframes policeFlash { 
             0% { opacity: 0.1; filter: sepia(1) hue-rotate(-50deg) saturate(10) brightness(0.5) blur(2px) drop-shadow(0 0 10px red); } 
-            100% { opacity: 0.7; filter: sepia(1) hue-rotate(-50deg) saturate(15) brightness(1.2) blur(0px) drop-shadow(0 0 40px red); } 
+            100% { opacity: 0.8; filter: sepia(1) hue-rotate(-50deg) saturate(15) brightness(1.2) blur(0px) drop-shadow(0 0 40px red); } 
         }
 
         .side-light { position: absolute; top: 5%; width: 8px; height: 90%; border-radius: 4px; z-index: 9500; transition: all 0.2s ease-in-out; }
@@ -99,83 +97,103 @@
         .mode-blue { animation: flashBlue 2.5s infinite ease-in-out; }
 
         @keyframes flashRed { 0%, 100% { background-color: #ff0000; box-shadow: 0 0 15px #ff0000, 0 0 30px #aa0000; opacity: 0.3; } 50% { background-color: #ffaaaa; box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; opacity: 1; } }
-        .mode-red { animation: flashRed 0.1s infinite ease-in-out; }
+        .mode-red { animation: flashRed 0.15s infinite ease-in-out; }
 
         /* デジタルスピード */
         .digital-speed-top { text-align: center; margin-bottom: 0; z-index: 50; margin-top: 2vh;}
-        .digi-speed-val { font-size: 7rem; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 20px var(--meter-glow-color); transition: color 0.2s, text-shadow 0.2s; }
-        .digi-speed-unit { font-size: 2rem; color: #aaa; margin-left: 5px; }
-        .digi-limit-box { margin-top: 5px; font-size: 1.3rem; color: #ffcc00; border: 2px solid #ffcc00; padding: 2px 15px; border-radius: 4px; display: inline-block; font-weight: bold; background: rgba(255,204,0,0.1); box-shadow: 0 0 10px rgba(255,204,0,0.2); }
-        .radar-warn-text { color: #ff1a1a; font-size: 1.5rem; font-weight: bold; margin-top: 5px; text-shadow: 0 0 15px #ff0000; animation: blinkText 0.5s infinite alternate; visibility: hidden; }
+        .digi-speed-val { font-size: 7.5rem; font-weight: 900; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 20px var(--meter-glow-color); transition: color 0.2s, text-shadow 0.2s; }
+        .digi-speed-unit { font-size: 2rem; color: #aaa; margin-left: 5px; font-weight: bold;}
+        .digi-limit-box { margin-top: 5px; font-size: 1.4rem; color: #ffcc00; border: 2px solid #ffcc00; padding: 2px 20px; border-radius: 4px; display: inline-block; font-weight: bold; background: rgba(255,204,0,0.1); box-shadow: 0 0 10px rgba(255,204,0,0.2); letter-spacing: 2px;}
+        .radar-warn-text { color: #ff1a1a; font-size: 1.6rem; font-weight: 900; margin-top: 5px; text-shadow: 0 0 15px #ff0000; animation: blinkText 0.5s infinite alternate; visibility: hidden; }
 
-        /* ★ メーターをゴツく、ギラギラに！ */
-        .meters-dashboard { display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 1vh; gap: -6vh; z-index: 10;}
+        /* ★ 重装甲 3連メーターダッシュボード */
+        .meters-dashboard { display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 1vh; gap: -5vh; z-index: 10;}
         .meter-box { display: flex; flex-direction: column; align-items: center; position: relative; }
         
-        .meter-box.side-meter { z-index: 5; transform: translateY(6vh); }
-        .meter-box.side-meter .meter-gauge-container { width: 32vh; height: 32vh; border-width: 8px; }
+        .meter-box.side-meter { z-index: 5; transform: translateY(8vh); }
+        /* サイドメーターも大きく */
+        .meter-box.side-meter .meter-gauge-container { width: 34vh; height: 34vh; border-width: 14px; }
         
-        .meter-box.center-meter { z-index: 10; }
-        .meter-box.center-meter .meter-gauge-container { width: 46vh; height: 46vh; border-width: 12px; }
+        .meter-box.center-meter { z-index: 10; transform: translateY(2vh); }
+        /* センターメーターはさらに巨大に */
+        .meter-box.center-meter .meter-gauge-container { width: 48vh; height: 48vh; border-width: 18px; }
 
-        /* ★ メーター本体（極太ベゼル＆内部シャドウで立体感MAX） */
+        /* ★ メーター背後のギア（歯車）装飾 */
+        .meter-gear { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 112%; height: 112%; border-radius: 50%; 
+            background: repeating-conic-gradient(from 0deg, #444 0deg 5deg, #111 5deg 10deg); 
+            z-index: -1; box-shadow: 0 15px 30px rgba(0,0,0,1); border: 4px solid #111; transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        /* ★ メーター本体（極太ベゼル＆深い奥行き） */
         .meter-gauge-container { 
             position: relative; border-radius: 50%; 
-            border-style: solid; border-color: #777; /* ゴツいガンメタベゼル */
-            border-top-color: #bbb; border-bottom-color: #333;
-            box-shadow: 0 20px 40px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 10px rgba(0,212,255,0.3), 0 0 15px rgba(0,212,255,0.2); 
+            border-style: solid; border-color: #333; 
+            border-top-color: #777; border-bottom-color: #111;
+            box-shadow: 0 20px 50px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 15px rgba(0,212,255,0.4); 
             background: radial-gradient(circle at 50% 60%, #001133 0%, #000a22 60%, #000000 100%); 
             display: flex; justify-content: center; align-items: center; 
             overflow: hidden; 
         }
 
-        /* ビス（ネジ）装飾でメカメカしく */
-        .meter-gauge-container::before { content: ''; position: absolute; top: 12px; left: 12px; width: 8px; height: 8px; border-radius: 50%; background: #555; box-shadow: inset 1px 1px 2px #000, 0 1px 1px rgba(255,255,255,0.2); z-index: 20; }
-        .meter-gauge-container::after { content: ''; position: absolute; bottom: 12px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: #555; box-shadow: inset 1px 1px 2px #000, 0 1px 1px rgba(255,255,255,0.2); z-index: 20; }
+        /* ★ ボルト（ネジ）装飾 */
+        .screw { position: absolute; width: 16px; height: 16px; background: radial-gradient(circle, #999, #333); border-radius: 50%; border: 1px solid #000; box-shadow: inset 0 1px 2px rgba(255,255,255,0.5), 0 3px 5px rgba(0,0,0,0.9); z-index: 25; }
+        .screw::after { content: ''; position: absolute; top: 50%; left: 15%; width: 70%; height: 2px; background: #111; box-shadow: 0 1px 0 rgba(255,255,255,0.2); transform: translateY(-50%) rotate(45deg); }
+        /* 配置とランダムな角度 */
+        .screw.tl { top: 8%; left: 8%; }
+        .screw.tr { top: 8%; right: 8%; transform: rotate(30deg); }
+        .screw.bl { bottom: 8%; left: 8%; transform: rotate(70deg); }
+        .screw.br { bottom: 8%; right: 8%; transform: rotate(-20deg); }
 
         .meter-illumination {
-            position: absolute; top: 12%; left: 12%; width: 76%; height: 76%; border-radius: 50%;
+            position: absolute; top: 14%; left: 14%; width: 72%; height: 72%;
+            border-radius: 50%;
             background: radial-gradient(circle, transparent 40%, var(--meter-glow-color) 75%, var(--meter-glow-edge) 95%, transparent 100%);
             z-index: 2; -webkit-mask-image: conic-gradient(from 225deg, black 0%, black 75%, transparent 75%); transition: background 0.3s;
         }
 
         .meter-ticks { 
-            position: absolute; top: 2%; left: 2%; width: 96%; height: 96%; border-radius: 50%; 
-            background: repeating-conic-gradient(from 225deg, #fff 0deg 1.5deg, transparent 1.5deg 8deg); 
-            -webkit-mask-image: radial-gradient(transparent 90%, black 92%, black 100%); z-index: 3;
+            position: absolute; top: 3%; left: 3%; width: 94%; height: 94%; border-radius: 50%; 
+            background: repeating-conic-gradient(from 225deg, #fff 0deg 2deg, transparent 2deg 8deg); 
+            -webkit-mask-image: radial-gradient(transparent 88%, black 90%, black 100%); z-index: 3;
         }
-        .center-meter .meter-ticks { background: repeating-conic-gradient(from 225deg, #fff 0deg 2deg, transparent 2deg 10deg); }
+        .center-meter .meter-ticks { background: repeating-conic-gradient(from 225deg, #fff 0deg 2.5deg, transparent 2.5deg 8deg); }
 
-        /* ★ 針を分厚く、より赤くゴツく！ */
+        /* ★ 極太レッドニードル（メタルフレーム付き） */
         .meter-needle { 
             position: absolute; bottom: 50%; left: 50%; 
-            width: 6px; height: 42%; 
-            background: linear-gradient(to right, #600 0%, #f00 50%, #600 100%); 
+            width: 10px; height: 42%; 
+            background: linear-gradient(to right, #600 0%, #ff0000 50%, #600 100%); 
+            border: 1px solid rgba(255,255,255,0.4);
             transform-origin: bottom center; transform: translateX(-50%) rotate(-135deg); 
-            border-radius: 3px 3px 0 0; box-shadow: 0 0 15px rgba(255,0,0,1); z-index: 10; 
+            border-radius: 4px 4px 0 0; box-shadow: 0 0 20px rgba(255,0,0,1); z-index: 10; 
             transition: transform 0.2s linear;
         }
-        .center-meter .meter-needle { width: 8px; height: 44%; }
+        .center-meter .meter-needle { width: 14px; height: 44%; }
 
-        /* センターキャップ（スティングレー風） */
+        /* センターキャップ（スピンメタル風） */
         .meter-center-cap { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            width: 28%; height: 28%; background: radial-gradient(circle, #333, #000); 
-            border-radius: 50%; border: 3px solid #555; box-shadow: 0 5px 20px rgba(0,0,0,1); z-index: 15; 
+            width: 30%; height: 30%; 
+            background: conic-gradient(from 0deg, #222, #666, #222, #666, #222); 
+            border-radius: 50%; border: 4px solid #050505; 
+            box-shadow: 0 10px 25px rgba(0,0,0,1), inset 0 0 10px rgba(0,0,0,0.8); z-index: 15; 
         }
-        .center-meter .meter-center-cap { width: 32%; height: 32%; }
+        .center-meter .meter-center-cap { width: 35%; height: 35%; border-width: 6px; }
 
-        .meter-title-in { position: absolute; top: 65%; left: 50%; transform: translateX(-50%); font-size: 0.9rem; font-weight: bold; color: #fff; text-shadow: 0 0 5px #fff; z-index: 12; letter-spacing: 2px;}
-        .center-meter .meter-title-in { top: 65%; font-size: 1.2rem; }
-        .meter-bottom-val { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); font-size: 1.4rem; font-weight: bold; color: #fff; z-index: 12; font-family: 'Helvetica Neue', Arial, sans-serif;}
+        .meter-title-in { position: absolute; top: 68%; left: 50%; transform: translateX(-50%); font-size: 1.1rem; font-weight: 900; color: #fff; text-shadow: 0 0 5px #fff; z-index: 12; letter-spacing: 2px;}
+        .center-meter .meter-title-in { top: 68%; font-size: 1.5rem; }
+        .meter-bottom-val { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); font-size: 1.6rem; font-weight: bold; color: #fff; z-index: 12; font-family: 'Helvetica Neue', Arial, sans-serif;}
 
-        /* ★ 速度超過時のアラートモード（ヤバい赤色への完全上書き！） */
+        /* ★ 速度超過時のアラートモード（メーター全体とギアが真っ赤に！） */
         .radar-screen.alert-mode { 
-            --meter-glow-color: rgba(255, 0, 0, 0.9); 
+            --meter-glow-color: rgba(255, 0, 0, 0.95); 
             --meter-glow-edge: rgba(255, 50, 50, 1); 
         }
-        .radar-screen.alert-mode .meter-gauge-container { box-shadow: 0 20px 40px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 20px rgba(255,0,0,0.6), 0 0 30px rgba(255,0,0,0.5); }
-        .radar-screen.alert-mode .digi-speed-val { color: #ff0000; text-shadow: 0 0 30px #ff0000, 0 0 15px #ff0000; }
+        .radar-screen.alert-mode .meter-gear { background: repeating-conic-gradient(from 0deg, #aa0000 0deg 5deg, #330000 5deg 10deg); box-shadow: 0 0 50px rgba(255,0,0,0.8); border-color: #300; }
+        .radar-screen.alert-mode .meter-gauge-container { box-shadow: 0 20px 50px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 20px rgba(255,0,0,0.6), 0 0 30px rgba(255,0,0,0.5); border-color: #500; border-top-color: #f55; }
+        .radar-screen.alert-mode .digi-speed-val { color: #ff0000; text-shadow: 0 0 40px #ff0000, 0 0 20px #ff0000; }
         .radar-screen.alert-mode .meter-bottom-val { color: #ffaaaa; text-shadow: 0 0 10px #ff0000; }
 
         /* ============================================================== */
@@ -324,7 +342,7 @@
                 </div>
             </div>
 
-            <!-- ★ MH23S スティングレー風 超大型・超ゴツ・3連メーター画面 -->
+            <!-- ★ MH23S 超ゴツ・重装甲 3連メーター画面 -->
             <div id="radarScreen" class="radar-screen hidden">
                 
                 <!-- ★ 超過時に浮かび上がるPOLICE画像アラート -->
@@ -342,10 +360,13 @@
                     <div class="radar-warn-text" id="radarWarnText">!! WARNING: ORBIS DETECTED !!</div>
                 </div>
 
+                <!-- ★ 重装甲メーターダッシュボード（極太ベゼル＆ボルト） -->
                 <div class="meters-dashboard">
-                    <!-- 左：気温メーター -->
+                    <!-- 左：気温メーター（奥） -->
                     <div class="meter-box side-meter">
+                        <div class="meter-gear"></div>
                         <div class="meter-gauge-container">
+                            <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
                             <div class="meter-ticks"></div>
                             <div class="meter-illumination"></div>
                             <div class="meter-needle" id="needleTemp"></div>
@@ -355,9 +376,11 @@
                         </div>
                     </div>
 
-                    <!-- 中央：スピードメーター（超デカ） -->
+                    <!-- 中央：スピードメーター（超デカ＆手前） -->
                     <div class="meter-box center-meter" onclick="demoSpeedToggle()" style="cursor:pointer;">
+                        <div class="meter-gear"></div>
                         <div class="meter-gauge-container">
+                            <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
                             <div class="meter-ticks"></div>
                             <div class="meter-illumination"></div>
                             <div class="meter-needle" id="needleSpeed"></div>
@@ -366,9 +389,11 @@
                         </div>
                     </div>
 
-                    <!-- 右：湿度メーター -->
+                    <!-- 右：湿度メーター（奥） -->
                     <div class="meter-box side-meter">
+                        <div class="meter-gear"></div>
                         <div class="meter-gauge-container">
+                            <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
                             <div class="meter-ticks"></div>
                             <div class="meter-illumination"></div>
                             <div class="meter-needle" id="needleHum"></div>
@@ -454,6 +479,7 @@
                 <button class="search-btn sound-btn" onclick="smartSearchLocation()">🔍 検索</button>
             </div>
             <div class="category-grid">
+                <!-- 検索リミットを10件にして通信フリーズを防止 -->
                 <div class="cat-btn sound-btn" onclick="searchNearby('shop', 'convenience', 'コンビニ')">🏪 近くのコンビニ</div>
                 <div class="cat-btn sound-btn" onclick="searchNearby('amenity', 'fuel', 'ガソリンスタンド')">⛽ 近くのGS</div>
                 <div class="cat-btn sound-btn" onclick="searchNearby('amenity', 'parking', '駐車場')">🅿️ 近くの駐車場</div>
@@ -465,7 +491,7 @@
         </div>
 
         <div id="resultsModal" class="system-modal">
-            <div class="modal-header">📍 検索結果（現在地から近い順）</div>
+            <div class="modal-header">📍 検索結果（最大10件・近い順）</div>
             <div id="resultsListContainer" class="results-list-container"></div>
             <div class="modal-close sound-btn" onclick="backToNavMenu()">🔙 戻る</div>
         </div>
@@ -603,7 +629,7 @@
         }
 
         // ==========================================
-        // ★ 3連メーター・システム
+        // ★ MH23S 重装甲メーター・システム
         // ==========================================
         let isRadarMode = false;
         let isSpeedDemoMode = false;
@@ -711,6 +737,7 @@
                     let hDegClock = (humValue - 50) * 2.4; hDegClock = Math.max(-120, Math.min(120, hDegClock));
                     document.getElementById('clockTempHand').style.transform = `translateX(-50%) rotate(${tDegClock}deg)`;
                     document.getElementById('clockHumHand').style.transform = `translateX(-50%) rotate(${hDegClock}deg)`;
+                    
                     tempFetched = true;
                     updateMeterNeedles();
                 }
@@ -793,7 +820,7 @@
                     updateRadarUI(realSpeed, currentLimit);
                 }
 
-                // ★ ルート案内ロジックの改善（完璧な案内と到着処理）
+                // ルート案内ロジック
                 if (isRouting && destLatObj !== null) {
                     let distKM = getDistToRouteKM(userLat, userLng);
                     if (distKM > 0.05) {
@@ -847,11 +874,11 @@
         function openNavMenu() { openModal('navModal'); }
         function backToNavMenu() { closeModal('resultsModal'); openModal('navModal'); }
 
-        // ★ 通信負荷軽減 ＆ エラー防止の検索システム
+        // ★ 通信エラーフリーズ対策 ＆ 最大10件制限
         function searchNearby(key, value, label) {
             showToast(`周辺の ${label} を検索中...`);
-            // タイムアウトを短縮し、最大20件のみ取得することでフリーズを完全防止
-            let query = `[out:json][timeout:10];(node["${key}"="${value}"](around:3000,${userLat},${userLng});way["${key}"="${value}"](around:3000,${userLat},${userLng}););out center 20;`;
+            // リミットを10件（out center 10;）に制限し通信負荷を激減
+            let query = `[out:json][timeout:10];(node["${key}"="${value}"](around:3000,${userLat},${userLng});way["${key}"="${value}"](around:3000,${userLat},${userLng}););out center 10;`;
             let url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
             fetch(url).then(res => res.json()).then(data => {
                 if(data && data.elements && data.elements.length > 0) {
@@ -864,20 +891,19 @@
             }).catch(e => { showToast('通信エラーが発生しました'); closeModal('navModal'); });
         }
 
-        // ★ ハイブリッド住所検索（国土地理院 ＆ Nominatim）
         function smartSearchLocation() {
             var rawKeyword = document.getElementById('searchInput').value.trim();
             if(!rawKeyword) return;
             showToast('AI検索エンジンで解析中...');
             let hasNumbers = /[0-9０-９]/.test(rawKeyword);
             
-            // 番地が含まれる場合は日本の最強住所API「国土地理院」を利用
             if (hasNumbers) {
                 fetch(`https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(rawKeyword)}`)
                 .then(res => { if(!res.ok) throw new Error("GSI Network error"); return res.json(); })
                 .then(data => {
                     if(data && data.length > 0) {
-                        let limitedData = data.slice(0, 20); // 20件でカットして処理落ち防止
+                        // 最大10件でカット
+                        let limitedData = data.slice(0, 10); 
                         let results = limitedData.map(item => { return { lat: item.geometry.coordinates[1], lon: item.geometry.coordinates[0], name: item.properties.title, display_name: item.properties.title, dist: calculateDistance(userLat, userLng, item.geometry.coordinates[1], item.geometry.coordinates[0]) }; });
                         processMapResults(results, rawKeyword);
                     } else { fallbackToNominatim(rawKeyword); }
@@ -888,7 +914,8 @@
         function fallbackToNominatim(query) {
             let left = userLng - 0.1; let right = userLng + 0.1; let top = userLat + 0.1; let bottom = userLat - 0.1;
             let viewbox = `${left},${top},${right},${bottom}`;
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=20&viewbox=${viewbox}`)
+            // limit=10に設定
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=10&viewbox=${viewbox}`)
             .then(res => { if(!res.ok) throw new Error("Network error"); return res.json(); })
             .then(data => {
                 if(data.length > 0) {
