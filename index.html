@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>純正風カーナビ - TOYOTA CHASER 重装甲メカニカルレーダー版</title>
+    <title>純正風カーナビ - TOYOTA CHASER 超ゴツ・サイバーネオン版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
-            /* スティングレー特有の鮮やかなブルーイルミ（よりサイバーに） */
-            --meter-glow-color: rgba(0, 170, 255, 0.9);
-            --meter-glow-edge: rgba(0, 212, 255, 1);
+            /* ★ サイバーネオンの光の強さを定義 */
+            --meter-glow-color: rgba(0, 212, 255, 0.7);
+            --meter-glow-edge: rgba(0, 255, 255, 1);
+            --meter-bg: radial-gradient(circle at 50% 50%, #001133 0%, #000 70%);
         }
         
         * { box-sizing: border-box; }
@@ -68,21 +69,28 @@
         .top-right-clock { position: absolute; top: 20px; right: 20px; z-index: 9900; font-size: 2.8rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px #000, 0 0 15px #00d4ff; font-family: 'Helvetica Neue', Arial, sans-serif; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
 
         /* ==============================================================
-           ★ 重装甲メカニカル・オービスレーダー画面
+           ★ 新設：超ゴツ・サイバーネオン・オービスレーダー画面
         ============================================================== */
         .radar-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #020202; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 20; opacity: 1; transition: opacity 0.4s ease; overflow: hidden; padding-top: 10px;}
         .radar-screen.hidden { opacity: 0; pointer-events: none; z-index: -1; }
 
-        /* ★ POLICE アラート背景（左側うっすら） */
+        /* サイバーグリッド背景 */
+        .radar-bg-mech { 
+            position: absolute; top:0; left:0; width:100%; height:100%; 
+            background-image: radial-gradient(circle at center, transparent 20%, #000 100%), linear-gradient(var(--meter-glow-color) 1px, transparent 1px), linear-gradient(90deg, var(--meter-glow-color) 1px, transparent 1px); 
+            background-size: 100% 100%, 60px 60px, 60px 60px; 
+            opacity: 0.15; z-index: 1; pointer-events: none; 
+            transition: background-image 0.3s;
+        }
+
+        /* ★ POLICE アラート背景（左側） */
         .police-alert-bg { 
             position: absolute; top: 50%; left: 5%; width: 45vh; height: 60vh; 
             transform: translateY(-50%); 
-            background-image: url('1308.jpg'); /* 提供された警察マーク */
+            background-image: url('1308.jpg'); 
             background-size: contain; background-repeat: no-repeat; background-position: center; 
-            opacity: 0; z-index: 1; pointer-events: none; 
-            mix-blend-mode: screen; 
+            opacity: 0; z-index: 1; pointer-events: none; mix-blend-mode: screen; 
         }
-        /* 速度超過時：警察マークが真っ赤に激しく点滅！ */
         .radar-screen.alert-mode .police-alert-bg { animation: policeFlash 0.15s infinite alternate; }
         @keyframes policeFlash { 
             0% { opacity: 0.1; filter: sepia(1) hue-rotate(-50deg) saturate(10) brightness(0.5) blur(2px) drop-shadow(0 0 10px red); } 
@@ -101,100 +109,93 @@
 
         /* デジタルスピード */
         .digital-speed-top { text-align: center; margin-bottom: 0; z-index: 50; margin-top: 2vh;}
-        .digi-speed-val { font-size: 7.5rem; font-weight: 900; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 20px var(--meter-glow-color); transition: color 0.2s, text-shadow 0.2s; }
+        .digi-speed-val { font-size: 7.5rem; font-weight: 900; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1; color: #fff; text-shadow: 0 0 20px var(--meter-glow-edge); transition: color 0.2s, text-shadow 0.2s; }
         .digi-speed-unit { font-size: 2rem; color: #aaa; margin-left: 5px; font-weight: bold;}
         .digi-limit-box { margin-top: 5px; font-size: 1.4rem; color: #ffcc00; border: 2px solid #ffcc00; padding: 2px 20px; border-radius: 4px; display: inline-block; font-weight: bold; background: rgba(255,204,0,0.1); box-shadow: 0 0 10px rgba(255,204,0,0.2); letter-spacing: 2px;}
         .radar-warn-text { color: #ff1a1a; font-size: 1.6rem; font-weight: 900; margin-top: 5px; text-shadow: 0 0 15px #ff0000; animation: blinkText 0.5s infinite alternate; visibility: hidden; }
 
-        /* ★ 重装甲 3連メーターダッシュボード */
-        .meters-dashboard { display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 1vh; gap: -5vh; z-index: 10;}
+        /* ★ メーターをゴツく、ネオンギラギラに！ */
+        .meters-dashboard { display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 1vh; gap: -6vh; z-index: 10;}
         .meter-box { display: flex; flex-direction: column; align-items: center; position: relative; }
         
-        .meter-box.side-meter { z-index: 5; transform: translateY(8vh); }
-        /* サイドメーターも大きく */
-        .meter-box.side-meter .meter-gauge-container { width: 34vh; height: 34vh; border-width: 14px; }
+        .meter-box.side-meter { z-index: 5; transform: translateY(6vh); }
+        .meter-box.side-meter .meter-gauge-container { width: 32vh; height: 32vh; border-width: 8px; }
         
-        .meter-box.center-meter { z-index: 10; transform: translateY(2vh); }
-        /* センターメーターはさらに巨大に */
-        .meter-box.center-meter .meter-gauge-container { width: 48vh; height: 48vh; border-width: 18px; }
+        .meter-box.center-meter { z-index: 10; }
+        .meter-box.center-meter .meter-gauge-container { width: 46vh; height: 46vh; border-width: 12px; }
 
-        /* ★ メーター背後のギア（歯車）装飾 */
-        .meter-gear { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            width: 112%; height: 112%; border-radius: 50%; 
-            background: repeating-conic-gradient(from 0deg, #444 0deg 5deg, #111 5deg 10deg); 
-            z-index: -1; box-shadow: 0 15px 30px rgba(0,0,0,1); border: 4px solid #111; transition: background 0.3s, box-shadow 0.3s;
-        }
-
-        /* ★ メーター本体（極太ベゼル＆深い奥行き） */
+        /* ★ メーター本体（極太装甲 ＋ ネオン発光） */
         .meter-gauge-container { 
             position: relative; border-radius: 50%; 
-            border-style: solid; border-color: #333; 
-            border-top-color: #777; border-bottom-color: #111;
-            box-shadow: 0 20px 50px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 15px rgba(0,212,255,0.4); 
-            background: radial-gradient(circle at 50% 60%, #001133 0%, #000a22 60%, #000000 100%); 
+            border: solid #111; /* 極太のダークアーマー枠 */
+            /* 枠の周りから漏れ出す強烈なネオンシャドウ */
+            box-shadow: 
+                0 0 0 4px var(--meter-glow-edge), 
+                0 0 30px 10px var(--meter-glow-color), 
+                inset 0 0 30px var(--meter-glow-color), 
+                inset 0 20px 40px #000; 
+            background: var(--meter-bg); 
             display: flex; justify-content: center; align-items: center; 
             overflow: hidden; 
+            transition: box-shadow 0.3s, background 0.3s;
         }
 
-        /* ★ ボルト（ネジ）装飾 */
-        .screw { position: absolute; width: 16px; height: 16px; background: radial-gradient(circle, #999, #333); border-radius: 50%; border: 1px solid #000; box-shadow: inset 0 1px 2px rgba(255,255,255,0.5), 0 3px 5px rgba(0,0,0,0.9); z-index: 25; }
-        .screw::after { content: ''; position: absolute; top: 50%; left: 15%; width: 70%; height: 2px; background: #111; box-shadow: 0 1px 0 rgba(255,255,255,0.2); transform: translateY(-50%) rotate(45deg); }
-        /* 配置とランダムな角度 */
-        .screw.tl { top: 8%; left: 8%; }
-        .screw.tr { top: 8%; right: 8%; transform: rotate(30deg); }
-        .screw.bl { bottom: 8%; left: 8%; transform: rotate(70deg); }
-        .screw.br { bottom: 8%; right: 8%; transform: rotate(-20deg); }
+        /* ★ サイバー・ノード（発光端子装飾） */
+        .screw { position: absolute; width: 12px; height: 12px; background: #000; border: 2px solid var(--meter-glow-edge); border-radius: 3px; box-shadow: 0 0 10px var(--meter-glow-color); z-index: 25; transition: border-color 0.3s, box-shadow 0.3s; }
+        .screw.tl { top: 12%; left: 12%; }
+        .screw.tr { top: 12%; right: 12%; }
+        .screw.bl { bottom: 12%; left: 12%; }
+        .screw.br { bottom: 12%; right: 12%; }
 
+        /* メーター内部のイルミリング */
         .meter-illumination {
-            position: absolute; top: 14%; left: 14%; width: 72%; height: 72%;
-            border-radius: 50%;
+            position: absolute; top: 14%; left: 14%; width: 72%; height: 72%; border-radius: 50%;
             background: radial-gradient(circle, transparent 40%, var(--meter-glow-color) 75%, var(--meter-glow-edge) 95%, transparent 100%);
             z-index: 2; -webkit-mask-image: conic-gradient(from 225deg, black 0%, black 75%, transparent 75%); transition: background 0.3s;
         }
 
         .meter-ticks { 
             position: absolute; top: 3%; left: 3%; width: 94%; height: 94%; border-radius: 50%; 
-            background: repeating-conic-gradient(from 225deg, #fff 0deg 2deg, transparent 2deg 8deg); 
+            background: repeating-conic-gradient(from 225deg, #fff 0deg 1.5deg, transparent 1.5deg 8deg); 
             -webkit-mask-image: radial-gradient(transparent 88%, black 90%, black 100%); z-index: 3;
         }
-        .center-meter .meter-ticks { background: repeating-conic-gradient(from 225deg, #fff 0deg 2.5deg, transparent 2.5deg 8deg); }
+        .center-meter .meter-ticks { background: repeating-conic-gradient(from 225deg, #fff 0deg 2.5deg, transparent 2.5deg 10deg); }
 
-        /* ★ 極太レッドニードル（メタルフレーム付き） */
+        /* ★ 極太レッドニードル（発光） */
         .meter-needle { 
             position: absolute; bottom: 50%; left: 50%; 
-            width: 10px; height: 42%; 
-            background: linear-gradient(to right, #600 0%, #ff0000 50%, #600 100%); 
-            border: 1px solid rgba(255,255,255,0.4);
+            width: 8px; height: 42%; 
+            background: linear-gradient(to right, #600 0%, #ff1a1a 50%, #600 100%); 
+            border: 1px solid rgba(255,255,255,0.5);
             transform-origin: bottom center; transform: translateX(-50%) rotate(-135deg); 
             border-radius: 4px 4px 0 0; box-shadow: 0 0 20px rgba(255,0,0,1); z-index: 10; 
             transition: transform 0.2s linear;
         }
-        .center-meter .meter-needle { width: 14px; height: 44%; }
+        .center-meter .meter-needle { width: 12px; height: 44%; }
 
         /* センターキャップ（スピンメタル風） */
         .meter-center-cap { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            width: 30%; height: 30%; 
+            width: 28%; height: 28%; 
             background: conic-gradient(from 0deg, #222, #666, #222, #666, #222); 
             border-radius: 50%; border: 4px solid #050505; 
             box-shadow: 0 10px 25px rgba(0,0,0,1), inset 0 0 10px rgba(0,0,0,0.8); z-index: 15; 
         }
-        .center-meter .meter-center-cap { width: 35%; height: 35%; border-width: 6px; }
+        .center-meter .meter-center-cap { width: 32%; height: 32%; border-width: 6px; }
 
-        .meter-title-in { position: absolute; top: 68%; left: 50%; transform: translateX(-50%); font-size: 1.1rem; font-weight: 900; color: #fff; text-shadow: 0 0 5px #fff; z-index: 12; letter-spacing: 2px;}
+        .meter-title-in { position: absolute; top: 68%; left: 50%; transform: translateX(-50%); font-size: 1.1rem; font-weight: 900; color: #fff; text-shadow: 0 0 8px var(--meter-glow-edge); z-index: 12; letter-spacing: 2px;}
         .center-meter .meter-title-in { top: 68%; font-size: 1.5rem; }
         .meter-bottom-val { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); font-size: 1.6rem; font-weight: bold; color: #fff; z-index: 12; font-family: 'Helvetica Neue', Arial, sans-serif;}
 
-        /* ★ 速度超過時のアラートモード（メーター全体とギアが真っ赤に！） */
+        /* ★ 速度超過時のアラートモード（ヤバい赤色への完全上書き！） */
         .radar-screen.alert-mode { 
             --meter-glow-color: rgba(255, 0, 0, 0.95); 
             --meter-glow-edge: rgba(255, 50, 50, 1); 
+            --meter-bg: radial-gradient(circle at 50% 50%, #330000 0%, #000 70%);
         }
-        .radar-screen.alert-mode .meter-gear { background: repeating-conic-gradient(from 0deg, #aa0000 0deg 5deg, #330000 5deg 10deg); box-shadow: 0 0 50px rgba(255,0,0,0.8); border-color: #300; }
-        .radar-screen.alert-mode .meter-gauge-container { box-shadow: 0 20px 50px rgba(0,0,0,1), inset 0 0 30px rgba(0,0,0,1), inset 0 0 20px rgba(255,0,0,0.6), 0 0 30px rgba(255,0,0,0.5); border-color: #500; border-top-color: #f55; }
         .radar-screen.alert-mode .digi-speed-val { color: #ff0000; text-shadow: 0 0 40px #ff0000, 0 0 20px #ff0000; }
         .radar-screen.alert-mode .meter-bottom-val { color: #ffaaaa; text-shadow: 0 0 10px #ff0000; }
+        .radar-screen.alert-mode .meter-title-in { text-shadow: 0 0 8px #ff0000; color: #ffaaaa;}
 
         /* ============================================================== */
 
@@ -342,8 +343,10 @@
                 </div>
             </div>
 
-            <!-- ★ MH23S 超ゴツ・重装甲 3連メーター画面 -->
+            <!-- ★ 超ゴツ・サイバーネオン メーター画面 -->
             <div id="radarScreen" class="radar-screen hidden">
+                
+                <div class="radar-bg-mech"></div>
                 
                 <!-- ★ 超過時に浮かび上がるPOLICE画像アラート -->
                 <div class="police-alert-bg"></div>
@@ -352,6 +355,7 @@
                 <div class="side-light right mode-blue" id="sideLightR"></div>
 
                 <div class="digital-speed-top">
+                    <!-- タップでテスト速度アップ -->
                     <div onclick="demoSpeedToggle()" style="cursor:pointer;" title="タップでテスト速度アップ！">
                         <span class="digi-speed-val" id="radarSpeed">0</span>
                         <span class="digi-speed-unit">km/h</span>
@@ -360,12 +364,12 @@
                     <div class="radar-warn-text" id="radarWarnText">!! WARNING: ORBIS DETECTED !!</div>
                 </div>
 
-                <!-- ★ 重装甲メーターダッシュボード（極太ベゼル＆ボルト） -->
+                <!-- ★ 極太装甲 3連メーターダッシュボード -->
                 <div class="meters-dashboard">
                     <!-- 左：気温メーター（奥） -->
                     <div class="meter-box side-meter">
-                        <div class="meter-gear"></div>
                         <div class="meter-gauge-container">
+                            <!-- サイバーノード装飾 -->
                             <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
                             <div class="meter-ticks"></div>
                             <div class="meter-illumination"></div>
@@ -378,8 +382,8 @@
 
                     <!-- 中央：スピードメーター（超デカ＆手前） -->
                     <div class="meter-box center-meter" onclick="demoSpeedToggle()" style="cursor:pointer;">
-                        <div class="meter-gear"></div>
                         <div class="meter-gauge-container">
+                            <!-- サイバーノード装飾 -->
                             <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
                             <div class="meter-ticks"></div>
                             <div class="meter-illumination"></div>
@@ -391,8 +395,8 @@
 
                     <!-- 右：湿度メーター（奥） -->
                     <div class="meter-box side-meter">
-                        <div class="meter-gear"></div>
                         <div class="meter-gauge-container">
+                            <!-- サイバーノード装飾 -->
                             <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
                             <div class="meter-ticks"></div>
                             <div class="meter-illumination"></div>
@@ -478,8 +482,8 @@
                 <input type="text" id="searchInput" class="search-input" placeholder="名称・番地 (例: トヨタ博物館, 北栄4-9-1)...">
                 <button class="search-btn sound-btn" onclick="smartSearchLocation()">🔍 検索</button>
             </div>
+            <!-- ★ 最大10件制限でエラー解消！ -->
             <div class="category-grid">
-                <!-- 検索リミットを10件にして通信フリーズを防止 -->
                 <div class="cat-btn sound-btn" onclick="searchNearby('shop', 'convenience', 'コンビニ')">🏪 近くのコンビニ</div>
                 <div class="cat-btn sound-btn" onclick="searchNearby('amenity', 'fuel', 'ガソリンスタンド')">⛽ 近くのGS</div>
                 <div class="cat-btn sound-btn" onclick="searchNearby('amenity', 'parking', '駐車場')">🅿️ 近くの駐車場</div>
@@ -629,7 +633,7 @@
         }
 
         // ==========================================
-        // ★ MH23S 重装甲メーター・システム
+        // ★ 超ゴツ・メーター・システム
         // ==========================================
         let isRadarMode = false;
         let isSpeedDemoMode = false;
