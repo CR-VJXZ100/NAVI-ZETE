@@ -4,784 +4,331 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#05080d">
-<title>NAVI-ZETE v92</title>
-
+<title>NAVI-ZETE v94</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-
 <style>
-:root{
-  --c:#00d4ff;
-  --g:#00ff78;
-  --bg:#05080d;
-  --p:#0b141d;
-  --line:#496274;
-  --txt:#f5fbff;
-  --sub:#9db0bf;
-  --amber:#ffb347;
-}
+:root{--c:#00d4ff;--g:#00ff78;--bg:#05080d;--p:#0b141d;--line:#496274;--txt:#f5fbff;--sub:#9db0bf;--amber:#ffb347}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;user-select:none}
+button,input{font:inherit;color:inherit}
+.app{height:100dvh;display:flex;flex-direction:column;background:#02050a}
+.main{position:relative;flex:1;min-height:0;overflow:hidden}
+#map{position:absolute;inset:0}
+.maplibregl-ctrl-attrib{display:none!important}
 
-*{
-  box-sizing:border-box;
-  -webkit-tap-highlight-color:transparent
-}
+.vehicle{width:52px;height:52px;filter:drop-shadow(0 5px 5px #000b);pointer-events:none}
+.vehicle svg{width:100%;height:100%}
 
-html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:#000;
-  color:var(--txt);
-  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
-  user-select:none
-}
+.dest{width:27px;height:27px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c);border:3px solid white;box-shadow:0 0 14px #00d4ff88}
+.dest:after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;background:#00344a;left:7px;top:7px}
 
-button,input{
-  font:inherit;
-  color:inherit
-}
+.cam{width:25px;height:25px;border:2px solid var(--amber);border-radius:50%;display:grid;place-items:center;background:#1d1003;color:#ffd08a;box-shadow:0 0 10px #ff9b2855;font-size:11px}
 
-.app{
-  height:100dvh;
-  display:flex;
-  flex-direction:column;
-  background:#02050a
-}
+.top{position:absolute;z-index:20;left:18px;right:18px;top:max(12px,env(safe-area-inset-top));display:flex;justify-content:space-between;pointer-events:none}
 
-.main{
-  position:relative;
-  flex:1;
-  min-height:0;
-  overflow:hidden
-}
-
-#map{
-  position:absolute;
-  inset:0
-}
-
-.maplibregl-ctrl-attrib{
-  display:none!important
-}
-
-.vehicle{
-  width:52px;
-  height:52px;
-  filter:drop-shadow(0 5px 5px #000b);
-  pointer-events:none
-}
-
-.vehicle svg{
-  width:100%;
-  height:100%
-}
-
-.dest{
-  width:27px;
-  height:27px;
-  border-radius:50% 50% 50% 0;
-  transform:rotate(-45deg);
-  background:var(--c);
-  border:3px solid white;
-  box-shadow:0 0 14px #00d4ff88
-}
-
-.dest:after{
-  content:"";
-  position:absolute;
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:#00344a;
-  left:7px;
-  top:7px
-}
-
-.cam{
-  width:25px;
-  height:25px;
-  border:2px solid var(--amber);
-  border-radius:50%;
-  display:grid;
-  place-items:center;
-  background:#1d1003;
-  color:#ffd08a;
-  box-shadow:0 0 10px #ff9b2855;
-  font-size:11px
-}
-
-.top{
-  position:absolute;
-  z-index:20;
-  left:18px;
-  right:18px;
-  top:max(12px,env(safe-area-inset-top));
-  display:flex;
-  justify-content:space-between;
-  pointer-events:none
-}
-
-.hud{
-  background:#000d;
-  border-left:4px solid var(--g);
-  border-radius:7px;
-  padding:11px 14px;
-  font:800 12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
-  box-shadow:0 8px 24px #000a
-}
-
-.hud b{
-  font-size:15px
-}
+.hud{background:#000d;border-left:4px solid var(--g);border-radius:7px;padding:11px 14px;font:800 12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;box-shadow:0 8px 24px #000a}
+.hud b{font-size:15px}
 
 .time{
+  position:relative;
+  overflow:hidden;
+  font-family:"Orbitron",ui-monospace,SFMono-Regular,Menlo,monospace;
   font-size:40px;
   font-weight:800;
-  background:#07131bd9;
-  border:1px solid #ffffff3b;
-  padding:5px 15px;
-  border-radius:11px;
-  box-shadow:0 8px 22px #0008;
-  text-shadow:0 0 16px var(--c)
+  letter-spacing:3px;
+  color:#eaffff;
+  background:linear-gradient(180deg,#07131f 0%,#01060b 100%);
+  border:1px solid #63e9ff;
+  padding:7px 16px 6px;
+  border-radius:12px;
+  box-shadow:
+    0 0 7px #bff7ff,
+    0 0 18px #00d4ffaa,
+    0 0 38px #00d4ff66,
+    0 10px 28px #000a,
+    inset 0 0 12px #00d4ff44;
+  text-shadow:
+    0 0 2px #fff,
+    0 0 8px #d9fbff,
+    0 0 16px #00d4ff,
+    0 0 30px #00aaff;
+  animation:clockGlow 1.45s ease-in-out infinite alternate
 }
 
-.tools{
-  position:absolute;
-  z-index:21;
-  left:18px;
-  top:145px;
-  display:flex;
-  flex-direction:column;
-  gap:10px
-}
-
-.tool{
-  min-width:126px;
-  padding:12px 14px;
-  border:1px solid #5b7486;
-  border-radius:8px;
-  background:#07111ce8;
-  font-weight:900;
-  box-shadow:0 7px 16px #0008
-}
-
-.tool.on{
-  border-color:var(--c);
-  color:var(--c);
-  box-shadow:0 0 13px #00d4ff44
-}
-
-.gpsstate,
-.radstate{
-  position:absolute;
-  z-index:20;
-  right:18px;
-  font:800 9px/1 ui-monospace,monospace;
-  letter-spacing:1px;
-  background:#050b11e8;
-  border:1px solid #52626e;
-  padding:5px 8px;
-  border-radius:4px
-}
-
-.gpsstate{
-  top:76px
-}
-
-.radstate{
-  top:101px
-}
-
-.gpsstate.fix{
-  color:var(--g);
-  border-color:#16794b
-}
-
-.radstate.on{
-  color:var(--amber);
-  border-color:#8a632a
-}
-
-.status{
-  position:absolute;
-  z-index:21;
-  left:50%;
-  top:18px;
-  transform:translateX(-50%);
-  display:none;
-  background:#061018e8;
-  border:1px solid #557084;
-  border-radius:8px;
-  padding:8px 14px;
-  box-shadow:0 8px 20px #0008
-}
-
-.status.show{
-  display:block
-}
-
-.status b{
-  color:var(--c)
-}
-
-.radar{
-  position:absolute;
-  z-index:23;
-  left:50%;
-  top:85px;
-  transform:translateX(-50%) translateY(-10px);
-  opacity:0;
-  visibility:hidden;
-  transition:.2s;
-  background:linear-gradient(#533511,#1e1004);
-  border:1px solid var(--amber);
-  border-radius:7px;
-  padding:9px 14px;
-  min-width:300px;
-  text-align:center;
-  box-shadow:0 8px 22px #000a
-}
-
-.radar.show{
-  opacity:1;
-  visibility:visible;
-  transform:translateX(-50%) translateY(0)
-}
-
-.radar b{
-  display:block;
-  color:#fff2db
-}
-
-.radar span{
-  font-size:12px;
-  color:#ffd08a
-}
-
-.guide{
-  position:absolute;
-  z-index:22;
-  right:-350px;
-  top:0;
-  width:330px;
-  height:100%;
-  background:linear-gradient(#07192a,#03070d);
-  border-left:2px solid var(--c);
-  padding:18px 14px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  transition:.25s;
-  box-shadow:-10px 0 25px #000b
-}
-
-.guide.show{
-  right:0
-}
-
-.sign{
-  border:2px solid var(--c);
-  background:linear-gradient(#003a68,#00182d);
-  border-radius:9px;
-  text-align:center;
-  padding:13px
-}
-
-.arrow{
-  font-size:62px
-}
-
-.gtext{
-  font-size:18px;
-  font-weight:900
-}
-
-.road{
-  flex:1;
-  border:1px solid #40505c;
-  border-radius:8px;
-  background:linear-gradient(#18314d 0 40%,#555 40%,#202020 100%);
-  position:relative;
-  overflow:hidden
-}
-
-.road:after{
+.time:before{
   content:"";
   position:absolute;
-  left:50%;
-  top:44%;
-  bottom:-20px;
-  width:5px;
-  background:repeating-linear-gradient(
-    #fff 0 18px,
-    transparent 18px 34px
-  )
-}
-
-.gdist{
-  text-align:center;
-  background:#000b;
-  border:1px solid #3a4650;
-  border-radius:8px;
-  padding:10px
-}
-
-.gdist b{
-  font-size:32px
-}
-
-.bottom{
-  height:96px;
-  flex:0 0 96px;
-  position:relative;
-  z-index:30;
-  background:repeating-linear-gradient(
-    45deg,
-    #101010 0 6px,
-    #171717 6px 12px
-  );
-  border-top:2px solid #000;
-  display:grid;
-  grid-template-columns:1fr 78px 1fr;
-  gap:9px;
-  align-items:center;
-  padding:8px 12px max(8px,env(safe-area-inset-bottom));
-  box-shadow:0 -8px 22px #000
-}
-
-.grp{
-  display:flex;
-  gap:8px;
-  align-items:center
-}
-
-.grp.r{
-  justify-content:flex-end
-}
-
-.badge{
-  height:40px;
-  padding:0 13px;
-  display:grid;
-  place-items:center;
-  background:linear-gradient(#3d3d3d,#151515);
-  border:1px solid #626262;
-  border-radius:5px;
-  font:700 10px/1 Georgia,serif;
-  letter-spacing:2px;
-  white-space:nowrap
-}
-
-.hw{
-  height:56px;
-  min-width:52px;
-  max-width:86px;
-  flex:1;
-  border:1px solid #080808;
-  border-top:2px solid #777;
-  border-bottom:4px solid #000;
-  border-radius:7px;
-  background:linear-gradient(#5d5d5d,#2a2a2a 48%,#111);
-  box-shadow:0 8px 15px #000b;
-  font-weight:900;
-  font-size:17px;
-  position:relative
-}
-
-.hw:after{
-  content:"";
-  position:absolute;
-  left:9%;
-  right:9%;
-  height:4px;
-  bottom:-4px;
-  background:var(--c);
-  border-radius:5px;
-  box-shadow:0 0 10px var(--c)
-}
-
-.hw:active{
-  transform:translateY(2px)
-}
-
-.analog{
-  width:72px;
-  height:72px;
-  border-radius:50%;
-  border:3px solid #c0c9d1;
-  background:radial-gradient(circle,#173d77,#0a1731 70%,#02060b);
-  position:relative;
-  box-shadow:inset 0 0 10px #000,0 7px 18px #000a
-}
-
-.analog .brand{
-  position:absolute;
-  top:13px;
-  width:100%;
-  text-align:center;
-  font:700 6px/1.2 Arial
-}
-
-.hand{
-  position:absolute;
-  left:50%;
-  bottom:50%;
-  transform-origin:bottom;
-  background:#eee
-}
-
-.hh{
-  width:4px;
-  height:19px
-}
-
-.mh{
-  width:3px;
-  height:27px
-}
-
-.sh{
-  width:1px;
-  height:30px;
-  background:#ff4059
-}
-
-.dot{
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:white;
-  transform:translate(-50%,-50%)
-}
-
-.modal{
-  position:fixed;
-  z-index:100;
-  inset:10% 5% 14%;
-  display:none;
-  flex-direction:column;
-  background:linear-gradient(145deg,#16232e,#060a0f);
-  border:2px solid #425767;
-  border-radius:11px;
-  padding:22px;
-  overflow:auto;
-  box-shadow:0 25px 60px #000e
-}
-
-.modal.show{
-  display:flex
-}
-
-.modal h2{
-  margin:0 0 16px;
-  padding-bottom:11px;
-  border-bottom:2px solid var(--c)
-}
-
-.search{
-  display:flex;
-  gap:8px;
-  margin-bottom:14px
-}
-
-.search input{
-  flex:1;
-  min-width:0;
-  padding:13px;
-  background:#101820;
-  border:1px solid #536878;
-  border-radius:7px
-}
-
-.primary{
-  border:0;
-  background:var(--c);
-  color:#001821;
-  border-radius:7px;
-  padding:0 18px;
-  font-weight:900
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:9px;
-  margin-bottom:14px
-}
-
-.cat,
-.setting,
-.row{
-  border:1px solid #495b69;
-  background:#1a242d;
-  border-radius:8px;
-  padding:13px;
-  font-weight:800
-}
-
-.setting{
-  text-align:left;
-  margin-bottom:9px
-}
-
-.setting strong{
-  color:var(--c)
-}
-
-.row{
-  width:100%;
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  text-align:left;
-  color:white
-}
-
-.row small{
-  display:block;
-  color:#a9b7c1;
-  margin-top:4px
-}
-
-.row .dist{
-  color:#7de7ff;
-  white-space:nowrap
-}
-
-.list{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  margin-bottom:15px
-}
-
-.danger{
-  margin-top:auto;
-  padding:14px;
-  border:1px solid #e15768;
-  background:linear-gradient(#851725,#4a0710);
-  border-radius:7px;
-  font-weight:900
-}
-
-.note{
-  font-size:11px;
-  color:#cbb48f;
-  background:#211608;
-  border-left:3px solid var(--amber);
-  padding:9px;
-  margin:2px 0 12px
-}
-
-.preview{
-  position:fixed;
-  z-index:90;
-  left:0;
-  right:0;
-  bottom:-560px;
-  background:linear-gradient(#14212c,#05080c);
-  border-top:3px solid var(--c);
-  padding:14px 18px calc(14px + env(safe-area-inset-bottom));
-  box-shadow:0 -12px 35px #000d;
-  transition:.3s
-}
-
-.preview.show{
-  bottom:96px
-}
-
-.ptitle{
-  text-align:center;
-  font-size:18px;
-  font-weight:900;
-  margin-bottom:9px
-}
-
-.routes{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:8px
-}
-
-.route{
-  border:1px solid #526471;
-  background:#17212a;
-  border-radius:8px;
-  padding:10px 5px;
-  font-weight:900;
-  font-size:13px
-}
-
-.route.on{
-  background:var(--c);
-  color:#00151d
-}
-
-.pinfo{
-  margin:10px 0;
-  background:#000b;
-  border:1px solid #35434e;
-  border-radius:7px;
-  padding:11px;
-  text-align:center
-}
-
-.acts{
-  display:grid;
-  grid-template-columns:1fr 2fr;
-  gap:8px
-}
-
-.acts button{
-  padding:13px;
-  border-radius:7px;
-  font-weight:900
-}
-
-.cancel{
-  background:#424b52;
-  border:1px solid #68747d
-}
-
-.start{
-  background:var(--c);
-  color:#00151b;
-  border:0
-}
-
-.loading{
-  display:inline-block;
-  width:15px;
-  height:15px;
-  border:2px solid #ffffff44;
-  border-top-color:white;
-  border-radius:50%;
-  animation:spin .7s linear infinite;
-  vertical-align:-2px;
-  margin-right:7px
-}
-
-@keyframes spin{
-  to{
-    transform:rotate(360deg)
-  }
-}
-
-#toast{
-  position:fixed;
-  z-index:200;
-  left:50%;
-  bottom:112px;
-  transform:translate(-50%,12px);
-  opacity:0;
-  visibility:hidden;
-  transition:.2s;
-  background:#000e;
-  border:1px solid var(--c);
-  border-radius:8px;
-  padding:13px 17px;
-  min-width:280px;
-  max-width:86vw;
-  text-align:center;
-  font-weight:800
-}
-
-#toast.show{
-  opacity:1;
-  visibility:visible;
-  transform:translate(-50%,0)
-}
-
-.startup{
-  position:fixed;
-  z-index:999;
   inset:0;
-  background:#010305;
-  display:grid;
-  place-items:center;
-  transition:.7s
-}
-
-.startup.hide{
-  opacity:0;
-  visibility:hidden;
+  background:linear-gradient(105deg,transparent 0 28%,#ffffff24 42%,#8defff33 48%,transparent 61%);
+  transform:translateX(-135%);
+  animation:clockSweep 3.6s ease-in-out infinite;
   pointer-events:none
 }
 
-.boot{
-  text-align:center
-}
-
-.micro{
-  letter-spacing:5px;
-  color:#83919c;
-  font:700 12px Georgia
-}
-
-.model{
-  font:italic 700 clamp(26px,5vw,50px) Georgia;
-  letter-spacing:7px;
-  margin:15px;
-  text-shadow:0 0 24px var(--c)
-}
-
-.line{
+.time:after{
+  content:"";
+  position:absolute;
+  left:8%;
+  right:8%;
+  bottom:3px;
   height:1px;
-  background:linear-gradient(90deg,transparent,var(--c),transparent);
-  margin:14px
+  background:#9bf3ff;
+  box-shadow:0 0 8px #00d4ff,0 0 15px #00d4ff
 }
 
-.term{
-  font:12px/1.55 ui-monospace,monospace;
-  color:#00ff72;
-  text-align:left
+@keyframes clockGlow{
+  0%{
+    filter:brightness(.95);
+    box-shadow:
+      0 0 6px #bff7ff,
+      0 0 14px #00d4ff99,
+      0 0 30px #00d4ff55,
+      0 10px 28px #000a,
+      inset 0 0 10px #00d4ff33
+  }
+  100%{
+    filter:brightness(1.22);
+    box-shadow:
+      0 0 10px #fff,
+      0 0 24px #55eaff,
+      0 0 48px #00d4ff99,
+      0 10px 30px #000b,
+      inset 0 0 16px #00d4ff66
+  }
 }
+
+@keyframes clockSweep{
+  0%,58%{transform:translateX(-135%)}
+  82%,100%{transform:translateX(135%)}
+}
+
+.tools{position:absolute;z-index:21;left:18px;top:145px;display:flex;flex-direction:column;gap:10px}
+.tool{min-width:126px;padding:12px 14px;border:1px solid #5b7486;border-radius:8px;background:#07111ce8;font-weight:900;box-shadow:0 7px 16px #0008}
+.tool.on{border-color:var(--c);color:var(--c);box-shadow:0 0 13px #00d4ff44}
+
+.gpsstate,.radstate,.trafficstate{position:absolute;z-index:20;right:18px;font:800 9px/1 ui-monospace,monospace;letter-spacing:1px;background:#050b11e8;border:1px solid #52626e;padding:5px 8px;border-radius:4px}
+.gpsstate{top:76px}
+.radstate{top:101px}
+.trafficstate{top:126px}
+.gpsstate.fix{color:var(--g);border-color:#16794b}
+.radstate.on{color:var(--amber);border-color:#8a632a}
+.trafficstate.on{color:#ff5b5b;border-color:#8f2d2d}
+
+/* 18:00〜翌5:00 黒テーマ */
+.night-ui{background:#000;color:#f2fbff}
+.night-ui .app,.night-ui .main{background:#000}
+
+.night-ui .hud,
+.night-ui .tool,
+.night-ui .gpsstate,
+.night-ui .radstate,
+.night-ui .trafficstate,
+.night-ui .status{
+  background:#000f;
+  border-color:#24313b
+}
+
+.night-ui .time{
+  background:linear-gradient(180deg,#02080d 0%,#000 100%);
+  border-color:#7ff0ff;
+  box-shadow:
+    0 0 10px #d7fbff,
+    0 0 24px #00d4ffcc,
+    0 0 52px #00d4ff88,
+    0 10px 30px #000,
+    inset 0 0 18px #00d4ff55
+}
+
+.night-ui .bottom{
+  background:repeating-linear-gradient(45deg,#010101 0 6px,#060606 6px 12px);
+  border-top-color:#111
+}
+
+.night-ui .hw{
+  background:linear-gradient(#171717,#080808 48%,#010101);
+  border-top-color:#363636
+}
+
+.night-ui .badge{
+  background:linear-gradient(#151515,#020202);
+  border-color:#333
+}
+
+.night-ui .analog{
+  background:radial-gradient(circle,#061a31,#020712 70%,#000);
+  border-color:#59636c
+}
+
+.night-ui .guide{
+  background:linear-gradient(#02070c,#000);
+  border-left-color:#007f99
+}
+
+.night-ui .sign{
+  background:linear-gradient(#001a26,#00080d);
+  border-color:#00a8c9
+}
+
+.night-ui .road{
+  background:linear-gradient(#07111b 0 40%,#1d1d1d 40%,#090909 100%);
+  border-color:#202b33
+}
+
+.night-ui .gdist,
+.night-ui .pinfo{
+  background:#000;
+  border-color:#1c2a33
+}
+
+.night-ui .modal{
+  background:linear-gradient(145deg,#050708,#000);
+  border-color:#26323b
+}
+
+.night-ui .preview{
+  background:linear-gradient(#050708,#000);
+  border-top-color:#00a8c9
+}
+
+.night-ui .cat,
+.night-ui .setting,
+.night-ui .row,
+.night-ui .route,
+.night-ui .search input{
+  background:#030303;
+  border-color:#28333b
+}
+
+.night-ui .route.on,
+.night-ui .primary,
+.night-ui .start{
+  background:#00b8d9;
+  color:#001014
+}
+
+.night-ui .cancel{
+  background:#111;
+  border-color:#2c353b
+}
+
+.night-ui .note{background:#120d05}
+.night-ui #toast{background:#000f}
+
+.status{position:absolute;z-index:21;left:50%;top:18px;transform:translateX(-50%);display:none;background:#061018e8;border:1px solid #557084;border-radius:8px;padding:8px 14px;box-shadow:0 8px 20px #0008}
+.status.show{display:block}
+.status b{color:var(--c)}
+
+.radar{position:absolute;z-index:23;left:50%;top:85px;transform:translateX(-50%) translateY(-10px);opacity:0;visibility:hidden;transition:.2s;background:linear-gradient(#533511,#1e1004);border:1px solid var(--amber);border-radius:7px;padding:9px 14px;min-width:300px;text-align:center;box-shadow:0 8px 22px #000a}
+.radar.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+.radar b{display:block;color:#fff2db}
+.radar span{font-size:12px;color:#ffd08a}
+
+.guide{position:absolute;z-index:22;right:-350px;top:0;width:330px;height:100%;background:linear-gradient(#07192a,#03070d);border-left:2px solid var(--c);padding:18px 14px;display:flex;flex-direction:column;gap:12px;transition:.25s;box-shadow:-10px 0 25px #000b}
+.guide.show{right:0}
+
+.sign{border:2px solid var(--c);background:linear-gradient(#003a68,#00182d);border-radius:9px;text-align:center;padding:13px}
+.arrow{font-size:62px}
+.gtext{font-size:18px;font-weight:900}
+
+.road{flex:1;border:1px solid #40505c;border-radius:8px;background:linear-gradient(#18314d 0 40%,#555 40%,#202020 100%);position:relative;overflow:hidden}
+.road:after{content:"";position:absolute;left:50%;top:44%;bottom:-20px;width:5px;background:repeating-linear-gradient(#fff 0 18px,transparent 18px 34px)}
+
+.gdist{text-align:center;background:#000b;border:1px solid #3a4650;border-radius:8px;padding:10px}
+.gdist b{font-size:32px}
+
+.bottom{height:96px;flex:0 0 96px;position:relative;z-index:30;background:repeating-linear-gradient(45deg,#101010 0 6px,#171717 6px 12px);border-top:2px solid #000;display:grid;grid-template-columns:1fr 78px 1fr;gap:9px;align-items:center;padding:8px 12px max(8px,env(safe-area-inset-bottom));box-shadow:0 -8px 22px #000}
+
+.grp{display:flex;gap:8px;align-items:center}
+.grp.r{justify-content:flex-end}
+
+.badge{height:40px;padding:0 13px;display:grid;place-items:center;background:linear-gradient(#3d3d3d,#151515);border:1px solid #626262;border-radius:5px;font:700 10px/1 Georgia,serif;letter-spacing:2px;white-space:nowrap}
+
+.hw{height:56px;min-width:52px;max-width:86px;flex:1;border:1px solid #080808;border-top:2px solid #777;border-bottom:4px solid #000;border-radius:7px;background:linear-gradient(#5d5d5d,#2a2a2a 48%,#111);box-shadow:0 8px 15px #000b;font-weight:900;font-size:17px;position:relative}
+.hw:after{content:"";position:absolute;left:9%;right:9%;height:4px;bottom:-4px;background:var(--c);border-radius:5px;box-shadow:0 0 10px var(--c)}
+.hw:active{transform:translateY(2px)}
+
+.analog{width:72px;height:72px;border-radius:50%;border:3px solid #c0c9d1;background:radial-gradient(circle,#173d77,#0a1731 70%,#02060b);position:relative;box-shadow:inset 0 0 10px #000,0 7px 18px #000a}
+.analog .brand{position:absolute;top:13px;width:100%;text-align:center;font:700 6px/1.2 Arial}
+
+.hand{position:absolute;left:50%;bottom:50%;transform-origin:bottom;background:#eee}
+.hh{width:4px;height:19px}
+.mh{width:3px;height:27px}
+.sh{width:1px;height:30px;background:#ff4059}
+
+.dot{position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:white;transform:translate(-50%,-50%)}
+
+.modal{position:fixed;z-index:100;inset:10% 5% 14%;display:none;flex-direction:column;background:linear-gradient(145deg,#16232e,#060a0f);border:2px solid #425767;border-radius:11px;padding:22px;overflow:auto;box-shadow:0 25px 60px #000e}
+.modal.show{display:flex}
+.modal h2{margin:0 0 16px;padding-bottom:11px;border-bottom:2px solid var(--c)}
+
+.search{display:flex;gap:8px;margin-bottom:14px}
+.search input{flex:1;min-width:0;padding:13px;background:#101820;border:1px solid #536878;border-radius:7px}
+
+.primary{border:0;background:var(--c);color:#001821;border-radius:7px;padding:0 18px;font-weight:900}
+
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px}
+
+.cat,.setting,.row{border:1px solid #495b69;background:#1a242d;border-radius:8px;padding:13px;font-weight:800}
+.setting{text-align:left;margin-bottom:9px}
+.setting strong{color:var(--c)}
+
+.row{width:100%;display:flex;justify-content:space-between;gap:10px;text-align:left;color:white}
+.row small{display:block;color:#a9b7c1;margin-top:4px}
+.row .dist{color:#7de7ff;white-space:nowrap}
+
+.list{display:flex;flex-direction:column;gap:8px;margin-bottom:15px}
+
+.danger{margin-top:auto;padding:14px;border:1px solid #e15768;background:linear-gradient(#851725,#4a0710);border-radius:7px;font-weight:900}
+
+.note{font-size:11px;color:#cbb48f;background:#211608;border-left:3px solid var(--amber);padding:9px;margin:2px 0 12px}
+
+.preview{position:fixed;z-index:90;left:0;right:0;bottom:-560px;background:linear-gradient(#14212c,#05080c);border-top:3px solid var(--c);padding:14px 18px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -12px 35px #000d;transition:.3s}
+.preview.show{bottom:96px}
+
+.ptitle{text-align:center;font-size:18px;font-weight:900;margin-bottom:9px}
+
+.routes{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+
+.route{border:1px solid #526471;background:#17212a;border-radius:8px;padding:10px 5px;font-weight:900;font-size:13px}
+.route.on{background:var(--c);color:#00151d}
+
+.pinfo{margin:10px 0;background:#000b;border:1px solid #35434e;border-radius:7px;padding:11px;text-align:center}
+
+.acts{display:grid;grid-template-columns:1fr 2fr;gap:8px}
+.acts button{padding:13px;border-radius:7px;font-weight:900}
+
+.cancel{background:#424b52;border:1px solid #68747d}
+.start{background:var(--c);color:#00151b;border:0}
+
+.loading{display:inline-block;width:15px;height:15px;border:2px solid #ffffff44;border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:7px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#toast{position:fixed;z-index:200;left:50%;bottom:112px;transform:translate(-50%,12px);opacity:0;visibility:hidden;transition:.2s;background:#000e;border:1px solid var(--c);border-radius:8px;padding:13px 17px;min-width:280px;max-width:86vw;text-align:center;font-weight:800}
+#toast.show{opacity:1;visibility:visible;transform:translate(-50%,0)}
+
+.startup{position:fixed;z-index:999;inset:0;background:#010305;display:grid;place-items:center;transition:.7s}
+.startup.hide{opacity:0;visibility:hidden;pointer-events:none}
+
+.boot{text-align:center}
+.micro{letter-spacing:5px;color:#83919c;font:700 12px Georgia}
+.model{font:italic 700 clamp(26px,5vw,50px) Georgia;letter-spacing:7px;margin:15px;text-shadow:0 0 24px var(--c)}
+.line{height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent);margin:14px}
+.term{font:12px/1.55 ui-monospace,monospace;color:#00ff72;text-align:left}
 
 @media(max-width:760px){
-  .badge{
-    display:none
-  }
-
-  .bottom{
-    grid-template-columns:1fr 66px 1fr
-  }
-
-  .analog{
-    width:62px;
-    height:62px
-  }
-
-  .time{
-    font-size:29px
-  }
-
-  .hud{
-    font-size:10px
-  }
-
-  .guide{
-    width:42%;
-    min-width:250px;
-    right:-45%
-  }
-
-  .routes{
-    grid-template-columns:repeat(5,minmax(72px,1fr));
-    overflow-x:auto
-  }
-
-  .route{
-    min-width:72px
-  }
-
-  .status{
-    max-width:44%;
-    font-size:12px
-  }
+  .badge{display:none}
+  .bottom{grid-template-columns:1fr 66px 1fr}
+  .analog{width:62px;height:62px}
+  .time{font-size:29px}
+  .hud{font-size:10px}
+  .guide{width:42%;min-width:250px;right:-45%}
+  .routes{grid-template-columns:repeat(5,minmax(72px,1fr));overflow-x:auto}
+  .route{min-width:72px}
+  .status{max-width:44%;font-size:12px}
 }
 </style>
 </head>
@@ -793,7 +340,6 @@ button,input{
     <div class="micro">NEON EXCLUSIVE</div>
     <div class="model">DRIVE YOUR AMBITIONS</div>
     <div class="line"></div>
-
     <div class="term">
       &gt;&gt; NAVIGATION CORE ... OK<br>
       &gt;&gt; GPS MODULE ... STARTING<br>
@@ -826,83 +372,32 @@ button,input{
 
     </div>
 
-    <div class="gpsstate" id="gpsState">
-      GPS SEARCH
-    </div>
-
-    <div class="radstate" id="radState">
-      RADAR GPS
-    </div>
+    <div class="gpsstate" id="gpsState">GPS SEARCH</div>
+    <div class="radstate" id="radState">RADAR GPS</div>
+    <div class="trafficstate" id="trafficState">TRAFFIC --</div>
 
     <div class="tools">
-
-      <button
-        class="tool sound"
-        onclick="zoomInMap()">
-        詳細表示（＋）
-      </button>
-
-      <button
-        class="tool sound"
-        onclick="zoomOutMap()">
-        広域表示（－）
-      </button>
-
-      <button
-        class="tool sound on"
-        id="headingBtn"
-        onclick="toggleHeadingMode()">
-        🧭 進行方向上
-      </button>
-
+      <button class="tool sound" onclick="zoomInMap()">詳細表示（＋）</button>
+      <button class="tool sound" onclick="zoomOutMap()">広域表示（－）</button>
+      <button class="tool sound on" id="headingBtn" onclick="toggleHeadingMode()">🧭 進行方向上</button>
     </div>
 
-    <div
-      class="status"
-      id="routeStatus">
-
-      <b id="remaining">
-        --
-      </b>
-
-      <span id="eta">
-        --
-      </span>
-
+    <div class="status" id="routeStatus">
+      <b id="remaining">--</b>
+      　
+      <span id="eta">--</span>
     </div>
 
-    <div
-      class="radar"
-      id="radarPanel">
-
-      <b>
-        ◎ 速度取締機 接近
-      </b>
-
-      <span id="radarDistance">
-        ---
-      </span>
-
+    <div class="radar" id="radarPanel">
+      <b>◎ 速度取締機 接近</b>
+      <span id="radarDistance">---</span>
     </div>
 
-    <div
-      class="guide"
-      id="guide">
+    <div class="guide" id="guide">
 
       <div class="sign">
-
-        <div
-          class="arrow"
-          id="guideArrow">
-          ↑
-        </div>
-
-        <div
-          class="gtext"
-          id="guideText">
-          直進
-        </div>
-
+        <div class="arrow" id="guideArrow">↑</div>
+        <div class="gtext" id="guideText">直進</div>
       </div>
 
       <div class="road"></div>
@@ -910,10 +405,7 @@ button,input{
       <div class="gdist">
         次の案内まで
         <b>
-          <span id="guideDist">
-            --
-          </span>
-          m
+          <span id="guideDist">--</span> m
         </b>
       </div>
 
@@ -929,29 +421,13 @@ button,input{
         NEON EXCLUSIVE
       </div>
 
-      <button
-        class="hw sound"
-        onclick="saveCurrentPoint()">
-        ★
-      </button>
-
-      <button
-        class="hw sound"
-        onclick="openModal('mediaModal')">
-        AV
-      </button>
-
-      <button
-        class="hw sound"
-        onclick="openMusic()">
-        ♪
-      </button>
+      <button class="hw sound" onclick="saveCurrentPoint()">★</button>
+      <button class="hw sound" onclick="openModal('mediaModal')">AV</button>
+      <button class="hw sound" onclick="openMusic()">♪</button>
 
     </div>
 
-    <button
-      class="analog sound"
-      onclick="refreshWeather()">
+    <button class="analog sound" onclick="refreshWeather()">
 
       <div class="brand">
         CHASER<br>
@@ -967,11 +443,7 @@ button,input{
 
     <div class="grp r">
 
-      <button
-        class="hw sound"
-        onclick="openNav()">
-        ▲
-      </button>
+      <button class="hw sound" onclick="openNav()">▲</button>
 
       <button
         class="hw sound"
@@ -996,13 +468,9 @@ button,input{
 
 </div>
 
-<div
-  class="preview"
-  id="preview">
+<div class="preview" id="preview">
 
-  <div
-    class="ptitle"
-    id="ptitle">
+  <div class="ptitle" id="ptitle">
     目的地
   </div>
 
@@ -1045,42 +513,23 @@ button,input{
 
   </div>
 
-  <div
-    class="pinfo"
-    id="pinfo">
-
+  <div class="pinfo" id="pinfo">
     <span class="loading"></span>
     ルート探索中…
-
   </div>
 
   <div class="acts">
-
-    <button
-      class="cancel sound"
-      onclick="cancelPreview()">
-      取消
-    </button>
-
-    <button
-      class="start sound"
-      id="startBtn"
-      onclick="startGuidance()"
-      disabled>
+    <button class="cancel sound" onclick="cancelPreview()">取消</button>
+    <button class="start sound" id="startBtn" onclick="startGuidance()" disabled>
       このルートで案内
     </button>
-
   </div>
 
 </div>
 
-<div
-  class="modal"
-  id="navModal">
+<div class="modal" id="navModal">
 
-  <h2>
-    🧭 目的地検索
-  </h2>
+  <h2>🧭 目的地検索</h2>
 
   <div class="search">
 
@@ -1142,158 +591,96 @@ button,input{
 
   </div>
 
-  <button
-    class="setting sound"
-    onclick="openFavorites()">
+  <button class="setting sound" onclick="openFavorites()">
     ★ 登録地点
   </button>
 
-  <button
-    class="danger sound"
-    onclick="closeModal('navModal')">
+  <button class="danger sound" onclick="closeModal('navModal')">
     閉じる
   </button>
 
 </div>
 
-<div
-  class="modal"
-  id="resultsModal">
-
-  <h2 id="resultsTitle">
-    📍 検索結果
-  </h2>
-
-  <div
-    class="list"
-    id="results">
-  </div>
-
-  <button
-    class="danger sound"
-    onclick="backNav()">
-    戻る
-  </button>
-
+<div class="modal" id="resultsModal">
+  <h2 id="resultsTitle">📍 検索結果</h2>
+  <div class="list" id="results"></div>
+  <button class="danger sound" onclick="backNav()">戻る</button>
 </div>
 
-<div
-  class="modal"
-  id="favoritesModal">
-
-  <h2>
-    ★ 登録地点
-  </h2>
-
-  <div
-    class="list"
-    id="favorites">
-  </div>
-
-  <button
-    class="danger sound"
-    onclick="closeModal('favoritesModal')">
-    閉じる
-  </button>
-
+<div class="modal" id="favoritesModal">
+  <h2>★ 登録地点</h2>
+  <div class="list" id="favorites"></div>
+  <button class="danger sound" onclick="closeModal('favoritesModal')">閉じる</button>
 </div>
 
-<div
-  class="modal"
-  id="settingsModal">
+<div class="modal" id="settingsModal">
 
-  <h2>
-    ⚙ システム設定
-  </h2>
+  <h2>⚙ システム設定</h2>
 
-  <button
-    class="setting sound"
-    onclick="toggleMapMode()">
-
-    <strong>
-      🌓 地図表示
-    </strong>
-
-    <br>
-
-    <span id="mapModeLabel">
-      自動
-    </span>
-
+  <button class="setting sound" onclick="toggleMapMode()">
+    <strong>🌓 地図表示</strong><br>
+    <span id="mapModeLabel">自動</span>
   </button>
 
-  <button
-    class="setting sound"
-    onclick="toggleVoice()">
+  <div class="note">
+    自動モードでは18:00〜翌05:00を黒ベースの夜間テーマにします。
+  </div>
 
-    <strong>
-      🗣 音声案内
-    </strong>
-
-    <br>
-
-    <span id="voiceLabel">
-      ON
-    </span>
-
+  <button class="setting sound" onclick="toggleVoice()">
+    <strong>🗣 音声案内</strong><br>
+    <span id="voiceLabel">ON</span>
   </button>
 
-  <button
-    class="setting sound"
-    onclick="toggleAccuracy()">
-
-    <strong>
-      📡 GPS精度表示
-    </strong>
-
-    <br>
-
-    <span id="accuracyLabel">
-      OFF
-    </span>
-
+  <button class="setting sound" onclick="toggleAccuracy()">
+    <strong>📡 GPS精度表示</strong><br>
+    <span id="accuracyLabel">OFF</span>
   </button>
 
-  <button
-    class="setting sound"
-    onclick="toggleRadar()">
+  <button class="setting sound" onclick="toggleTraffic()">
+    <strong>🚗 リアルタイム渋滞表示</strong><br>
+    <span id="trafficLabel">ON</span>
+  </button>
 
-    <strong>
-      ◎ オービス接近警告
-    </strong>
+  <div class="search">
 
-    <br>
+    <input
+      id="trafficKeyInput"
+      type="password"
+      autocomplete="off"
+      placeholder="TomTom Traffic API Key">
 
-    <span id="radarLabel">
-      ON
-    </span>
+    <button
+      class="primary sound"
+      onclick="saveTrafficKey()">
+      保存
+    </button>
 
+  </div>
+
+  <div class="note">
+    渋滞区間だけ赤線で重ねます。TomTom Traffic APIキーが必要です。
+  </div>
+
+  <button class="setting sound" onclick="toggleRadar()">
+    <strong>◎ オービス接近警告</strong><br>
+    <span id="radarLabel">ON</span>
   </button>
 
   <div class="note">
     GPS＋OpenStreetMapの固定式速度取締機データで通知します。
-    電波を検知するレーダーではありません。
   </div>
 
-  <button
-    class="danger sound"
-    onclick="closeModal('settingsModal')">
+  <button class="danger sound" onclick="closeModal('settingsModal')">
     閉じる
   </button>
 
 </div>
 
-<div
-  class="modal"
-  id="mediaModal">
+<div class="modal" id="mediaModal">
 
-  <h2>
-    AV / MEDIA
-  </h2>
+  <h2>AV / MEDIA</h2>
 
-  <button
-    class="setting sound"
-    onclick="openMusic()">
+  <button class="setting sound" onclick="openMusic()">
     ♪ YouTube Music
   </button>
 
@@ -1303,17 +690,13 @@ button,input{
     Spotify
   </button>
 
-  <button
-    class="danger sound"
-    onclick="closeModal('mediaModal')">
+  <button class="danger sound" onclick="closeModal('mediaModal')">
     閉じる
   </button>
 
 </div>
 
-<div id="toast">
-  通知
-</div>
+<div id="toast">通知</div>
 
 <script>
 'use strict';
@@ -1338,6 +721,8 @@ const OVER=[
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter'
 ];
+
+const TOMTOM_API_KEY_DEFAULT='';
 
 const profiles={
 
@@ -1392,7 +777,6 @@ const profiles={
 let map;
 let userMarker;
 let destMarker;
-
 let routeOn=false;
 let camMarkers=[];
 
@@ -1415,7 +799,6 @@ let smoothed=0;
 
 let tracking=true;
 let headingUp=true;
-
 let navZoom=16.7;
 
 let voice=true;
@@ -1439,8 +822,7 @@ let routing=false;
 let offCount=0;
 let lastReroute=0;
 
-let spoken=
-  new Set();
+let spoken=new Set();
 
 let toastTimer;
 let lastWeather=0;
@@ -1451,14 +833,24 @@ let radar=
   )!=='0';
 
 let cameras=[];
-
-let radarAlerts=
-  new Set();
+let radarAlerts=new Set();
 
 let radarLoading=false;
 let lastRadarFetch=0;
 let lastRadarLat=null;
 let lastRadarLng=null;
+
+let trafficEnabled=
+  localStorage.getItem(
+    'naviZeteTraffic'
+  )!=='0';
+
+let trafficKey=
+  localStorage.getItem(
+    'naviZeteTrafficKey'
+  )
+  ||
+  TOMTOM_API_KEY_DEFAULT;
 
 function init(){
 
@@ -1480,8 +872,7 @@ function init(){
 
             tileSize:256,
 
-            attribution:
-              '© OpenStreetMap contributors'
+            attribution:'© OpenStreetMap contributors'
           }
         },
 
@@ -1505,15 +896,13 @@ function init(){
       minZoom:8,
       maxZoom:19,
 
-      maxBounds:
-        BOUNDS,
+      maxBounds:BOUNDS,
 
       attributionControl:false,
 
       dragRotate:false,
       pitchWithRotate:false,
       touchPitch:false
-
     });
 
   const e=
@@ -1521,11 +910,8 @@ function init(){
       'div'
     );
 
-  e.className=
-    'vehicle';
-
-  e.style.display=
-    'none';
+  e.className='vehicle';
+  e.style.display='none';
 
   e.innerHTML=
     `
@@ -1557,14 +943,9 @@ function init(){
 
   userMarker=
     new maplibregl.Marker({
-
       element:e,
-
       anchor:'center',
-
-      rotationAlignment:
-        'viewport'
-
+      rotationAlignment:'viewport'
     })
     .setLngLat(
       [
@@ -1580,21 +961,27 @@ function init(){
 
       applyTheme();
 
+      updateTrafficUi();
+
+      if(
+        document.getElementById(
+          'trafficKeyInput'
+        )
+      ){
+        trafficKeyInput.value=
+          trafficKey;
+      }
+
+      initTrafficLayer();
+
       if(
         radar&&
         gpsFix
       ){
         loadCameras(true);
       }
-
     }
   );
-
-  /*
-    重要：
-    ドラッグ・ズームでは
-    走行追従をOFFにしない。
-  */
 
   map.on(
     'dragstart',
@@ -1604,10 +991,8 @@ function init(){
   map.on(
     'zoomend',
     ()=>{
-
       navZoom=
         map.getZoom();
-
     }
   );
 
@@ -1647,7 +1032,6 @@ function init(){
 
   setTimeout(
     ()=>{
-
       document
         .getElementById(
           'startup'
@@ -1656,7 +1040,6 @@ function init(){
         .add(
           'hide'
         );
-
     },
     3300
   );
@@ -1681,9 +1064,11 @@ function beep(){
   try{
 
     ac=
-      ac||
+      ac
+      ||
       new(
-        window.AudioContext||
+        window.AudioContext
+        ||
         window.webkitAudioContext
       )();
 
@@ -1767,29 +1152,14 @@ function updateClock(){
   const s=
     d.getSeconds()*6;
 
-  document
-    .getElementById(
-      'hh'
-    )
-    .style
-    .transform=
-      `translateX(-50%) rotate(${h}deg)`;
+  hh.style.transform=
+    `translateX(-50%) rotate(${h}deg)`;
 
-  document
-    .getElementById(
-      'mh'
-    )
-    .style
-    .transform=
-      `translateX(-50%) rotate(${m}deg)`;
+  mh.style.transform=
+    `translateX(-50%) rotate(${m}deg)`;
 
-  document
-    .getElementById(
-      'sh'
-    )
-    .style
-    .transform=
-      `translateX(-50%) rotate(${s}deg)`;
+  sh.style.transform=
+    `translateX(-50%) rotate(${s}deg)`;
 }
 
 function applyTheme(){
@@ -1799,29 +1169,41 @@ function applyTheme(){
       .getHours();
 
   const dark=
-    mapMode==='night'||
+    mapMode==='night'
+    ||
     (
-      mapMode==='auto'&&
+      mapMode==='auto'
+      &&
       (
-        h>=17||
-        h<6
+        h>=18
+        ||
+        h<5
       )
     );
 
-  document
-    .getElementById(
-      'mapModeLabel'
-    )
-    .textContent=
-      mapMode==='auto'
-      ?
-      '自動'
-      :
+  document.body
+    .classList
+    .toggle(
+      'night-ui',
+      dark
+    );
+
+  mapModeLabel.textContent=
+    mapMode==='auto'
+    ?
+    (
       dark
       ?
-      '夜間'
+      '自動 / 夜間'
       :
-      '昼間';
+      '自動 / 昼間'
+    )
+    :
+    dark
+    ?
+    '夜間'
+    :
+    '昼間';
 
   if(
     map?.isStyleLoaded?.()
@@ -1834,7 +1216,7 @@ function applyTheme(){
         'raster-brightness-max',
         dark
         ?
-        .72
+        .34
         :
         1
       );
@@ -1842,10 +1224,6 @@ function applyTheme(){
       map.setPaintProperty(
         'osm',
         'raster-brightness-min',
-        dark
-        ?
-        .06
-        :
         0
       );
 
@@ -1854,7 +1232,7 @@ function applyTheme(){
         'raster-saturation',
         dark
         ?
-        -.4
+        -.88
         :
         0
       );
@@ -1864,13 +1242,22 @@ function applyTheme(){
         'raster-contrast',
         dark
         ?
-        .18
+        .34
         :
         0
       );
 
-    }catch(_){}
+      map.setPaintProperty(
+        'osm',
+        'raster-opacity',
+        dark
+        ?
+        .97
+        :
+        1
+      );
 
+    }catch(_){}
   }
 }
 
@@ -1891,11 +1278,7 @@ function toggleMapMode(){
 
   toast(
     '地図表示：'+
-    document
-      .getElementById(
-        'mapModeLabel'
-      )
-      .textContent
+    mapModeLabel.textContent
   );
 }
 
@@ -1904,26 +1287,16 @@ function toggleVoice(){
   voice=
     !voice;
 
-  document
-    .getElementById(
-      'voiceLabel'
-    )
-    .textContent=
-      voice
-      ?
-      'ON'
-      :
-      'OFF';
+  voiceLabel.textContent=
+    voice
+    ?
+    'ON'
+    :
+    'OFF';
 
   toast(
     '音声案内：'+
-    (
-      voice
-      ?
-      'ON'
-      :
-      'OFF'
-    )
+    voiceLabel.textContent
   );
 
   if(
@@ -1940,33 +1313,24 @@ function toggleAccuracy(){
   showAcc=
     !showAcc;
 
-  document
-    .getElementById(
-      'accuracyLabel'
-    )
-    .textContent=
-      showAcc
-      ?
-      'ON'
-      :
-      'OFF';
+  accuracyLabel.textContent=
+    showAcc
+    ?
+    'ON'
+    :
+    'OFF';
 
   toast(
     'GPS精度表示：'+
-    (
-      showAcc
-      ?
-      'ON'
-      :
-      'OFF'
-    )
+    accuracyLabel.textContent
   );
 }
 
 function speak(t){
 
   if(
-    !voice||
+    !voice
+    ||
     !(
       'speechSynthesis'
       in window
@@ -1984,15 +1348,10 @@ function speak(t){
         t
       );
 
-    u.lang=
-      'ja-JP';
+    u.lang='ja-JP';
+    u.rate=1.03;
 
-    u.rate=
-      1.03;
-
-    speechSynthesis.speak(
-      u
-    );
+    speechSynthesis.speak(u);
 
   }catch(_){}
 }
@@ -2019,30 +1378,24 @@ function startGPS(){
     watchId!=null
   ){
 
-    navigator
-      .geolocation
-      .clearWatch(
-        watchId
-      );
-
+    navigator.geolocation.clearWatch(
+      watchId
+    );
   }
 
   watchId=
-    navigator
-      .geolocation
-      .watchPosition(
+    navigator.geolocation.watchPosition(
 
-        onGps,
+      onGps,
 
-        onGpsError,
+      onGpsError,
 
-        {
-          enableHighAccuracy:true,
-          maximumAge:700,
-          timeout:15000
-        }
-
-      );
+      {
+        enableHighAccuracy:true,
+        maximumAge:700,
+        timeout:15000
+      }
+    );
 }
 
 function getPosition(
@@ -2056,8 +1409,7 @@ function getPosition(
     return;
   }
 
-  requesting=
-    true;
+  requesting=true;
 
   if(
     msg
@@ -2067,56 +1419,48 @@ function getPosition(
     );
   }
 
-  navigator
-    .geolocation
-    .getCurrentPosition(
+  navigator.geolocation.getCurrentPosition(
 
-      p=>{
+    p=>{
 
-        requesting=
-          false;
+      requesting=false;
 
-        onGps(
-          p,
-          {
-            force:center
-          }
-        );
-
-        if(
-          msg
-        ){
-
-          toast(
-            `📍 現在地取得${
-              acc
-              ?
-              ` ±${Math.round(acc)}m`
-              :
-              ''
-            }`
-          );
-
+      onGps(
+        p,
+        {
+          force:center
         }
+      );
 
-      },
+      if(
+        msg
+      ){
 
-      e=>{
-
-        requesting=
-          false;
-
-        onGpsError(e);
-
-      },
-
-      {
-        enableHighAccuracy:true,
-        maximumAge:0,
-        timeout:15000
+        toast(
+          `📍 現在地取得${
+            acc
+            ?
+            ` ±${Math.round(acc)}m`
+            :
+            ''
+          }`
+        );
       }
+    },
 
-    );
+    e=>{
+
+      requesting=false;
+      onGpsError(e);
+
+    },
+
+    {
+      enableHighAccuracy:true,
+      maximumAge:0,
+      timeout:15000
+    }
+  );
 }
 
 function onGps(
@@ -2133,22 +1477,11 @@ function onGps(
   const og=
     prevLng;
 
-  gpsFix=
-    true;
+  gpsFix=true;
+  acc=c.accuracy;
 
-  acc=
-    c.accuracy;
-
-  lat=
-    c.latitude;
-
-  lng=
-    c.longitude;
-
-  const gpsState=
-    document.getElementById(
-      'gpsState'
-    );
+  lat=c.latitude;
+  lng=c.longitude;
 
   gpsState.textContent=
     'GPS FIX';
@@ -2173,35 +1506,24 @@ function onGps(
     .display=
       'block';
 
-  document
-    .getElementById(
-      'tLat'
-    )
-    .textContent=
-      lat.toFixed(4);
+  tLat.textContent=
+    lat.toFixed(4);
 
-  document
-    .getElementById(
-      'tLon'
-    )
-    .textContent=
-      lng.toFixed(4);
+  tLon.textContent=
+    lng.toFixed(4);
 
-  document
-    .getElementById(
-      'tAlt'
-    )
-    .textContent=
-      c.altitude==null
-      ?
-      '---'
-      :
-      Math.round(
-        c.altitude
-      );
+  tAlt.textContent=
+    c.altitude==null
+    ?
+    '---'
+    :
+    Math.round(
+      c.altitude
+    );
 
   speed=
-    c.speed!=null&&
+    c.speed!=null
+    &&
     c.speed>=0
     ?
     Math.round(
@@ -2210,15 +1532,12 @@ function onGps(
     :
     0;
 
-  document
-    .getElementById(
-      'tSpd'
-    )
-    .textContent=
-      speed;
+  tSpd.textContent=
+    speed;
 
   let sensor=
-    c.heading!=null&&
+    c.heading!=null
+    &&
     !Number.isNaN(
       c.heading
     )
@@ -2226,7 +1545,8 @@ function onGps(
     (
       (
         c.heading%360
-      )+
+      )
+      +
       360
     )%360
     :
@@ -2236,7 +1556,8 @@ function onGps(
     null;
 
   if(
-    ol!=null&&
+    ol!=null
+    &&
     og!=null
   ){
 
@@ -2247,12 +1568,6 @@ function onGps(
         lat,
         lng
       );
-
-    /*
-      実際に3.5m以上動いた時は、
-      GPSの移動軌跡方向を最優先する。
-      これで横向きカーソルを抑える。
-    */
 
     if(
       moved>=3.5
@@ -2265,7 +1580,6 @@ function onGps(
           lat,
           lng
         );
-
     }
   }
 
@@ -2287,8 +1601,7 @@ function onGps(
       smoothed=
         raw;
 
-      headingReady=
-        true;
+      headingReady=true;
 
     }else{
 
@@ -2302,21 +1615,15 @@ function onGps(
           :
           .28
         );
-
     }
 
     heading=
       smoothed;
 
-    document
-      .getElementById(
-        'tHdg'
-      )
-      .textContent=
-        Math.round(
-          heading
-        );
-
+    tHdg.textContent=
+      Math.round(
+        heading
+      );
   }
 
   prevLat=
@@ -2326,15 +1633,13 @@ function onGps(
     lng;
 
   if(
-    firstFix||
+    firstFix
+    ||
     opt.force
   ){
 
-    firstFix=
-      false;
-
-    tracking=
-      true;
+    firstFix=false;
+    tracking=true;
 
     navZoom=
       Math.max(
@@ -2345,7 +1650,8 @@ function onGps(
     follow(true);
 
   }else if(
-    tracking||
+    tracking
+    ||
     routing
   ){
 
@@ -2354,7 +1660,6 @@ function onGps(
   }else{
 
     updateCar();
-
   }
 
   if(
@@ -2364,18 +1669,17 @@ function onGps(
   ){
 
     refreshWeather(true);
-
   }
 
   if(
-    showAcc&&
+    showAcc
+    &&
     Math.random()<.04
   ){
 
     toast(
       `GPS精度 ±${Math.round(acc)}m`
     );
-
   }
 
   if(
@@ -2383,9 +1687,7 @@ function onGps(
   ){
 
     refreshCameras();
-
     checkRadar();
-
   }
 
   if(
@@ -2393,7 +1695,6 @@ function onGps(
   ){
 
     updateGuidance();
-
   }
 }
 
@@ -2426,7 +1727,8 @@ function smoothAngle(
       (
         b-a+540
       )%360
-    )-
+    )
+    -
     180;
 
   return(
@@ -2442,14 +1744,6 @@ function updateCar(){
     userMarker
   ){
 
-    /*
-      進行方向上：
-      地図を回して自車は上固定
-
-      北を上：
-      地図固定で自車だけ回す
-    */
-
     userMarker
       .setRotation(
         headingUp
@@ -2458,7 +1752,6 @@ function updateCar(){
         :
         heading
       );
-
   }
 }
 
@@ -2476,7 +1769,8 @@ function follow(
 
   if(
     !(
-      tracking||
+      tracking
+      ||
       routing
     )
   ){
@@ -2491,7 +1785,8 @@ function follow(
     ],
 
     bearing:
-      headingUp&&
+      headingUp
+      &&
       headingReady
       ?
       heading
@@ -2528,7 +1823,6 @@ function follow(
       260,
 
     essential:true
-
   });
 }
 
@@ -2537,33 +1831,28 @@ function toggleHeadingMode(){
   headingUp=
     !headingUp;
 
-  const btn=
-    document.getElementById(
-      'headingBtn'
+  headingBtn
+    .classList
+    .toggle(
+      'on',
+      headingUp
     );
 
-  btn.classList.toggle(
-    'on',
-    headingUp
-  );
-
-  btn.textContent=
+  headingBtn.textContent=
     headingUp
     ?
     '🧭 進行方向上'
     :
     '🧭 北を上';
 
-  tracking=
-    true;
+  tracking=true;
 
   follow(true);
 }
 
 function resetCamera(){
 
-  tracking=
-    true;
+  tracking=true;
 
   if(
     gpsFix
@@ -2595,7 +1884,6 @@ function resetCamera(){
       true,
       true
     );
-
   }
 }
 
@@ -2607,12 +1895,7 @@ function zoomInMap(){
       map.getZoom()+1
     );
 
-  /*
-    ズームしても追従解除しない
-  */
-
-  tracking=
-    true;
+  tracking=true;
 
   follow(true);
 }
@@ -2625,8 +1908,7 @@ function zoomOutMap(){
       map.getZoom()-1
     );
 
-  tracking=
-    true;
+  tracking=true;
 
   follow(true);
 }
@@ -2636,7 +1918,8 @@ async function refreshWeather(
 ){
 
   if(
-    !gpsFix&&
+    !gpsFix
+    &&
     !silent
   ){
 
@@ -2661,14 +1944,14 @@ async function refreshWeather(
       Date.now();
 
     if(
-      !silent&&
+      !silent
+      &&
       d.current
     ){
 
       toast(
         `🌡 ${Math.round(d.current.temperature_2m)}℃　湿度 ${Math.round(d.current.relative_humidity_2m)}%`
       );
-
     }
 
   }catch(_){
@@ -2680,30 +1963,22 @@ async function refreshWeather(
       toast(
         '気象情報を取得できません'
       );
-
     }
-
   }
 }
 
 function openModal(id){
-
   document
     .getElementById(id)
     ?.classList
-    .add(
-      'show'
-    );
+    .add('show');
 }
 
 function closeModal(id){
-
   document
     .getElementById(id)
     ?.classList
-    .remove(
-      'show'
-    );
+    .remove('show');
 }
 
 function closeAll(){
@@ -2721,23 +1996,363 @@ function closeAll(){
 }
 
 function openNav(){
-
   closeAll();
-
-  openModal(
-    'navModal'
-  );
+  openModal('navModal');
 }
 
 function backNav(){
+  closeModal('resultsModal');
+  openModal('navModal');
+}
 
-  closeModal(
-    'resultsModal'
+function toggleTraffic(){
+
+  trafficEnabled=
+    !trafficEnabled;
+
+  localStorage.setItem(
+    'naviZeteTraffic',
+    trafficEnabled
+    ?
+    '1'
+    :
+    '0'
   );
 
-  openModal(
-    'navModal'
+  updateTrafficUi();
+
+  if(
+    !trafficEnabled
+  ){
+
+    removeTrafficLayer();
+
+    toast(
+      'リアルタイム渋滞表示：OFF'
+    );
+
+    return;
+  }
+
+  if(
+    !trafficKey
+  ){
+
+    toast(
+      'TomTom Traffic APIキーを設定してください'
+    );
+
+    return;
+  }
+
+  initTrafficLayer(true);
+
+  toast(
+    'リアルタイム渋滞表示：ON'
   );
+}
+
+function saveTrafficKey(){
+
+  trafficKey=
+    (
+      document
+        .getElementById(
+          'trafficKeyInput'
+        )
+        ?.value
+      ||
+      ''
+    )
+    .trim();
+
+  if(
+    trafficKey
+  ){
+
+    localStorage.setItem(
+      'naviZeteTrafficKey',
+      trafficKey
+    );
+
+  }else{
+
+    localStorage.removeItem(
+      'naviZeteTrafficKey'
+    );
+  }
+
+  updateTrafficUi();
+
+  if(
+    trafficEnabled
+    &&
+    trafficKey
+  ){
+
+    initTrafficLayer(true);
+
+  }else{
+
+    removeTrafficLayer();
+  }
+
+  toast(
+    trafficKey
+    ?
+    'Traffic APIキーを保存しました'
+    :
+    'Traffic APIキーを削除しました'
+  );
+}
+
+function updateTrafficUi(){
+
+  const label=
+    document.getElementById(
+      'trafficLabel'
+    );
+
+  const state=
+    document.getElementById(
+      'trafficState'
+    );
+
+  if(
+    label
+  ){
+
+    label.textContent=
+      trafficEnabled
+      ?
+      'ON'
+      :
+      'OFF';
+  }
+
+  if(
+    state
+  ){
+
+    const active=
+      trafficEnabled
+      &&
+      !!trafficKey;
+
+    state.textContent=
+      !trafficEnabled
+      ?
+      'TRAFFIC OFF'
+      :
+      trafficKey
+      ?
+      'TRAFFIC ON'
+      :
+      'TRAFFIC KEY';
+
+    state
+      .classList
+      .toggle(
+        'on',
+        active
+      );
+  }
+}
+
+function removeTrafficLayer(){
+
+  if(
+    !map?.isStyleLoaded?.()
+  ){
+    return;
+  }
+
+  for(
+    const id of[
+      'trafficJam',
+      'trafficJamGlow'
+    ]
+  ){
+
+    try{
+
+      if(
+        map.getLayer(id)
+      ){
+
+        map.removeLayer(id);
+      }
+
+    }catch(_){}
+  }
+
+  try{
+
+    if(
+      map.getSource(
+        'traffic'
+      )
+    ){
+
+      map.removeSource(
+        'traffic'
+      );
+    }
+
+  }catch(_){}
+}
+
+function initTrafficLayer(
+  force=false
+){
+
+  if(
+    !map?.isStyleLoaded?.()
+  ){
+    return;
+  }
+
+  updateTrafficUi();
+
+  if(
+    force
+  ){
+    removeTrafficLayer();
+  }
+
+  if(
+    !trafficEnabled
+    ||
+    !trafficKey
+    ||
+    map.getSource(
+      'traffic'
+    )
+  ){
+    return;
+  }
+
+  try{
+
+    map.addSource(
+      'traffic',
+      {
+
+        type:'vector',
+
+        tiles:[
+          `https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.pbf?key=${encodeURIComponent(trafficKey)}`
+        ],
+
+        minzoom:7,
+        maxzoom:22
+      }
+    );
+
+    const filter=[
+      'all',
+
+      [
+        'has',
+        'traffic_level'
+      ],
+
+      [
+        '<',
+        [
+          'to-number',
+          [
+            'get',
+            'traffic_level'
+          ]
+        ],
+        .75
+      ]
+    ];
+
+    map.addLayer({
+
+      id:'trafficJamGlow',
+
+      type:'line',
+
+      source:'traffic',
+
+      'source-layer':'Traffic flow',
+
+      filter,
+
+      layout:{
+        'line-cap':'round',
+        'line-join':'round'
+      },
+
+      paint:{
+
+        'line-color':'#3d0000',
+
+        'line-opacity':.72,
+
+        'line-width':[
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          9,3,
+          13,6,
+          17,12,
+          20,16
+        ]
+      }
+    });
+
+    map.addLayer({
+
+      id:'trafficJam',
+
+      type:'line',
+
+      source:'traffic',
+
+      'source-layer':'Traffic flow',
+
+      filter,
+
+      layout:{
+        'line-cap':'round',
+        'line-join':'round'
+      },
+
+      paint:{
+
+        'line-color':'#ff2020',
+
+        'line-opacity':.95,
+
+        'line-width':[
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          9,1.5,
+          13,3.5,
+          17,7,
+          20,10
+        ]
+      }
+    });
+
+    updateTrafficUi();
+
+  }catch(e){
+
+    console.warn(
+      'traffic layer',
+      e
+    );
+
+    toast(
+      '渋滞レイヤーを読み込めませんでした'
+    );
+  }
 }
 
 function toggleRadar(){
@@ -2766,10 +2381,7 @@ function toggleRadar(){
 
     clearCamMarkers();
 
-    document
-      .getElementById(
-        'radarPanel'
-      )
+    radarPanel
       .classList
       .remove(
         'show'
@@ -2790,40 +2402,32 @@ function toggleRadar(){
     ){
 
       loadCameras(true);
-
     }
   }
 }
 
 function updateRadarUi(){
 
-  document
-    .getElementById(
-      'radarLabel'
-    )
-    .textContent=
-      radar
-      ?
-      'ON'
-      :
-      'OFF';
+  radarLabel.textContent=
+    radar
+    ?
+    'ON'
+    :
+    'OFF';
 
-  const s=
-    document.getElementById(
-      'radState'
-    );
-
-  s.textContent=
+  radState.textContent=
     radar
     ?
     'RADAR GPS'
     :
     'RADAR OFF';
 
-  s.classList.toggle(
-    'on',
-    radar
-  );
+  radState
+    .classList
+    .toggle(
+      'on',
+      radar
+    );
 }
 
 function clearCamMarkers(){
@@ -2844,8 +2448,10 @@ function clearCamMarkers(){
 function refreshCameras(){
 
   if(
-    !radar||
-    !gpsFix||
+    !radar
+    ||
+    !gpsFix
+    ||
     radarLoading
   ){
     return;
@@ -2872,7 +2478,6 @@ function refreshCameras(){
   ){
 
     loadCameras(false);
-
   }
 }
 
@@ -2881,15 +2486,18 @@ async function loadCameras(
 ){
 
   if(
-    !radar||
-    !gpsFix||
+    !radar
+    ||
+    !gpsFix
+    ||
     radarLoading
   ){
     return;
   }
 
   if(
-    !force&&
+    !force
+    &&
     Date.now()-
     lastRadarFetch<
     90000
@@ -2897,14 +2505,12 @@ async function loadCameras(
     return;
   }
 
-  radarLoading=
-    true;
+  radarLoading=true;
 
   const q=
     `[out:json][timeout:12];node["highway"="speed_camera"](around:15000,${lat},${lng});out tags;`;
 
-  let data=
-    null;
+  let data=null;
 
   for(
     const ep of OVER
@@ -2937,8 +2543,7 @@ async function loadCameras(
     }catch(_){}
   }
 
-  radarLoading=
-    false;
+  radarLoading=false;
 
   if(
     !data?.elements
@@ -2970,17 +2575,15 @@ async function loadCameras(
     .map(
       x=>({
 
-        id:
-          x.id,
+        id:x.id,
 
-        lat:
-          +x.lat,
+        lat:+x.lat,
 
-        lon:
-          +x.lon,
+        lon:+x.lon,
 
         maxspeed:
-          x.tags?.maxspeed||
+          x.tags?.maxspeed
+          ||
           ''
 
       })
@@ -2997,11 +2600,8 @@ async function loadCameras(
         'div'
       );
 
-    e.className=
-      'cam';
-
-    e.textContent=
-      '◎';
+    e.className='cam';
+    e.textContent='◎';
 
     const pop=
       new maplibregl.Popup({
@@ -3028,7 +2628,6 @@ async function loadCameras(
       )
       .setPopup(pop)
       .addTo(map)
-
     );
   }
 }
@@ -3043,7 +2642,8 @@ function hdiff(
       (
         a-b+540
       )%360
-    )-
+    )
+    -
     180
   );
 }
@@ -3051,15 +2651,16 @@ function hdiff(
 function checkRadar(){
 
   if(
-    !radar||
-    !gpsFix||
+    !radar
+    ||
+    !gpsFix
+    ||
     !cameras.length
   ){
     return;
   }
 
-  let n=
-    null;
+  let n=null;
 
   for(
     const c of cameras
@@ -3099,7 +2700,8 @@ function checkRadar(){
     }
 
     if(
-      !n||
+      !n
+      ||
       d<n.d
     ){
 
@@ -3107,20 +2709,14 @@ function checkRadar(){
         c,
         d
       };
-
     }
   }
-
-  const panel=
-    document.getElementById(
-      'radarPanel'
-    );
 
   if(
     !n
   ){
 
-    panel
+    radarPanel
       .classList
       .remove(
         'show'
@@ -3135,28 +2731,24 @@ function checkRadar(){
   }=
     n;
 
-  document
-    .getElementById(
-      'radarDistance'
+  radarDistance.textContent=
+    (
+      d>=1000
+      ?
+      `約 ${(d/1000).toFixed(1)} km先`
+      :
+      `約 ${Math.round(d/10)*10} m先`
     )
-    .textContent=
-      (
-        d>=1000
-        ?
-        `約 ${(d/1000).toFixed(1)} km先`
-        :
-        `約 ${Math.round(d/10)*10} m先`
-      )
-      +
-      (
-        c.maxspeed
-        ?
-        ` / 制限 ${c.maxspeed}`
-        :
-        ''
-      );
+    +
+    (
+      c.maxspeed
+      ?
+      ` / 制限 ${c.maxspeed}`
+      :
+      ''
+    );
 
-  panel
+  radarPanel
     .classList
     .add(
       'show'
@@ -3200,10 +2792,7 @@ function checkRadar(){
 async function smartSearch(){
 
   const raw=
-    document
-      .getElementById(
-        'searchInput'
-      )
+    searchInput
       .value
       .trim();
 
@@ -3240,14 +2829,12 @@ async function smartSearch(){
   ){
 
     if(
-      x.status===
-      'fulfilled'
+      x.status==='fulfilled'
     ){
 
       a.push(
         ...x.value
       );
-
     }
   }
 
@@ -3309,7 +2896,6 @@ async function smartSearch(){
           x.name,
           x.display
         );
-
     }
   );
 
@@ -3323,13 +2909,11 @@ async function smartSearch(){
       ||
       (
         (
-          x.dist??
-          9999
+          x.dist??9999
         )
         -
         (
-          y.dist??
-          9999
+          y.dist??9999
         )
       )
   );
@@ -3377,9 +2961,12 @@ function inBounds(
 ){
 
   return(
-    a>=34.35&&
-    a<=37.65&&
-    o>=138.35&&
+    a>=34.35
+    &&
+    a<=37.65
+    &&
+    o>=138.35
+    &&
     o<=141.25
   );
 }
@@ -3392,15 +2979,15 @@ function score(
 
   q=
     norm(q)
-    .toLowerCase();
+      .toLowerCase();
 
   n=
     norm(n)
-    .toLowerCase();
+      .toLowerCase();
 
   d=
     norm(d)
-    .toLowerCase();
+      .toLowerCase();
 
   return(
     n===q
@@ -3428,22 +3015,17 @@ async function searchOsm(q){
   const p=
     new URLSearchParams({
 
-      format:
-        'jsonv2',
+      format:'jsonv2',
 
       q,
 
-      countrycodes:
-        'jp',
+      countrycodes:'jp',
 
-      limit:
-        '20',
+      limit:'20',
 
-      addressdetails:
-        '1',
+      addressdetails:'1',
 
-      namedetails:
-        '1'
+      namedetails:'1'
 
     });
 
@@ -3462,22 +3044,17 @@ async function searchOsm(q){
       'viewbox',
       '138.35,37.65,141.25,34.35'
     );
-
   }
 
   const r=
     await fetch(
-
       'https://nominatim.openstreetmap.org/search?'+
       p.toString(),
-
       {
         headers:{
-          'Accept-Language':
-            'ja'
+          'Accept-Language':'ja'
         }
       }
-
     );
 
   if(
@@ -3492,11 +3069,9 @@ async function searchOsm(q){
   .map(
     x=>({
 
-      lat:
-        +x.lat,
+      lat:+x.lat,
 
-      lon:
-        +x.lon,
+      lon:+x.lon,
 
       name:
         x.namedetails?.['name:ja']
@@ -3508,12 +3083,11 @@ async function searchOsm(q){
         '名称不明',
 
       display:
-        x.display_name||
+        x.display_name
+        ||
         '',
 
-      source:
-        'OSM'
-
+      source:'OSM'
     })
   );
 }
@@ -3551,16 +3125,16 @@ async function searchGsi(q){
         +x.geometry?.coordinates?.[0],
 
       name:
-        x.properties?.title||
+        x.properties?.title
+        ||
         q,
 
       display:
-        x.properties?.title||
+        x.properties?.title
+        ||
         q,
 
-      source:
-        'GSI'
-
+      source:'GSI'
     })
   );
 }
@@ -3607,8 +3181,7 @@ async function nearby(
   const q=
     `[out:json][timeout:14];(${b.join('')});out center tags 40;`;
 
-  let d=
-    null;
+  let d=null;
 
   for(
     const ep of OVER
@@ -3662,15 +3235,18 @@ async function nearby(
   ){
 
     const a=
-      x.lat??
+      x.lat
+      ??
       x.center?.lat;
 
     const o=
-      x.lon??
+      x.lon
+      ??
       x.center?.lon;
 
     if(
-      a==null||
+      a==null
+      ||
       o==null
     ){
       continue;
@@ -3688,7 +3264,8 @@ async function nearby(
     seen.add(k);
 
     const t=
-      x.tags||
+      x.tags
+      ||
       {};
 
     const name=
@@ -3704,11 +3281,9 @@ async function nearby(
 
     out.push({
 
-      lat:
-        +a,
+      lat:+a,
 
-      lon:
-        +o,
+      lon:+o,
 
       name,
 
@@ -3730,7 +3305,6 @@ async function nearby(
           +a,
           +o
         )/1000
-
     });
   }
 
@@ -3768,28 +3342,18 @@ function showResults(
   title
 ){
 
-  const box=
-    document.getElementById(
-      'results'
+  results.innerHTML='';
+
+  resultsTitle.textContent=
+    '📍 '+
+    title+
+    (
+      gpsFix
+      ?
+      '（近い順）'
+      :
+      ''
     );
-
-  box.innerHTML=
-    '';
-
-  document
-    .getElementById(
-      'resultsTitle'
-    )
-    .textContent=
-      '📍 '+
-      title+
-      (
-        gpsFix
-        ?
-        '（近い順）'
-        :
-        ''
-      );
 
   a.forEach(
     x=>{
@@ -3805,6 +3369,7 @@ function showResults(
       b.innerHTML=
         `
           <span>
+
             <b>
               ${esc(x.name)}
             </b>
@@ -3812,6 +3377,7 @@ function showResults(
             <small>
               ${esc(x.display||'')}
             </small>
+
           </span>
 
           <span class="dist">
@@ -3835,11 +3401,9 @@ function showResults(
             x.lon,
             x.name
           );
-
         };
 
-      box.appendChild(b);
-
+      results.appendChild(b);
     }
   );
 
@@ -3871,18 +3435,14 @@ async function startRoute(
 
   stopGuidance(true);
 
-  dLat=
-    a;
-
-  dLng=
-    o;
-
-  dName=
-    name;
+  dLat=a;
+  dLng=o;
+  dName=name;
 
   if(
     destMarker
   ){
+
     destMarker.remove();
   }
 
@@ -3891,8 +3451,7 @@ async function startRoute(
       'div'
     );
 
-  e.className=
-    'dest';
+  e.className='dest';
 
   destMarker=
     new maplibregl.Marker({
@@ -3916,43 +3475,22 @@ async function startRoute(
     .addTo(map);
 
   candidates={};
+  active=null;
+  mode='recommended';
 
-  active=
-    null;
+  ptitle.textContent=
+    '目的地：'+name;
 
-  mode=
-    'recommended';
+  pinfo.innerHTML=
+    '<span class="loading"></span>5種類のルートを探索しています…';
 
-  document
-    .getElementById(
-      'ptitle'
-    )
-    .textContent=
-      '目的地：'+
-      name;
-
-  document
-    .getElementById(
-      'pinfo'
-    )
-    .innerHTML=
-      '<span class="loading"></span>5種類のルートを探索しています…';
-
-  document
-    .getElementById(
-      'preview'
-    )
+  preview
     .classList
     .add(
       'show'
     );
 
-  document
-    .getElementById(
-      'startBtn'
-    )
-    .disabled=
-      true;
+  startBtn.disabled=true;
 
   document
     .querySelectorAll(
@@ -4019,9 +3557,7 @@ async function startRoute(
             .style
             .opacity=
               '.4';
-
         }
-
       }
     )
   );
@@ -4041,11 +3577,8 @@ async function startRoute(
       f
     ){
 
-      mode=
-        f;
-
+      mode=f;
       showCandidate(f);
-
     }
   }
 
@@ -4055,20 +3588,15 @@ async function startRoute(
     ).length
   ){
 
-    document
-      .getElementById(
-        'pinfo'
-      )
-      .innerHTML=
-        `
-          <b>
-            ルートを取得できませんでした
-          </b>
-
-          <div class="note">
-            通信状態を確認してください
-          </div>
-        `;
+    pinfo.innerHTML=
+      `
+        <b>
+          ルートを取得できませんでした
+        </b>
+        <div class="note">
+          通信状態を確認してください
+        </div>
+      `;
 
     toast(
       'ルート探索に失敗しました'
@@ -4098,12 +3626,6 @@ async function reliableRoute(
 
   }catch(_){
 
-    /*
-      Valhallaで失敗した場合は
-      最寄りの走行可能道路にスナップして
-      OSRMで再探索する。
-    */
-
     const f=
       await snap(
         fa,
@@ -4125,12 +3647,12 @@ async function reliableRoute(
         t.lon
       );
 
-    r.fallback=
-      true;
+    r.fallback=true;
 
     r.snapDistance=
       Math.round(
-        t.distance||
+        t.distance
+        ||
         0
       );
 
@@ -4163,16 +3685,14 @@ async function snap(
 
   return{
 
-    lon:
-      +w.location[0],
+    lon:+w.location[0],
 
-    lat:
-      +w.location[1],
+    lat:+w.location[1],
 
     distance:
-      +w.distance||
+      +w.distance
+      ||
       0
-
   };
 }
 
@@ -4194,7 +3714,8 @@ async function osrmRoute(
     await r.json();
 
   if(
-    d.code!=='Ok'||
+    d.code!=='Ok'
+    ||
     !d.routes?.length
   ){
     throw 0;
@@ -4230,38 +3751,27 @@ async function valRoute(
       }
     ],
 
-    costing:
-      'auto',
+    costing:'auto',
 
     costing_options:{
       auto:{
         ...p.opts,
-
-        ignore_closures:
-          false,
-
-        ignore_restrictions:
-          false
+        ignore_closures:false,
+        ignore_restrictions:false
       }
     },
 
-    units:
-      'kilometers',
+    units:'kilometers',
 
-    language:
-      'ja-JP',
+    language:'ja-JP',
 
-    directions_type:
-      'instructions',
+    directions_type:'instructions',
 
-    format:
-      'osrm',
+    format:'osrm',
 
-    shape_format:
-      'geojson',
+    shape_format:'geojson',
 
-    alternates:
-      1
+    alternates:1
   };
 
   const r=
@@ -4279,7 +3789,6 @@ async function valRoute(
         'X-Client-Id':
           'cr-vjxz100.github.io/NAVI-ZETE'
       }
-
     );
 
   const d=
@@ -4345,9 +3854,7 @@ async function timedFetch(
       await fetch(
         url,
         {
-          signal:
-            c.signal,
-
+          signal:c.signal,
           headers
         }
       );
@@ -4363,7 +3870,6 @@ async function timedFetch(
   }finally{
 
     clearTimeout(t);
-
   }
 }
 
@@ -4374,59 +3880,63 @@ function normalizeRoute(
 
   return{
 
-    mode:
-      m,
+    mode:m,
 
     geometry:
       r.geometry,
 
     distance:
-      +r.distance||
+      +r.distance
+      ||
       0,
 
     duration:
-      +r.duration||
+      +r.duration
+      ||
       0,
 
     steps:
       (
-        r.legs||
+        r.legs
+        ||
         []
       )
       .flatMap(
         l=>
-          l.steps||
+          l.steps
+          ||
           []
       )
       .map(
         s=>({
 
           distance:
-            +s.distance||
+            +s.distance
+            ||
             0,
 
           duration:
-            +s.duration||
+            +s.duration
+            ||
             0,
 
           name:
-            s.name||
+            s.name
+            ||
             '',
 
           maneuver:
-            s.maneuver||
+            s.maneuver
+            ||
             {}
-
         })
       )
-
   };
 }
 
 function selectMode(m){
 
-  mode=
-    m;
+  mode=m;
 
   document
     .querySelectorAll(
@@ -4449,20 +3959,10 @@ function selectMode(m){
 
   }else{
 
-    document
-      .getElementById(
-        'pinfo'
-      )
-      .innerHTML=
-        '<span class="loading"></span>探索中…';
+    pinfo.innerHTML=
+      '<span class="loading"></span>探索中…';
 
-    document
-      .getElementById(
-        'startBtn'
-      )
-      .disabled=
-        true;
-
+    startBtn.disabled=true;
   }
 }
 
@@ -4477,8 +3977,7 @@ function showCandidate(m){
     return;
   }
 
-  active=
-    r;
+  active=r;
 
   drawRoute(
     r.geometry
@@ -4516,44 +4015,32 @@ function showCandidate(m){
     :
     '有料道路を強く回避';
 
-  document
-    .getElementById(
-      'pinfo'
-    )
-    .innerHTML=
-      `
-        <b>
-          ${km.toFixed(1)} km
-          /
-          約 ${min} 分
-        </b>
+  pinfo.innerHTML=
+    `
+      <b>
+        ${km.toFixed(1)} km
+        /
+        約 ${min} 分
+      </b>
 
-        <div
-          style="
-            font-size:11px;
-            color:#9db0bf;
-            margin-top:4px
-          ">
+      <div
+        style="
+          font-size:11px;
+          color:#9db0bf;
+          margin-top:4px
+        ">
+        ${desc}
+        ${
+          r.fallback
+          ?
+          `<br>道路外地点を最寄り道路へ補正（約${r.snapDistance}m）`
+          :
+          ''
+        }
+      </div>
+    `;
 
-          ${desc}
-
-          ${
-            r.fallback
-            ?
-            `<br>道路外地点を最寄り道路へ補正（約${r.snapDistance}m）`
-            :
-            ''
-          }
-
-        </div>
-      `;
-
-  document
-    .getElementById(
-      'startBtn'
-    )
-    .disabled=
-      false;
+  startBtn.disabled=false;
 }
 
 function clearRoute(){
@@ -4575,7 +4062,6 @@ function clearRoute(){
       map.removeLayer(
         'route'
       );
-
     }
 
   }catch(_){}
@@ -4591,7 +4077,6 @@ function clearRoute(){
       map.removeLayer(
         'routeCase'
       );
-
     }
 
   }catch(_){}
@@ -4607,13 +4092,11 @@ function clearRoute(){
       map.removeSource(
         'route'
       );
-
     }
 
   }catch(_){}
 
-  routeOn=
-    false;
+  routeOn=false;
 }
 
 function drawRoute(g){
@@ -4653,14 +4136,11 @@ function drawRoute(g){
 
   map.addLayer({
 
-    id:
-      'routeCase',
+    id:'routeCase',
 
-    type:
-      'line',
+    type:'line',
 
-    source:
-      'route',
+    source:'route',
 
     layout:{
       'line-cap':'round',
@@ -4672,19 +4152,15 @@ function drawRoute(g){
       'line-width':12,
       'line-opacity':.85
     }
-
   });
 
   map.addLayer({
 
-    id:
-      'route',
+    id:'route',
 
-    type:
-      'line',
+    type:'line',
 
-    source:
-      'route',
+    source:'route',
 
     layout:{
       'line-cap':'round',
@@ -4696,11 +4172,9 @@ function drawRoute(g){
       'line-width':7,
       'line-opacity':.98
     }
-
   });
 
-  routeOn=
-    true;
+  routeOn=true;
 
   const cs=
     geoCoords(g);
@@ -4717,20 +4191,14 @@ function drawRoute(g){
         b.extend(x)
     );
 
-    /*
-      ルートプレビュー時だけ
-      一時的に自車追従を止めて
-      全ルートを表示。
-    */
-
-    tracking=
-      false;
+    tracking=false;
 
     map.setBearing(0);
 
     map.fitBounds(
       b,
       {
+
         padding:{
           top:85,
           bottom:180,
@@ -4738,11 +4206,9 @@ function drawRoute(g){
           right:70
         },
 
-        maxZoom:
-          16.5,
+        maxZoom:16.5,
 
-        duration:
-          450
+        duration:450
       }
     );
   }
@@ -4761,28 +4227,19 @@ function startGuidance(){
     return;
   }
 
-  document
-    .getElementById(
-      'preview'
-    )
+  preview
     .classList
     .remove(
       'show'
     );
 
-  routing=
-    true;
-
-  tracking=
-    true;
-
-  offCount=
-    0;
+  routing=true;
+  tracking=true;
+  offCount=0;
 
   spoken.clear();
 
-  stepIndex=
-    0;
+  stepIndex=0;
 
   coords=
     geoCoords(
@@ -4795,7 +4252,8 @@ function startGuidance(){
     );
 
   steps=
-    active.steps||
+    active.steps
+    ||
     [];
 
   navZoom=
@@ -4806,11 +4264,6 @@ function startGuidance(){
         map.getZoom()
       )
     );
-
-  /*
-    案内開始時は必ず
-    現在地追従＋進行方向表示へ戻す
-  */
 
   follow(true);
 
@@ -4827,10 +4280,7 @@ function startGuidance(){
 
 function cancelPreview(){
 
-  document
-    .getElementById(
-      'preview'
-    )
+  preview
     .classList
     .remove(
       'show'
@@ -4845,43 +4295,30 @@ function stopGuidance(
   silent=false
 ){
 
-  routing=
-    false;
+  routing=false;
 
   coords=[];
   cum=[];
   steps=[];
 
-  stepIndex=
-    0;
-
-  active=
-    null;
+  stepIndex=0;
+  active=null;
 
   spoken.clear();
 
-  document
-    .getElementById(
-      'guide'
-    )
+  guide
     .classList
     .remove(
       'show'
     );
 
-  document
-    .getElementById(
-      'routeStatus'
-    )
+  routeStatus
     .classList
     .remove(
       'show'
     );
 
-  document
-    .getElementById(
-      'preview'
-    )
+  preview
     .classList
     .remove(
       'show'
@@ -4890,6 +4327,7 @@ function stopGuidance(
   if(
     routeOn
   ){
+
     clearRoute();
   }
 
@@ -4899,8 +4337,7 @@ function stopGuidance(
 
     destMarker.remove();
 
-    destMarker=
-      null;
+    destMarker=null;
   }
 
   if(
@@ -4914,15 +4351,16 @@ function stopGuidance(
     speak(
       '案内を終了します'
     );
-
   }
 }
 
 function updateGuidance(){
 
   if(
-    !routing||
-    !active||
+    !routing
+    ||
+    !active
+    ||
     coords.length<2
   ){
     return;
@@ -4946,20 +4384,19 @@ function updateGuidance(){
     offCount++;
 
     if(
-      offCount>=3&&
+      offCount>=3
+      &&
       Date.now()-
       lastReroute>
       10000
     ){
 
       reroute();
-
     }
 
   }else{
 
-    offCount=
-      0;
+    offCount=0;
   }
 
   const prog=
@@ -4968,11 +4405,13 @@ function updateGuidance(){
         n.index,
         cum.length-1
       )
-    ]||
+    ]
+    ||
     0;
 
   const total=
-    cum.at(-1)||
+    cum.at(-1)
+    ||
     active.distance;
 
   const rem=
@@ -5002,36 +4441,25 @@ function updateGuidance(){
       sec*1000
     );
 
-  document
-    .getElementById(
-      'remaining'
-    )
-    .textContent=
-      rem>=1000
-      ?
-      `残り ${(rem/1000).toFixed(1)} km`
-      :
-      `残り ${Math.round(rem)} m`;
+  remaining.textContent=
+    rem>=1000
+    ?
+    `残り ${(rem/1000).toFixed(1)} km`
+    :
+    `残り ${Math.round(rem)} m`;
 
-  document
-    .getElementById(
-      'eta'
-    )
-    .textContent=
-      `約 ${Math.max(1,Math.round(sec/60))}分 / ${
-        arr.toLocaleTimeString(
-          'ja-JP',
-          {
-            hour:'2-digit',
-            minute:'2-digit'
-          }
-        )
-      }着`;
+  eta.textContent=
+    `約 ${Math.max(1,Math.round(sec/60))}分 / ${
+      arr.toLocaleTimeString(
+        'ja-JP',
+        {
+          hour:'2-digit',
+          minute:'2-digit'
+        }
+      )
+    }着`;
 
-  document
-    .getElementById(
-      'routeStatus'
-    )
+  routeStatus
     .classList
     .add(
       'show'
@@ -5090,14 +4518,15 @@ function updateGuidance(){
 
     if(
       (
-        cum[idx]||
+        cum[idx]
+        ||
         0
-      )>
+      )
+      >
       prog+8
     ){
 
-      bi=
-        i;
+      bi=i;
 
       break;
     }
@@ -5109,8 +4538,7 @@ function updateGuidance(){
       );
   }
 
-  stepIndex=
-    bi;
+  stepIndex=bi;
 
   const st=
     steps[
@@ -5137,49 +4565,37 @@ function updateGuidance(){
     Math.max(
       0,
       (
-        cum[idx]||
+        cum[idx]
+        ||
         0
-      )-
+      )
+      -
       prog
     );
 
   const ins=
     instruction(st);
 
-  document
-    .getElementById(
-      'guideArrow'
-    )
-    .textContent=
-      icon(
-        m.type,
-        m.modifier
-      );
+  guideArrow.textContent=
+    icon(
+      m.type,
+      m.modifier
+    );
 
-  document
-    .getElementById(
-      'guideText'
-    )
-    .textContent=
-      ins;
+  guideText.textContent=
+    ins;
 
-  document
-    .getElementById(
-      'guideDist'
-    )
-    .textContent=
-      Math.round(
-        dist
-      );
+  guideDist.textContent=
+    Math.round(
+      dist
+    );
 
-  document
-    .getElementById(
-      'guide'
-    )
+  guide
     .classList
     .toggle(
       'show',
-      dist<800||
+      dist<800
+      ||
       stepIndex===0
     );
 
@@ -5217,7 +4633,8 @@ function updateGuidance(){
 async function reroute(){
 
   if(
-    !routing||
+    !routing
+    ||
     dLat==null
   ){
     return;
@@ -5226,8 +4643,7 @@ async function reroute(){
   lastReroute=
     Date.now();
 
-  offCount=
-    0;
+  offCount=0;
 
   toast(
     '↻ ルートを外れました。再探索します'
@@ -5249,11 +4665,9 @@ async function reroute(){
         dLng
       );
 
-    candidates[mode]=
-      r;
+    candidates[mode]=r;
 
-    active=
-      r;
+    active=r;
 
     drawRoute(
       r.geometry
@@ -5270,16 +4684,15 @@ async function reroute(){
       );
 
     steps=
-      r.steps||
+      r.steps
+      ||
       [];
 
-    stepIndex=
-      0;
+    stepIndex=0;
 
     spoken.clear();
 
-    tracking=
-      true;
+    tracking=true;
 
     follow(true);
 
@@ -5292,14 +4705,14 @@ async function reroute(){
     toast(
       '再探索に失敗しました'
     );
-
   }
 }
 
 function instruction(s){
 
   const m=
-    s.maneuver||
+    s.maneuver
+    ||
     {};
 
   const name=
@@ -5310,17 +4723,13 @@ function instruction(s){
     '';
 
   if(
-    m.type===
-    'arrive'
+    m.type==='arrive'
   ){
-    return(
-      '目的地周辺です'
-    );
+    return '目的地周辺です';
   }
 
   if(
-    m.type===
-    'depart'
+    m.type==='depart'
   ){
 
     return(
@@ -5333,11 +4742,11 @@ function instruction(s){
   }
 
   const x=
-    m.modifier||
+    m.modifier
+    ||
     'straight';
 
-  let d=
-    '直進';
+  let d='直進';
 
   if(
     x.includes(
@@ -5345,8 +4754,7 @@ function instruction(s){
     )
   ){
 
-    d=
-      '斜め右方向';
+    d='斜め右方向';
 
   }else if(
     x.includes(
@@ -5354,8 +4762,7 @@ function instruction(s){
     )
   ){
 
-    d=
-      '大きく右方向';
+    d='大きく右方向';
 
   }else if(
     x.includes(
@@ -5363,8 +4770,7 @@ function instruction(s){
     )
   ){
 
-    d=
-      '右方向';
+    d='右方向';
 
   }else if(
     x.includes(
@@ -5372,8 +4778,7 @@ function instruction(s){
     )
   ){
 
-    d=
-      '斜め左方向';
+    d='斜め左方向';
 
   }else if(
     x.includes(
@@ -5381,8 +4786,7 @@ function instruction(s){
     )
   ){
 
-    d=
-      '大きく左方向';
+    d='大きく左方向';
 
   }else if(
     x.includes(
@@ -5390,8 +4794,7 @@ function instruction(s){
     )
   ){
 
-    d=
-      '左方向';
+    d='左方向';
 
   }else if(
     x.includes(
@@ -5399,14 +4802,11 @@ function instruction(s){
     )
   ){
 
-    d=
-      'Uターン';
-
+    d='Uターン';
   }
 
   if(
-    m.type===
-    'merge'
+    m.type==='merge'
   ){
 
     return(
@@ -5511,9 +4911,7 @@ function saveCurrentPoint(){
 
     lat,
 
-    lon:
-      lng
-
+    lon:lng
   });
 
   localStorage.setItem(
@@ -5546,7 +4944,6 @@ function getFav(){
   }catch(_){
 
     return [];
-
   }
 }
 
@@ -5559,19 +4956,13 @@ function openFavorites(){
   const a=
     getFav();
 
-  const box=
-    document.getElementById(
-      'favorites'
-    );
-
-  box.innerHTML=
-    '';
+  favorites.innerHTML='';
 
   if(
     !a.length
   ){
 
-    box.innerHTML=
+    favorites.innerHTML=
       `
         <div
           style="
@@ -5582,7 +4973,6 @@ function openFavorites(){
           登録地点はありません
         </div>
       `;
-
   }
 
   a.forEach(
@@ -5631,7 +5021,6 @@ function openFavorites(){
             +f.lon,
             f.name
           );
-
         };
 
       b.oncontextmenu=
@@ -5653,11 +5042,9 @@ function openFavorites(){
           );
 
           openFavorites();
-
         };
 
-      box.appendChild(b);
-
+      favorites.appendChild(b);
     }
   );
 
@@ -5682,8 +5069,7 @@ function toast(t){
       'toast'
     );
 
-  e.textContent=
-    t;
+  e.textContent=t;
 
   e.classList.add(
     'show'
@@ -5734,22 +5120,19 @@ function geoCoords(g){
   }
 
   if(
-    g.type===
-    'LineString'
+    g.type==='LineString'
   ){
+
     return g.coordinates;
   }
 
   if(
-    g.type===
-    'Feature'&&
-    g.geometry?.type===
-    'LineString'
+    g.type==='Feature'
+    &&
+    g.geometry?.type==='LineString'
   ){
 
-    return(
-      g.geometry.coordinates
-    );
+    return g.geometry.coordinates;
   }
 
   return [];
@@ -5768,14 +5151,14 @@ function buildCum(a){
   ){
 
     o[i]=
-      o[i-1]+
+      o[i-1]
+      +
       distance(
         a[i-1][1],
         a[i-1][0],
         a[i][1],
         a[i][0]
       );
-
   }
 
   return o;
@@ -5787,11 +5170,8 @@ function nearIdx(
   c
 ){
 
-  let b=
-    0;
-
-  let d=
-    Infinity;
+  let b=0;
+  let d=Infinity;
 
   const st=
     c.length>
@@ -5835,12 +5215,8 @@ function nearIdx(
       q<d
     ){
 
-      d=
-        q;
-
-      b=
-        i;
-
+      d=q;
+      b=i;
     }
   }
 
@@ -5897,12 +5273,8 @@ function nearestRoute(
       q<d
     ){
 
-      d=
-        q;
-
-      b=
-        i;
-
+      d=q;
+      b=i;
     }
   }
 
