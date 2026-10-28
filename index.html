@@ -4546,5 +4546,1191 @@ window.addEventListener(
   init
 );
 </script>
+  <script>
+/* =========================================================
+   NAVI-ZETE v102
+   BUTTON SOUND + FAST NEARBY SEARCH FIX
+   ========================================================= */
+
+
+/* =========================================================
+   ボタン操作音
+   ========================================================= */
+
+let naviAudioCtx = null;
+
+function naviButtonBeep(){
+
+  try{
+
+    const AC =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+    if(!AC){
+      return;
+    }
+
+    naviAudioCtx =
+      naviAudioCtx ||
+      new AC();
+
+    const play = ()=>{
+
+      const t =
+        naviAudioCtx.currentTime;
+
+      const o =
+        naviAudioCtx.createOscillator();
+
+      const g =
+        naviAudioCtx.createGain();
+
+      o.type =
+        'square';
+
+      o.frequency.setValueAtTime(
+        880,
+        t
+      );
+
+      o.frequency.exponentialRampToValueAtTime(
+        520,
+        t + .035
+      );
+
+      g.gain.setValueAtTime(
+        .11,
+        t
+      );
+
+      g.gain.exponentialRampToValueAtTime(
+        .001,
+        t + .05
+      );
+
+      o.connect(g);
+
+      g.connect(
+        naviAudioCtx.destination
+      );
+
+      o.start(t);
+
+      o.stop(
+        t + .055
+      );
+    };
+
+
+    if(
+      naviAudioCtx.state ===
+      'suspended'
+    ){
+
+      naviAudioCtx
+        .resume()
+        .then(play)
+        .catch(()=>{});
+
+    }else{
+
+      play();
+
+    }
+
+  }catch(_){}
+
+}
+
+
+/* すべてのボタンで音を鳴らす */
+
+document.addEventListener(
+  'pointerdown',
+
+  e=>{
+
+    const button =
+      e.target.closest(
+        'button'
+      );
+
+    if(
+      !button ||
+      button.disabled
+    ){
+      return;
+    }
+
+    naviButtonBeep();
+
+  },
+
+  {
+    capture:true,
+    passive:true
+  }
+);
+
+
+
+/* =========================================================
+   高速周辺検索
+   ========================================================= */
+
+const naviNearbyCache =
+  new Map();
+
+let naviNearbyWarmPromise =
+  null;
+
+let naviNearbyWarmAt =
+  0;
+
+let naviNearbyWarmLat =
+  null;
+
+let naviNearbyWarmLng =
+  null;
+
+
+/* キャッシュ時間：2分 */
+
+const NAVI_NEARBY_TTL =
+  120000;
+
+
+
+/* =========================================================
+   キャッシュがまだ使えるか
+   ========================================================= */
+
+function naviCacheFresh(entry){
+
+  return(
+    !!entry
+    &&
+    Date.now() -
+      entry.at <
+      NAVI_NEARBY_TTL
+    &&
+    gpsFix
+    &&
+    distance(
+      entry.lat,
+      entry.lng,
+      lat,
+      lng
+    ) < 700
+  );
+
+}
+
+
+
+/* =========================================================
+   OSMタグ → カテゴリー判定
+   ========================================================= */
+
+function naviCategoryFromTags(
+  t = {}
+){
+
+  if(
+    t.shop ===
+    'convenience'
+  ){
+
+    return(
+      'convenience'
+    );
+
+  }
+
+
+  if(
+    t.amenity ===
+    'fuel'
+  ){
+
+    return(
+      'fuel'
+    );
+
+  }
+
+
+  if(
+    t.amenity ===
+    'parking'
+  ){
+
+    return(
+      'parking'
+    );
+
+  }
+
+
+  if(
+    t.shop ===
+    'supermarket'
+  ){
+
+    return(
+      'supermarket'
+    );
+
+  }
+
+
+  if(
+    [
+      'restaurant',
+      'fast_food',
+      'cafe'
+    ]
+    .includes(
+      t.amenity
+    )
+  ){
+
+    return(
+      'food'
+    );
+
+  }
+
+
+  if(
+    t.amenity ===
+    'toilets'
+  ){
+
+    return(
+      'toilets'
+    );
+
+  }
+
+
+  return(
+    null
+  );
+
+}
+
+
+
+/* =========================================================
+   周辺6カテゴリーを一気に検索するクエリ
+   ========================================================= */
+
+function naviBuildCombinedNearbyQuery(
+  radius
+){
+
+  const parts = [
+
+    `nwr["shop"="convenience"](around:${radius},${lat},${lng});`,
+
+    `nwr["amenity"="fuel"](around:${radius},${lat},${lng});`,
+
+    `nwr["amenity"="parking"](around:${radius},${lat},${lng});`,
+
+    `nwr["shop"="supermarket"](around:${radius},${lat},${lng});`,
+
+    `nwr["amenity"="restaurant"](around:${radius},${lat},${lng});`,
+
+    `nwr["amenity"="fast_food"](around:${radius},${lat},${lng});`,
+
+    `nwr["amenity"="cafe"](around:${radius},${lat},${lng});`,
+
+    `nwr["amenity"="toilets"](around:${radius},${lat},${lng});`
+
+  ];
+
+
+  return(
+
+    `[out:json][timeout:7];` +
+
+    `(${parts.join('')});` +
+
+    `out center tags qt 160;`
+
+  );
+
+}
+
+
+
+/* =========================================================
+   1カテゴリーだけ広範囲検索
+   ========================================================= */
+
+function naviBuildCategoryQuery(
+  cat,
+  radius
+){
+
+  const parts = [];
+
+
+  for(
+    const [k,v]
+    of cat.filters
+  ){
+
+    parts.push(
+
+      `nwr["${k}"="${v}"]` +
+
+      `(around:${radius},${lat},${lng});`
+
+    );
+
+  }
+
+
+  return(
+
+    `[out:json][timeout:8];` +
+
+    `(${parts.join('')});` +
+
+    `out center tags qt 60;`
+
+  );
+
+}
+
+
+
+/* =========================================================
+   Overpassデータをナビ用に変換
+   ========================================================= */
+
+function naviRowsFromElements(
+  elements,
+  key,
+  label
+){
+
+  const seen =
+    new Set();
+
+  const out = [];
+
+
+  for(
+    const x
+    of elements || []
+  ){
+
+    const t =
+      x.tags || {};
+
+
+    if(
+      key
+      &&
+      naviCategoryFromTags(t)
+      !==
+      key
+    ){
+
+      continue;
+
+    }
+
+
+    const a =
+      x.lat ??
+      x.center?.lat;
+
+
+    const o =
+      x.lon ??
+      x.center?.lon;
+
+
+    if(
+      !Number.isFinite(+a)
+      ||
+      !Number.isFinite(+o)
+    ){
+
+      continue;
+
+    }
+
+
+    const dedupe =
+
+      `${(+a).toFixed(5)},` +
+
+      `${(+o).toFixed(5)}`;
+
+
+    if(
+      seen.has(
+        dedupe
+      )
+    ){
+
+      continue;
+
+    }
+
+
+    seen.add(
+      dedupe
+    );
+
+
+    out.push({
+
+      lat:+a,
+
+      lon:+o,
+
+
+      name:
+
+        t['name:ja']
+        ||
+        t.name
+        ||
+        t.brand
+        ||
+        t.operator
+        ||
+        `名称不明の${label}`,
+
+
+      display:
+
+        [
+          t['addr:city'],
+          t['addr:suburb'],
+          t['addr:street']
+        ]
+        .filter(Boolean)
+        .join(' ')
+
+        ||
+
+        label,
+
+
+      source:
+        'OVERPASS',
+
+
+      dist:
+
+        distance(
+          lat,
+          lng,
+          +a,
+          +o
+        )
+        /
+        1000
+
+    });
+
+  }
+
+
+  out.sort(
+    (a,b)=>
+      a.dist -
+      b.dist
+  );
+
+
+  return(
+    out
+  );
+
+}
+
+
+
+/* =========================================================
+   Overpass高速化
+
+   2つのサーバーに同時接続して
+   先に返ってきた方を使用
+   ========================================================= */
+
+function overpassFetch(
+  query,
+  ms = 6500
+){
+
+  const endpoints = [
+
+    ...new Set(
+      OVER
+    )
+
+  ];
+
+
+  return(
+
+    new Promise(
+      (
+        resolve,
+        reject
+      )=>{
+
+        let finished =
+          false;
+
+        let failed =
+          0;
+
+
+        endpoints.forEach(
+          (
+            ep,
+            i
+          )=>{
+
+
+            fetchJsonTimeout(
+
+              ep +
+              '?data=' +
+              encodeURIComponent(
+                query
+              ),
+
+              ms +
+              i * 500
+
+            )
+
+            .then(
+              d=>{
+
+
+                if(
+                  finished
+                ){
+
+                  return;
+
+                }
+
+
+                if(
+                  d
+                  &&
+                  Array.isArray(
+                    d.elements
+                  )
+                ){
+
+                  finished =
+                    true;
+
+                  resolve(d);
+
+                  return;
+
+                }
+
+
+                throw new Error(
+                  'invalid Overpass response'
+                );
+
+              }
+            )
+
+            .catch(
+              ()=>{
+
+
+                failed++;
+
+
+                if(
+                  !finished
+                  &&
+                  failed >=
+                  endpoints.length
+                ){
+
+                  reject(
+                    new Error(
+                      'Overpass unavailable'
+                    )
+                  );
+
+                }
+
+              }
+            );
+
+          }
+        );
+
+      }
+    )
+
+  );
+
+}
+
+
+
+/* =========================================================
+   周辺施設を事前読み込み
+   ========================================================= */
+
+async function naviWarmNearby(
+  force = false
+){
+
+  if(
+    !gpsFix
+  ){
+
+    return(
+      null
+    );
+
+  }
+
+
+  const stillFresh =
+
+    !force
+
+    &&
+
+    naviNearbyWarmLat
+      !=
+      null
+
+    &&
+
+    Date.now() -
+      naviNearbyWarmAt
+      <
+      NAVI_NEARBY_TTL
+
+    &&
+
+    distance(
+      naviNearbyWarmLat,
+      naviNearbyWarmLng,
+      lat,
+      lng
+    )
+    <
+    700;
+
+
+  if(
+    stillFresh
+  ){
+
+    return(
+      true
+    );
+
+  }
+
+
+  if(
+    naviNearbyWarmPromise
+  ){
+
+    return(
+      naviNearbyWarmPromise
+    );
+
+  }
+
+
+  naviNearbyWarmPromise =
+    (
+      async()=>{
+
+
+        const originLat =
+          lat;
+
+        const originLng =
+          lng;
+
+
+        const d =
+
+          await overpassFetch(
+
+            naviBuildCombinedNearbyQuery(
+              3500
+            ),
+
+            6500
+
+          );
+
+
+        const bucketKeys =
+
+          Object.keys(
+            NEARBY_CATEGORIES
+          );
+
+
+        for(
+          const key
+          of bucketKeys
+        ){
+
+          const cat =
+
+            NEARBY_CATEGORIES[
+              key
+            ];
+
+
+          const items =
+
+            naviRowsFromElements(
+
+              d.elements,
+
+              key,
+
+              cat.label
+
+            )
+
+            .slice(
+              0,
+              15
+            );
+
+
+          naviNearbyCache.set(
+
+            key,
+
+            {
+
+              at:
+                Date.now(),
+
+              lat:
+                originLat,
+
+              lng:
+                originLng,
+
+              items
+
+            }
+
+          );
+
+        }
+
+
+        naviNearbyWarmAt =
+          Date.now();
+
+        naviNearbyWarmLat =
+          originLat;
+
+        naviNearbyWarmLng =
+          originLng;
+
+
+        return(
+          true
+        );
+
+      }
+    )()
+
+    .finally(
+      ()=>{
+
+        naviNearbyWarmPromise =
+          null;
+
+      }
+    );
+
+
+  return(
+    naviNearbyWarmPromise
+  );
+
+}
+
+
+
+/* =========================================================
+   目的地画面
+
+   開いた瞬間に周辺施設を先読み
+   ========================================================= */
+
+function openNav(){
+
+  closeAll();
+
+  updateHomeState();
+
+  setSearchState(
+    ''
+  );
+
+  openModal(
+    'navModal'
+  );
+
+
+  setTimeout(
+    ()=>{
+
+      $('searchInput')
+        ?.focus();
+
+    },
+
+    80
+  );
+
+
+  if(
+    gpsFix
+  ){
+
+    setSearchState(
+      '📍 周辺施設を先読みしています…'
+    );
+
+
+    naviWarmNearby(
+      false
+    )
+
+    .then(
+      ()=>{
+
+        setSearchState(
+          '✓ 周辺施設の準備完了'
+        );
+
+      }
+    )
+
+    .catch(
+      ()=>{
+
+        setSearchState(
+          '周辺検索はボタンを押した時に再試行します'
+        );
+
+      }
+    );
+
+  }
+
+}
+
+
+
+/* =========================================================
+   「近くの○○」検索
+   ========================================================= */
+
+async function nearby(
+  key,
+  button
+){
+
+  const cat =
+
+    NEARBY_CATEGORIES[
+      key
+    ];
+
+
+  if(
+    !cat
+  ){
+
+    return;
+
+  }
+
+
+  /* GPS確認 */
+
+  if(
+    !(
+      await ensureGps()
+    )
+  ){
+
+    setSearchState(
+      '現在地を取得できません。位置情報を許可してください。',
+      true
+    );
+
+    toast(
+      '現在地を取得できません'
+    );
+
+    return;
+
+  }
+
+
+  /* キャッシュ確認 */
+
+  const cached =
+
+    naviNearbyCache.get(
+      key
+    );
+
+
+  if(
+    naviCacheFresh(
+      cached
+    )
+    &&
+    cached.items.length
+  ){
+
+    setSearchState(
+      `${cat.label}を近い順で表示します`
+    );
+
+
+    showResults(
+
+      cached.items,
+
+      `近くの${cat.label}`
+
+    );
+
+
+    return;
+
+  }
+
+
+  /* ボタンを検索中表示 */
+
+  const oldText =
+    button?.textContent;
+
+
+  button
+    ?.classList
+    .add(
+      'busy'
+    );
+
+
+  if(
+    button
+  ){
+
+    button.textContent =
+      '検索中…';
+
+  }
+
+
+  setSearchState(
+    `🔎 近くの${cat.label}を検索しています…`
+  );
+
+
+  try{
+
+
+    /* まず3.5kmを高速検索 */
+
+    try{
+
+      await naviWarmNearby(
+        true
+      );
+
+    }catch(_){}
+
+
+    let entry =
+
+      naviNearbyCache.get(
+        key
+      );
+
+
+    let items =
+
+      naviCacheFresh(
+        entry
+      )
+
+      ?
+
+      entry.items
+
+      :
+
+      [];
+
+
+    /* 少なければ8kmへ自動拡大 */
+
+    if(
+      items.length <
+      3
+    ){
+
+      const d =
+
+        await overpassFetch(
+
+          naviBuildCategoryQuery(
+            cat,
+            8000
+          ),
+
+          7500
+
+        );
+
+
+      items =
+
+        naviRowsFromElements(
+
+          d.elements,
+
+          key,
+
+          cat.label
+
+        )
+
+        .slice(
+          0,
+          15
+        );
+
+
+      naviNearbyCache.set(
+
+        key,
+
+        {
+
+          at:
+            Date.now(),
+
+          lat,
+
+          lng,
+
+          items
+
+        }
+
+      );
+
+    }
+
+
+    if(
+      !items.length
+    ){
+
+      throw new Error(
+        'empty'
+      );
+
+    }
+
+
+    setSearchState(
+
+      `${cat.label}を近い順で表示します`
+
+    );
+
+
+    showResults(
+
+      items,
+
+      `近くの${cat.label}`
+
+    );
+
+
+  }catch(_){
+
+
+    setSearchState(
+
+      `近くの${cat.label}を取得できませんでした。少し待ってもう一度押してください。`,
+
+      true
+
+    );
+
+
+    toast(
+
+      `${cat.label}の検索に失敗しました`
+
+    );
+
+
+  }finally{
+
+
+    button
+      ?.classList
+      .remove(
+        'busy'
+      );
+
+
+    if(
+      button
+    ){
+
+      button.textContent =
+        oldText;
+
+    }
+
+  }
+
+}
+
+</script>
 </body>
 </html>
